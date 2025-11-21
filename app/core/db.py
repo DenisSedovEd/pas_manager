@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Any
+from typing import Any, AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
-    AsyncSession,
     AsyncEngine,
+    AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
@@ -28,6 +28,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, Any]:
     async with async_session() as session:
         try:
             yield session
+            await session.commit()
         except Exception:
             await session.rollback()
             raise

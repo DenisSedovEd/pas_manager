@@ -1,11 +1,11 @@
 import logging
 
+from schemas import CreateAccountSchema
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from app.core.config import settings
-from app.repositories import with_session, AccountRepository
-from schemas import CreateAccountSchema
+from app.repositories import AccountRepository, with_session
 
 (
     GET_SERVICE_NAME,

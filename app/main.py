@@ -3,30 +3,14 @@ import logging
 from telegram.ext import (
     Application,
     CommandHandler,
+    ConversationHandler,
     MessageHandler,
     filters,
-    ConversationHandler,
 )
-from app.bot.handlers import (
-    start_command,
-    get_password_start,
-    receive_service_name,
-    receive_master_password,
-    cancel_command,
-    GET_SERVICE_NAME,
-    GET_MASTER_PASSWORD,
-    add_password_start,
-    receive_add_service_name,
-    receive_add_username,
-    receive_add_password,
-    finalize_add_password,
-    ADD_SERVICE_NAME,
-    ADD_USERNAME,
-    ADD_PASSWORD,
-    ADD_MASTER_PASSWORD_CONFIRM,
-)
+
+
 from app.core.config import settings
-from app.core.config import settings
+from bot.handlers import BaseHandler
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -40,6 +24,8 @@ def main():
         return
 
     app = Application.builder().token(settings.app.telegram_token).build()
+
+    base_handler_instance = BaseHandler()
 
     get_conv_handler = ConversationHandler(
         entry_points=[CommandHandler("get", get_password_start)],

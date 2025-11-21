@@ -1,25 +1,17 @@
-from functools import wraps
-from typing import Optional, List, Sequence
+from typing import Optional, Sequence
 
+from crypto.exception import InvalidTag
+from schemas import ResponseAccountSchema
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas import CreateAccountSchema
 from app.core.db import get_session
+from app.crypto.encryption import (
+    encrypt_data,
+    decrypt_data,
+)
 from app.models.account import Account
-
-from app.crypto import encryption
-from schemas import ResponseAccountSchema
-
-
-def with_session(handler):
-    @wraps(handler)
-    async def wrapper(update, context, *args, **kwargs):
-        async with get_session() as session:
-            repo = AccountRepository(session)
-            return await handler(update, context, repo, *args, **kwargs)
-
-    return wrapper
+from app.schemas import CreateAccountSchema
 
 
 class AccountRepository:
@@ -27,11 +19,11 @@ class AccountRepository:
         self._session = session
 
     async def create(self, data: CreateAccountSchema, master_password: str) -> Account:
-        full_data = f"{data.username}|{data.password}"
+        new_data = f"{data.username}|{data.password}"
 
-        enc_data = encryption.encrypt_data(
-            full_data,
-            encryption.derive_key(master_password, encryption.generate_salt()),
+        enc_data = encrypt_data(
+            new_data,
+            master_password,
         )
 
         new_account = Account(
@@ -40,7 +32,6 @@ class AccountRepository:
             encrypted_data=enc_data["encrypted_data"],
             salt=enc_data["salt"],
             nonce=enc_data["nonce"],
-            tag=enc_data["tag"],
         )
 
         self._session.add(new_account)
@@ -48,31 +39,60 @@ class AccountRepository:
         await self._session.refresh(new_account)
         return new_account
 
-    async def get_decrypted(
+    async def get_decrypted_data(
         self, service_name: str, master_password: str
     ) -> Optional[ResponseAccountSchema]:
-        stmt = select(Account).filter_by(service_name=service_name)
+
+        stmt = select(Account).where(Account.service_name == service_name)
         result = await self._session.execute(stmt)
         account = result.scalar_one_or_none()
 
         if not account:
-            return None
+            raise ValueError(f"Сервис {service_name} не найден.")
 
         try:
-            decrypted_full_data = encryption.decode_and_decrypt(
+            decrypted_payload = decrypt_data(
                 account.encrypted_data,
                 account.salt,
                 account.nonce,
-                account.tag,
                 master_password,
             )
-        except ValueError as e:
-            raise ValueError(e)
+        except InvalidTag:
+            raise ValueError("Неверный мастер пароль")
         except Exception:
             raise ValueError("Ошибка дешифрования или повреждение данных")
 
+        if "|" not in decrypted_payload:
+            raise ValueError("Ошибка формата данных при дешифровании.")
+
+        user_name, password = decrypted_payload.split("|", 1)
+
+        return ResponseAccountSchema(
+            username=user_name, password=password, service_name=service_name
+        )
+
     async def get_accounts(self) -> Sequence[Account]:
-        stmt = select(Account)
+        stmt = select(Account.service_name, Account.user_name).order_by(
+            Account.service_name
+        )
         result = await self._session.execute(stmt)
         accounts = result.scalars().all()
         return accounts
+
+
+class RepositoryFactory:
+    def __init__(self, repo_class):
+        self._repo_class = repo_class
+        self._context_manager = None
+        self._session_object = None
+
+    async def __aenter__(self):
+        self._context_manager = get_session()
+        self._session_object = await self._context_manager.__aenter__()
+        return self._repo_class(self._session_object)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return await self._context_manager.__aexit__(exc_type, exc_val, exc_tb)
+
+
+AccountRepository = RepositoryFactory(AccountRepository)
