@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class Base(BaseSettings):
@@ -44,15 +44,19 @@ class AppSettings(Base):
         env_prefix="APP",
     )
     debug: bool = Field(False)
-    user_id: str = Field(...)
+    user_id: int = Field(...)
     telegram_token: str = Field(...)
+    key_length: int = Field(...)
+    salt_size: int = Field(...)
+    iterations: int = Field(...)
+    delete_timeout_seconds: int = Field(...)
 
 
 class Settings(Base):
     # noinspection PyArgumentList
-    db: DbSettings = DbSettings()
+    db: DbSettings = Field(default_factory=DbSettings)
     # noinspection PyArgumentList
-    app: AppSettings = AppSettings()
+    app: AppSettings = Field(default_factory=AppSettings)
 
 
 # noinspection PyArgumentList
