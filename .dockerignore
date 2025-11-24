@@ -1,0 +1,9 @@
+# Виртуальные окружения
+.venv
+venv
+env
+ENV
+
+.idea
+
+.env
