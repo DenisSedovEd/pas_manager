@@ -16,7 +16,7 @@ services:
       retries: 3
 
   api:
-    build: .
+    image: denissedoved/pas_manager:latest
     env_file:
       - .env
     depends_on:
