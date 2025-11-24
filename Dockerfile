@@ -8,9 +8,9 @@ RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml ./
 
-RUN uv pip install --system --no-cache-dir .
-
 COPY . .
+
+RUN uv pip install --system --no-cache-dir .
 
 ENV PYTHONPATH=/app
 
