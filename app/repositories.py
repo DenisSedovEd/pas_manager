@@ -44,6 +44,7 @@ class AccountRepository:
 
         self._session.add(new_account)
         await self._session.commit()
+
         await self._session.refresh(new_account)
         return new_account
 

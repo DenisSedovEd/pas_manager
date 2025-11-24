@@ -7,14 +7,21 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from app.core.config import settings
+from app.crypto.exception import EncodingToBytesError
 
 
-def to_base64_str(data: bytes) -> str:
-    return base64.b64encode(data).decode("utf-8")
+def to_base64_str(data: bytes) -> str | None:
+    try:
+        return base64.b64encode(data).decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise EncodingToBytesError(f"Ошибка перевода в байты {e}")
 
 
-def from_base64_str(data: str) -> bytes:
-    return base64.b64decode(data.encode("utf-8"))
+def from_base64_str(data: str) -> bytes | None:
+    try:
+        return base64.b64decode(data.encode("utf-8"))
+    except UnicodeDecodeError as e:
+        raise EncodingToBytesError(f"Ошибка перевода в байты {e}")
 
 
 def generate_salt() -> bytes:
