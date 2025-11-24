@@ -1,19 +1,15 @@
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler, filters
 
-from app.bot.handlers import BaseHandler
-from app.bot.handlers import add_handler_instance, get_handler_instance
-
+from app.bot.handlers import BaseHandler, add_handler_instance, get_handler_instance
 from app.bot.keyboards import (
     BTN_ADD,
-    BTN_GET,
-    BTN_LIST,
     BTN_CANCEL,
+    BTN_GET,
 )
 
 
 class MenuHandler(BaseHandler):
-
     async def handler_menu_input(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):

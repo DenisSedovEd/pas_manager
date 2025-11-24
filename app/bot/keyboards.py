@@ -1,6 +1,5 @@
 from telegram import ReplyKeyboardMarkup
 
-
 BTN_ADD = "Добавить"
 BTN_GET = "Просмотреть"
 BTN_LIST = "Список"

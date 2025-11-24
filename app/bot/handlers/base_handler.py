@@ -1,15 +1,14 @@
 import logging
 
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
-    ConversationHandler,
     ContextTypes,
+    ConversationHandler,
 )
 
-from app.core.config import settings
-from app.bot.keyboards import MAIN_MENU_MARKUP
 from app.bot import messages
+from app.core.config import settings
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -18,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseHandler:
-
     # def __init__(self):
     #     self.main_menu_markup = MAIN_MENU_MARKUP
 
@@ -55,15 +53,3 @@ class BaseHandler:
             "Действие отменено",
         )
         return ConversationHandler.END
-
-    async def delete_secure_message(self, context: ContextTypes.DEFAULT_TYPE):
-        chat_id, message_id = context.job.data
-
-        try:
-            await context.bot.delete_message(
-                chat_id=chat_id,
-                message_id=message_id,
-            )
-            logger.info("Сообщение с кредами удалено.")
-        except Exception as e:
-            logger.error(e)

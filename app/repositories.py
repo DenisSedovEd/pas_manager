@@ -1,18 +1,17 @@
 import logging
 from typing import Optional, Sequence
 
-from crypto.exception import InvalidTag
-from schemas import ResponseAccountSchema
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.crypto.encryption import (
-    encrypt_data,
     decrypt_data,
+    encrypt_data,
 )
+from app.crypto.exception import InvalidTag
 from app.models.account import Account
-from app.schemas import CreateAccountSchema
+from app.schemas import CreateAccountSchema, ResponseAccountSchema
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -51,7 +50,6 @@ class AccountRepository:
     async def get_account_by_name(
         self, service_name: str, master_password: str
     ) -> Optional[ResponseAccountSchema]:
-
         stmt = select(Account).where(
             func.lower(Account.service_name) == func.lower(service_name)
         )
@@ -91,6 +89,7 @@ class AccountRepository:
         )
         result = await self._session.execute(stmt)
         accounts = result.scalars().all()
+        logger.info(accounts)
         return accounts
 
 

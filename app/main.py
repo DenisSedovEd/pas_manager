@@ -3,19 +3,19 @@ import logging
 from telegram.ext import (
     Application,
     CommandHandler,
+    JobQueue,
     MessageHandler,
     filters,
-    JobQueue,
 )
 
-
-from app.core.config import settings
 from app.bot.handlers import (
     BaseHandler,
     add_conv_handler,
     get_conv_handler,
 )
+from app.bot.handlers.list_handler import list_handler_instance
 from app.bot.keyboards import BTN_CANCEL
+from app.core.config import settings
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -41,6 +41,7 @@ def main():
 
     app.add_handler(CommandHandler("start", base_handler_instance.start_command))
     app.add_handler(CommandHandler("cancel", base_handler_instance.cancel_command))
+    app.add_handler(CommandHandler("list", list_handler_instance.get_list_accounts))
 
     app.add_handler(add_conv_handler)
     app.add_handler(get_conv_handler)
@@ -48,7 +49,6 @@ def main():
     app.add_handler(
         MessageHandler(filters.Text(BTN_CANCEL), base_handler_instance.cancel_command)
     )
-    # app.add_handler(menu_message_handler)
 
     logger.info("Бот запущен. Ожидание команд...")
     app.run_polling()

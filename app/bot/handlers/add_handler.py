@@ -1,22 +1,22 @@
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
+    CommandHandler,
     ContextTypes,
     ConversationHandler,
-    CommandHandler,
     MessageHandler,
     filters,
 )
 
-from app.bot.handlers import BaseHandler
+from app.bot import messages
+from app.bot.handlers.base_handler import BaseHandler
 from app.bot.handlers.constants import AddConstraints
-from bot.keyboards import BTN_ADD
-from repositories import AccountRepository
-from schemas import CreateAccountSchema
+from app.repositories import AccountRepository
+from app.schemas import CreateAccountSchema
+from app.services.message_service import schedule_message_deletion
 
 
 class AddAccountHandler(BaseHandler):
-
     async def start_add(
         self,
         update: Update,
@@ -28,8 +28,8 @@ class AddAccountHandler(BaseHandler):
         context.user_data.clear()
 
         await update.message.reply_text(
-            "Начнем добавление нового аккаунта. Введи **название сервиса**:",
-            parse_mode=ParseMode.MARKDOWN,
+            messages.start_add_handler,
+            parse_mode=ParseMode.HTML,
         )
         return AddConstraints.ADD_SERVICE_NAME
 
@@ -41,13 +41,17 @@ class AddAccountHandler(BaseHandler):
         service_name = update.message.text.strip()
 
         if not service_name:
-            await update.message.reply_text("Пустое сообщение, повтори ввод")
+            await update.message.reply_text(
+                messages.empty_input_error,
+                parse_mode=ParseMode.HTML,
+            )
             return AddConstraints.ADD_SERVICE_NAME
 
         context.user_data["service_name"] = service_name
 
         await update.message.reply_text(
-            f"Сервис: {service_name}. Введи **логин**:",
+            messages.username_request.format(service=service_name),
+            parse_mode=ParseMode.HTML,
         )
         return AddConstraints.ADD_USERNAME
 
@@ -59,14 +63,18 @@ class AddAccountHandler(BaseHandler):
         username = update.message.text.strip()
         if not username:
             await update.message.reply_text(
-                "Логин не может быть пустой. Введи еще раз:"
+                messages.empty_input_error,
+                parse_mode=ParseMode.HTML,
             )
             return AddConstraints.ADD_USERNAME
 
         context.user_data["username"] = username
         await update.message.reply_text(
-            f"Логин {username}. Теперь введи **пароль**:",
-            parse_mode=ParseMode.MARKDOWN,
+            messages.password_request.format(
+                service=context.user_data.get("service_name"),
+                username=username,
+            ),
+            parse_mode=ParseMode.HTML,
         )
         return AddConstraints.ADD_PASSWORD
 
@@ -79,18 +87,33 @@ class AddAccountHandler(BaseHandler):
 
         if not password:
             await update.message.reply_text(
-                "Пароль не может быть пустым. Введи еще раз:"
+                messages.empty_input_error,
+                parse_mode=ParseMode.HTML,
             )
             return AddConstraints.ADD_PASSWORD
 
         context.user_data["password"] = password
 
-        await update.message.reply_text(
-            f"Добавляю в сервис {context.user_data.get('service_name')} "
-            f"пользователя {context.user_data.get('username')}"
-            f"🔐 Введи мастер-пароль:",
-            parse_mode=ParseMode.MARKDOWN,
+        set_msg_1 = await update.message.reply_text(
+            messages.add_account,
+            parse_mode=ParseMode.HTML,
         )
+        await schedule_message_deletion(
+            message=set_msg_1,
+            context=context,
+            delay_seconds=5,
+        )
+        set_msg_2 = await update.message.reply_text(
+            messages.master_password_request,
+            parse_mode=ParseMode.HTML,
+        )
+
+        await schedule_message_deletion(
+            message=set_msg_2,
+            context=context,
+            delay_seconds=5,
+        )
+
         return AddConstraints.ADD_MASTER_PASSWORD_CONFIRM
 
     async def finish_add(
@@ -99,6 +122,13 @@ class AddAccountHandler(BaseHandler):
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
         master_password = update.message.text
+        if not master_password:
+            await update.message.reply_text(
+                messages.empty_input_error,
+                parse_mode=ParseMode.HTML,
+            )
+            return AddConstraints.ADD_MASTER_PASSWORD_CONFIRM
+
         try:
             data = CreateAccountSchema(
                 service_name=context.user_data.get("service_name"),
@@ -110,8 +140,8 @@ class AddAccountHandler(BaseHandler):
                 await repo.create_account(data=data, master_password=master_password)
 
                 await update.message.reply_text(
-                    f"✅ Аккаунт для **{data.service_name}** успешно добавлен и зашифрован.",
-                    parse_mode="Markdown",
+                    f"{messages.add_account.format(service=data.service_name, username=data.username)}",
+                    parse_mode=ParseMode.HTML,
                 )
             await update.message.delete()
 
