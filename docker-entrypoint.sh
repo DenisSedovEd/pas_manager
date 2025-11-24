@@ -2,7 +2,7 @@
 set -e
 
 # Apply alembic migrations before starting app
-alembic upgrade head
+uv run alembic upgrade head
 
 # Run regular CMD (uvicorn)
 exec "$@"
