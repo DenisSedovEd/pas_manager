@@ -10,9 +10,12 @@ COPY pyproject.toml uv.lock ./
 
 COPY . .
 
-RUN uv sync --frozen --all-extras
+RUN uv sync --frozen --all-extras --no-editable
 
-ENV PYTHONPATH=/app
+RUN rm -rf .venv
+
+ENV PYTHONPATH=/app \
+    UV_PYTHON_DOWNLOADS=never
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
