@@ -8,11 +8,9 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 
+RUN uv sync --frozen --all-extras --system --no-editable
+
 COPY . .
-
-RUN uv sync --frozen --all-extras --no-editable
-
-RUN rm -rf .venv
 
 ENV PYTHONPATH=/app \
     UV_PYTHON_DOWNLOADS=never
