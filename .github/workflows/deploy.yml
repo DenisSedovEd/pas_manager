@@ -1,4 +1,4 @@
-name: Continuous Deployment Bor
+name: Continuous Deployment Bot
 on:
   push:
     branches:
