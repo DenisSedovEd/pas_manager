@@ -1,17 +1,21 @@
-from telegram import Update, ReplyKeyboardRemove
+from telegram import Update
 from telegram.constants import ParseMode
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram.ext import (
+    ContextTypes,
+    ConversationHandler,
+    CommandHandler,
+    MessageHandler,
+    filters,
+)
 
-from app.repositories import RepositoryFactory
 from app.bot.handlers import BaseHandler
 from app.bot.handlers.constants import AddConstraints
+from bot.keyboards import BTN_ADD
 from repositories import AccountRepository
 from schemas import CreateAccountSchema
 
 
-class AddHandler(BaseHandler):
-    def __init__(self):
-        self.update
+class AddAccountHandler(BaseHandler):
 
     async def start_add(
         self,
@@ -44,7 +48,6 @@ class AddHandler(BaseHandler):
 
         await update.message.reply_text(
             f"Сервис: {service_name}. Введи **логин**:",
-            parse_mode=ParseMode.MARKDOWN,
         )
         return AddConstraints.ADD_USERNAME
 
@@ -104,16 +107,58 @@ class AddHandler(BaseHandler):
             )
 
             async with AccountRepository as repo:
-                await repo.create(data=data, master_password=master_password)
+                await repo.create_account(data=data, master_password=master_password)
 
                 await update.message.reply_text(
                     f"✅ Аккаунт для **{data.service_name}** успешно добавлен и зашифрован.",
                     parse_mode="Markdown",
                 )
+            await update.message.delete()
+
         except Exception as e:
+            await update.message.delete()
+
             await update.message.reply_text(f"❌ Произошла ошибка при сохранении: {e}")
 
         finally:
             context.user_data.clear()
 
         return ConversationHandler.END
+
+
+add_handler_instance = AddAccountHandler()
+
+add_conv_handler = ConversationHandler(
+    entry_points=[
+        CommandHandler("add", add_handler_instance.start_add),
+        # MessageHandler(filters.Text(BTN_ADD), add_handler_instance.start_add),
+    ],
+    states={
+        # Состояние 1: Ожидаем название сервиса
+        AddConstraints.ADD_SERVICE_NAME: [
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND,
+                add_handler_instance.receive_service_name,
+            )
+        ],
+        # Состояние 2: Ожидаем логин
+        AddConstraints.ADD_USERNAME: [
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND, add_handler_instance.receive_username
+            )
+        ],
+        # Состояние 3: Ожидаем пароль
+        AddConstraints.ADD_PASSWORD: [
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND, add_handler_instance.receive_password
+            )
+        ],
+        # Состояние 4 (Завершающее): Ожидаем мастер-пароль
+        AddConstraints.ADD_MASTER_PASSWORD_CONFIRM: [
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND, add_handler_instance.finish_add
+            )
+        ],
+    },
+    fallbacks=[CommandHandler("cancel", add_handler_instance.cancel_command)],
+)

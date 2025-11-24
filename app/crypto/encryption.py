@@ -42,11 +42,13 @@ def encrypt_data(data: str, master_password: str) -> dict:
     nonce = os.urandom(12)
 
     ciphertext_with_tag = aesgcm.encrypt(nonce, data_bytes, associated_data=None)
+    tag = ciphertext_with_tag[-16:]
 
     return {
         "encrypted_data": to_base64_str(ciphertext_with_tag),
         "salt": to_base64_str(salt),
         "nonce": to_base64_str(nonce),
+        "tag": to_base64_str(tag),
     }
 
 
@@ -56,7 +58,7 @@ def decrypt_data(
     nonce: str,
     master_password: str,
 ) -> str:
-    ciphertext_with_tag_bytes = from_base64_str(encrypted_data)
+    new_encrypted_data = from_base64_str(encrypted_data)
     new_salt = from_base64_str(salt)
     new_nonce = from_base64_str(nonce)
 
@@ -64,11 +66,7 @@ def decrypt_data(
 
     aesgcm = AESGCM(key)
 
-    try:
-        decrypted_bytes = aesgcm.decrypt(
-            new_nonce, ciphertext_with_tag_bytes, associated_data=None
-        )
-        return decrypted_bytes.decode("utf-8")
-
-    except InvalidTag:
-        raise ValueError("Неверный мастер-пароль.")
+    decrypted_data = aesgcm.decrypt(
+        new_nonce, new_encrypted_data, associated_data=None
+    ).decode("utf-8")
+    return decrypted_data

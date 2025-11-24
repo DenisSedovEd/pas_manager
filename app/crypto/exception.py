@@ -1,2 +1,2 @@
-class InvalidTag:
+class InvalidTag(BaseException):
     pass

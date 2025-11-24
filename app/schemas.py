@@ -10,7 +10,6 @@ class CreateAccountSchema(BaseModel):
 
 
 class ResponseAccountSchema(BaseModel):
-    service_name: str
     username: str
     password: str
 

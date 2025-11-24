@@ -1,8 +1,9 @@
+import logging
 from typing import Optional, Sequence
 
 from crypto.exception import InvalidTag
 from schemas import ResponseAccountSchema
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -13,12 +14,19 @@ from app.crypto.encryption import (
 from app.models.account import Account
 from app.schemas import CreateAccountSchema
 
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
 
 class AccountRepository:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def create(self, data: CreateAccountSchema, master_password: str) -> Account:
+    async def create_account(
+        self, data: CreateAccountSchema, master_password: str
+    ) -> Account:
         new_data = f"{data.username}|{data.password}"
 
         enc_data = encrypt_data(
@@ -32,6 +40,7 @@ class AccountRepository:
             encrypted_data=enc_data["encrypted_data"],
             salt=enc_data["salt"],
             nonce=enc_data["nonce"],
+            tag=enc_data["tag"],
         )
 
         self._session.add(new_account)
@@ -39,13 +48,15 @@ class AccountRepository:
         await self._session.refresh(new_account)
         return new_account
 
-    async def get_decrypted_data(
+    async def get_account_by_name(
         self, service_name: str, master_password: str
     ) -> Optional[ResponseAccountSchema]:
 
-        stmt = select(Account).where(Account.service_name == service_name)
+        stmt = select(Account).where(
+            func.lower(Account.service_name) == func.lower(service_name)
+        )
         result = await self._session.execute(stmt)
-        account = result.scalar_one_or_none()
+        account = result.scalars().first()
 
         if not account:
             raise ValueError(f"Сервис {service_name} не найден.")
@@ -57,10 +68,12 @@ class AccountRepository:
                 account.nonce,
                 master_password,
             )
-        except InvalidTag:
-            raise ValueError("Неверный мастер пароль")
-        except Exception:
-            raise ValueError("Ошибка дешифрования или повреждение данных")
+        except InvalidTag as e:
+            raise ValueError(f"Неверный мастер пароль: {e}")
+        except Exception as e:
+            raise ValueError(
+                f"Критическая ошибка дешифрования: {type(e).__name__} - {e}"
+            )
 
         if "|" not in decrypted_payload:
             raise ValueError("Ошибка формата данных при дешифровании.")
@@ -68,7 +81,8 @@ class AccountRepository:
         user_name, password = decrypted_payload.split("|", 1)
 
         return ResponseAccountSchema(
-            username=user_name, password=password, service_name=service_name
+            username=user_name,
+            password=password,
         )
 
     async def get_accounts(self) -> Sequence[Account]:
