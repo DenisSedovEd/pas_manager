@@ -42,10 +42,10 @@ jobs:
           # Команды, которые будут выполнены на сервере
           script: |
             # Перейти в папку, где лежит docker-compose.yml
-            cd ~/pas_bot/pas_manager
+            cd ~/pas_manager
             
             # Загрузить новый образ (он должен быть с тегом latest)
-            docker compose pull api 
+            docker compose pull api
             
             # Перезапустить контейнер (это запустит Entrypoint и миграции)
             docker compose up -d --remove-orphans
