@@ -1,54 +1,37 @@
-name: Continuous Deployment Bot
+name: Deploy
 on:
   push:
     branches:
       - master
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # 1. Вход в Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 2. Сборка и Пуш образа
-      - name: Build and Push Docker image
+      - name: Build & Push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          # Используем имя пользователя Docker Hub и тег 'latest'
           tags: ${{ secrets.DOCKER_USERNAME }}/pas_manager:latest
-          cache-from: type=gha
 
-      # 3. Подключение к серверу и перезапуск
-      - name: Deploy to Remote Server via SSH
-        uses: appleboy/ssh-action@v1.0.3 # Экшен для выполнения SSH-команд
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # Команды, которые будут выполнены на сервере
           script: |
-            # Перейти в папку, где лежит docker-compose.yml
             cd ~/pas_manager
-            
-            # Загрузить новый образ (он должен быть с тегом latest)
             docker compose pull api
-            
-            # Перезапустить контейнер (это запустит Entrypoint и миграции)
             docker compose up -d --remove-orphans
-            
-            # Очистить старые неиспользуемые образы
             docker image prune -f
