@@ -94,7 +94,7 @@ class GetAccountHandler(BaseHandler):
                 )
 
         except Exception as e:
-            # await update.message.delete()
+            await update.message.delete()
             logger.error(f"Произошла ошибка в finish_get: {e}")
             await update.message.reply_text(f"❌ Произошла ошибка при дешифровке: {e}")
 
