@@ -5,33 +5,52 @@ on:
       - master
 
 jobs:
-  deploy:
+  # --- 1. Сборка и Публикация Docker образа ---
+  build_and_publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build & Push
+      # Присваиваем ТОЛЬКО тег 'latest'
+      - name: Build and Push Docker Image (latest)
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/pas_manager:latest
+          # Используем фиксированный тег
+          tags: username/pas_manager:latest
+          platforms: linux/amd64
 
-      - name: Deploy to server
+  # --- 2. Деплой на удаленный сервер ---
+  deploy:
+    needs: build_and_publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+
           script: |
-            cd ~/pas_manager
-            docker compose pull api
+            # 1. Переходим в папку проекта
+            cd ~/pas_bot/pas_manager
+            
+            # 2. Загружаем образ с тегом latest
+            # Docker потянет самый свежий образ с тегом latest
+            docker compose pull api 
+            
+            # 3. Перезапускаем контейнер (без изменений в docker-compose)
             docker compose up -d --remove-orphans
+            
+            # 4. Очищаем старые неиспользуемые образы
             docker image prune -f
