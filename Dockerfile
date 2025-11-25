@@ -4,14 +4,14 @@ RUN apt-get update && apt-get install -y build-essential libsqlite3-dev && rm -r
 
 #RUN pip install --no-cache-dir uv
 
-#COPY --from=ghcr.io/astral-sh/uv:0.7.8 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.7.8 /uv /uvx /bin/
 
-#RUN sh /uv-installer.sh && rm /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
 
 # Ensure the installed binary is on the `PATH`
-#ENV PATH="/root/.local/bin/:$PATH"
+ENV PATH="/root/.local/bin/:$PATH"
 
-ADD https://astral.sh/uv/0.9.11/install.sh /uv-installer.sh
+#ADD https://astral.sh/uv/0.9.11/install.sh /uv-installer.sh
 
 WORKDIR /app
 
