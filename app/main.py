@@ -1,9 +1,5 @@
 import logging
 
-from app.bot.handlers.add_handler import add_conv_handler
-from app.bot.handlers.base_handler import BaseHandler
-from app.bot.handlers.get_handler import get_conv_handler
-from app.bot.handlers.list_handler import list_handler_instance
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -12,6 +8,10 @@ from telegram.ext import (
     filters,
 )
 
+from app.bot.handlers.add_handler import add_conv_handler
+from app.bot.handlers.base_handler import BaseHandler
+from app.bot.handlers.get_handler import get_conv_handler
+from app.bot.handlers.list_handler import list_handler_instance
 from app.bot.keyboards import BTN_CANCEL
 from app.core.config import settings
 
@@ -24,7 +24,6 @@ base_handler_instance = BaseHandler()
 
 
 def main():
-
     if not settings.app.telegram_token:
         logger.error("Не найден токен тг")
         return
