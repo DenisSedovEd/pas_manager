@@ -8,6 +8,7 @@ from telegram.ext import (
 )
 
 from app.bot import messages
+from app.bot.keyboards import START_MARKUP
 from app.core.config import settings
 
 logging.basicConfig(
@@ -17,8 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseHandler:
-    # def __init__(self):
-    #     self.main_menu_markup = MAIN_MENU_MARKUP
 
     async def start_command(
         self,
@@ -29,6 +28,7 @@ class BaseHandler:
             return
         await update.message.reply_text(
             messages.start_message,
+            reply_markup=START_MARKUP,
             parse_mode=ParseMode.MARKDOWN,
         )
 
