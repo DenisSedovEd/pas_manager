@@ -1,9 +1,9 @@
 import logging
 
-from bot.handlers.add_handler import add_conv_handler
-from bot.handlers.base_handler import BaseHandler
-from bot.handlers.get_handler import get_conv_handler
-from bot.handlers.list_handler import list_handler_instance
+from app.bot.handlers.add_handler import add_conv_handler
+from app.bot.handlers.base_handler import BaseHandler
+from app.bot.handlers.get_handler import get_conv_handler
+from app.bot.handlers.list_handler import list_handler_instance
 from telegram.ext import (
     Application,
     CommandHandler,
