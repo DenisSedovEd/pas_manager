@@ -44,12 +44,14 @@ jobs:
             # 1. Переходим в папку проекта
             cd ~/pas_manager
             
-            # 2. Загружаем образ с тегом latest
-            # Docker потянет самый свежий образ с тегом latest
+            # 2. Загружаем весь репозиторий
+            git pull origin master
+            
+            # 3. Загружаем образ с тегом latest
             docker compose pull api 
             
-            # 3. Перезапускаем контейнер (без изменений в docker-compose)
+            # 4. Перезапускаем контейнер (без изменений в docker-compose)
             docker compose up -d --remove-orphans
             
-            # 4. Очищаем старые неиспользуемые образы
+            # 5. Очищаем старые неиспользуемые образы
             docker image prune -f
