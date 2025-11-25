@@ -16,7 +16,7 @@ service_name_request = "🖥 <b>Введи название сервиса:</b>"
 
 
 success_decrypt_data_message = (
-    "✅ <b>Аккаунт ТТЕЕССТТ для {service}</b>\n\n"
+    "✅ <b>Аккаунт для {service}</b>\n\n"
     "👤 <b>Логин:</b> <code>{username}</code>\n"
     '🔑 <b>Пароль:</b> <span class="tg-spoiler">{password}</span>'
 )
@@ -50,6 +50,6 @@ success_add_account_message = (
 
 # For list handler
 
-start_list_accounts = "<b>📋 Список всех сервисов ПОСЛЕДНИЙ ТЕСТ:</b>\n"
+start_list_accounts = "<b>📋 Список всех сервисов:</b>\n"
 
 item_list_accounts = "<b>{idx}: {account_name}</b>\n"
