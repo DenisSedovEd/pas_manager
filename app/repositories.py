@@ -85,9 +85,7 @@ class AccountRepository:
         )
 
     async def get_accounts(self) -> Sequence[Account]:
-        stmt = select(Account.service_name, Account.user_name).order_by(
-            Account.service_name
-        )
+        stmt = select(Account).order_by(Account.service_name)
         result = await self._session.execute(stmt)
         accounts = result.scalars().all()
         logger.info(accounts)

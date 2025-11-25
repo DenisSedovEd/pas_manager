@@ -1,8 +1,10 @@
+import logging
 from datetime import datetime
 
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
+    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     ConversationHandler,
@@ -11,11 +13,15 @@ from telegram.ext import (
 )
 
 from app.bot import messages
-from app.bot.handlers import BaseHandler
+from app.bot.handlers.base_handler import BaseHandler
 from app.bot.handlers.constants import GetConstraints
 from app.repositories import AccountRepository
-from app.services.logger import logger
 from app.services.message_service import schedule_message_deletion
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 
 class GetAccountHandler(BaseHandler):
@@ -32,6 +38,33 @@ class GetAccountHandler(BaseHandler):
             parse_mode=ParseMode.HTML,
         )
         return GetConstraints.GET_SERVICE_NAME
+
+    async def start_get_from_list(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        query = update.callback_query
+
+        if not await self.check_admin(update):
+            return ConversationHandler.END
+
+        await query.answer()
+
+        try:
+            service_name = query.data.split(":")[1]
+        except IndexError:
+            await query.edit_message_text("❌ Ошибка данных аккаунта.")
+            return ConversationHandler.END
+
+        context.user_data.clear()
+
+        context.user_data["service_name"] = service_name
+
+        await query.edit_message_text(
+            messages.master_password_request,
+            parse_mode=ParseMode.HTML,
+        )
+
+        return GetConstraints.GET_MASTER_PASSWORD
 
     async def receive_service_name(
         self,
@@ -109,7 +142,13 @@ class GetAccountHandler(BaseHandler):
 get_handler_instance = GetAccountHandler()
 
 get_conv_handler = ConversationHandler(
-    entry_points=[CommandHandler("get", get_handler_instance.start_get)],
+    entry_points=[
+        CommandHandler("get", get_handler_instance.start_get),
+        CallbackQueryHandler(
+            get_handler_instance.start_get_from_list,
+            pattern=r"^get:.+$",
+        ),
+    ],
     states={
         #     Состояние 1
         GetConstraints.GET_SERVICE_NAME: [

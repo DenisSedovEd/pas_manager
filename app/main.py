@@ -1,5 +1,9 @@
 import logging
 
+from bot.handlers.add_handler import add_conv_handler
+from bot.handlers.base_handler import BaseHandler
+from bot.handlers.get_handler import get_conv_handler
+from bot.handlers.list_handler import list_handler_instance
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -8,18 +12,8 @@ from telegram.ext import (
     filters,
 )
 
-from app.bot.handlers import (
-    BaseHandler,
-    add_conv_handler,
-    get_conv_handler,
-)
 from app.bot.keyboards import BTN_CANCEL
 from app.core.config import settings
-from app.bot.handlers import (
-    get_handler_instance,
-    add_handler_instance,
-    list_handler_instance,
-)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

@@ -1,7 +1,12 @@
+import logging
+
 from telegram import Message
 from telegram.ext import ContextTypes
 
-from app.services.logger import logger
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 
 async def delete_secure_message_callback(context: ContextTypes.DEFAULT_TYPE) -> None:
