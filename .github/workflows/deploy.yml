@@ -25,7 +25,7 @@ jobs:
           context: .
           push: true
           # Используем фиксированный тег
-          tags: username/pas_manager:latest
+          tags: denissedoved/pas_manager:latest
           platforms: linux/amd64
 
   # --- 2. Деплой на удаленный сервер ---
@@ -39,11 +39,10 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.DEPLOY_PORT }}
 
           script: |
             # 1. Переходим в папку проекта
-            cd ~/pas_bot/pas_manager
+            cd ~/pas_manager
             
             # 2. Загружаем образ с тегом latest
             # Docker потянет самый свежий образ с тегом latest

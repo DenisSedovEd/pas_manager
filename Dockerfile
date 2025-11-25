@@ -1,5 +1,5 @@
 # --- СТАДИЯ 1: СБОРКА (BUILDER) ---
-FROM python:3.11-slim as builder
+FROM docker.io/python:3.13-slim AS builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -21,7 +21,7 @@ RUN uv sync --frozen --all-extras --no-editable
 
 # --- СТАДИЯ 2: ВЫПОЛНЕНИЕ (RUNTIME) ---
 
-FROM python:3.11-slim as runtime
+FROM docker.io/python:3.13-slim AS runtime
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
