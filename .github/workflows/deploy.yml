@@ -45,7 +45,7 @@ jobs:
             cd ~/pas_manager
             
             # 2. Загружаем весь репозиторий
-            git pull origin master
+            # git pull
             
             # 3. Загружаем образ с тегом latest
             docker compose pull api 

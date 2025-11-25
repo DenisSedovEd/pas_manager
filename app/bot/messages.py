@@ -50,6 +50,6 @@ success_add_account_message = (
 
 # For list handler
 
-start_list_accounts = "<b>📋 Список всех сервисовGHJDT:</b>\n"
+start_list_accounts = "<b>📋 Список всех сервисов:</b>\n"
 
 item_list_accounts = "<b>{idx}: {account_name}</b>\n"
