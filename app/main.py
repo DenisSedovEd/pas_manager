@@ -24,6 +24,7 @@ base_handler_instance = BaseHandler()
 
 
 def main():
+
     if not settings.app.telegram_token:
         logger.error("Не найден токен тг")
         return

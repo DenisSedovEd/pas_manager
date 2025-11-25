@@ -55,6 +55,11 @@ class GetAccountHandler(BaseHandler):
             await query.edit_message_text("❌ Ошибка данных аккаунта.")
             return ConversationHandler.END
 
+        for msg in context.user_data["list_accounts"]:
+            await schedule_message_deletion(
+                message=msg, context=context, delay_seconds=1
+            )
+
         context.user_data.clear()
 
         context.user_data["service_name"] = service_name

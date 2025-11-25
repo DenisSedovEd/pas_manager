@@ -5,6 +5,7 @@ from telegram.ext import ContextTypes
 from app.bot import messages
 from app.bot.handlers.base_handler import BaseHandler
 from app.repositories import AccountRepository
+from app.services.message_service import schedule_message_deletion
 
 
 class ListAccountsHandler(BaseHandler):
@@ -13,10 +14,18 @@ class ListAccountsHandler(BaseHandler):
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ):
-        await update.message.reply_text(
+        welcome_message = await update.message.reply_text(
             messages.start_list_accounts,
             parse_mode=ParseMode.HTML,
         )
+
+        await schedule_message_deletion(
+            welcome_message,
+            context=context,
+            delay_seconds=30,
+        )
+
+        all_massage = []
 
         async with AccountRepository as repo:
             response = await repo.get_accounts()
@@ -35,11 +44,15 @@ class ListAccountsHandler(BaseHandler):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            await update.message.reply_text(
+            msg = await update.message.reply_text(
                 f"Сервис: {account.service_name}",
                 reply_markup=reply_markup,
                 parse_mode=ParseMode.HTML,
             )
+
+            all_massage.append(msg)
+
+        context.user_data["list_accounts"] = all_massage
 
     async def handle_callback_query(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
