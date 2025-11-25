@@ -1,5 +1,5 @@
 # --- СТАДИЯ 1: СБОРКА (BUILDER) ---
-FROM python:3.11-slim as build
+FROM python:3.11-slim as builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
