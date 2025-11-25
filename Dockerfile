@@ -28,9 +28,11 @@ RUN apt-get update && \
         libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pip install --no-cache-dir uv
+
 WORKDIR /app
 
-COPY --from=builder /app/.venv /usr/local/lib/python3.11/site-packages
+COPY --from=builder /app/.venv /usr/local/lib/python3.13/site-packages
 
 COPY . .
 
