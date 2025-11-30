@@ -12,6 +12,7 @@ from app.bot.handlers.add_handler import add_conv_handler
 from app.bot.handlers.base_handler import BaseHandler
 from app.bot.handlers.get_handler import get_conv_handler
 from app.bot.handlers.list_handler import list_handler_instance
+from app.bot.handlers.edit_handler import edit_conv_handler
 from app.bot.keyboards import btn_start
 from app.core.config import settings
 
@@ -51,6 +52,7 @@ def main():
 
     app.add_handler(add_conv_handler)
     app.add_handler(get_conv_handler)
+    # app.add_handler(edit_conv_handler)
 
     logger.info("Бот запущен. Ожидание команд...")
     app.run_polling()

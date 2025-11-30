@@ -24,6 +24,26 @@ async def delete_secure_message_callback(context: ContextTypes.DEFAULT_TYPE) -> 
         )
 
 
+async def schedule_messages_deletion(
+    messages: list[Message],
+    context: ContextTypes.DEFAULT_TYPE,
+    delay_seconds: int = 100,
+) -> None:
+    for msg in messages:
+        chat_id = msg.chat.id
+        message_id = msg.message_id
+
+        job_data = (chat_id, message_id)
+
+        context.job_queue.run_once(
+            delete_secure_message_callback,
+            delay_seconds,
+            data=job_data,
+            name=f"del_{message_id}",
+        )
+        logger.info(f"Запланировано удаление сообщения {message_id}")
+
+
 async def schedule_message_deletion(
     message: Message,
     context: ContextTypes.DEFAULT_TYPE,

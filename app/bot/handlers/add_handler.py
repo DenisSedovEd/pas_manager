@@ -13,24 +13,36 @@ from app.bot.handlers.base_handler import BaseHandler
 from app.bot.handlers.constants import AddConstraints
 from app.repositories import AccountRepository
 from app.schemas import CreateAccountSchema
-from app.services.message_service import schedule_message_deletion
+from app.services.message_service import (
+    schedule_message_deletion,
+    schedule_messages_deletion,
+)
 
 
 class AddAccountHandler(BaseHandler):
+
+    def __init__(self):
+        self.messages_for_del = []
+
     async def start_add(
         self,
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
+
         if not await self.check_admin(update):
             return ConversationHandler.END
 
+        self.messages_for_del.append(update.message)
         context.user_data.clear()
 
-        await update.message.reply_text(
-            messages.start_add_handler,
-            parse_mode=ParseMode.HTML,
+        self.messages_for_del.append(
+            await update.message.reply_text(
+                messages.start_add_handler,
+                parse_mode=ParseMode.HTML,
+            )
         )
+
         return AddConstraints.ADD_SERVICE_NAME
 
     async def receive_service_name(
@@ -38,20 +50,26 @@ class AddAccountHandler(BaseHandler):
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
+
         service_name = update.message.text.strip()
+        self.messages_for_del.append(update.message)
 
         if not service_name:
-            await update.message.reply_text(
-                messages.empty_input_error,
-                parse_mode=ParseMode.HTML,
+            self.messages_for_del.append(
+                await update.message.reply_text(
+                    messages.empty_input_error,
+                    parse_mode=ParseMode.HTML,
+                )
             )
             return AddConstraints.ADD_SERVICE_NAME
 
         context.user_data["service_name"] = service_name
 
-        await update.message.reply_text(
-            messages.username_request.format(service=service_name),
-            parse_mode=ParseMode.HTML,
+        self.messages_for_del.append(
+            await update.message.reply_text(
+                messages.username_request.format(service=service_name),
+                parse_mode=ParseMode.HTML,
+            )
         )
         return AddConstraints.ADD_USERNAME
 
@@ -60,21 +78,28 @@ class AddAccountHandler(BaseHandler):
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
+
         username = update.message.text.strip()
+        self.messages_for_del.append(update.message)
+
         if not username:
-            await update.message.reply_text(
-                messages.empty_input_error,
-                parse_mode=ParseMode.HTML,
+            self.messages_for_del.append(
+                await update.message.reply_text(
+                    messages.empty_input_error,
+                    parse_mode=ParseMode.HTML,
+                )
             )
             return AddConstraints.ADD_USERNAME
 
         context.user_data["username"] = username
-        await update.message.reply_text(
-            messages.password_request.format(
-                service=context.user_data.get("service_name"),
-                username=username,
-            ),
-            parse_mode=ParseMode.HTML,
+        self.messages_for_del.append(
+            await update.message.reply_text(
+                messages.password_request.format(
+                    service=context.user_data.get("service_name"),
+                    username=username,
+                ),
+                parse_mode=ParseMode.HTML,
+            )
         )
         return AddConstraints.ADD_PASSWORD
 
@@ -84,34 +109,30 @@ class AddAccountHandler(BaseHandler):
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
         password = update.message.text
+        self.messages_for_del.append(update.message)
 
         if not password:
-            await update.message.reply_text(
-                messages.empty_input_error,
-                parse_mode=ParseMode.HTML,
+            self.messages_for_del.append(
+                await update.message.reply_text(
+                    messages.empty_input_error,
+                    parse_mode=ParseMode.HTML,
+                )
             )
             return AddConstraints.ADD_PASSWORD
 
         context.user_data["password"] = password
 
-        set_msg_1 = await update.message.reply_text(
-            messages.add_account,
-            parse_mode=ParseMode.HTML,
+        self.messages_for_del.append(
+            await update.message.reply_text(
+                messages.add_account,
+                parse_mode=ParseMode.HTML,
+            )
         )
-        await schedule_message_deletion(
-            message=set_msg_1,
-            context=context,
-            delay_seconds=5,
-        )
-        set_msg_2 = await update.message.reply_text(
-            messages.master_password_request,
-            parse_mode=ParseMode.HTML,
-        )
-
-        await schedule_message_deletion(
-            message=set_msg_2,
-            context=context,
-            delay_seconds=5,
+        self.messages_for_del.append(
+            await update.message.reply_text(
+                messages.master_password_request,
+                parse_mode=ParseMode.HTML,
+            )
         )
 
         return AddConstraints.ADD_MASTER_PASSWORD_CONFIRM
@@ -121,12 +142,18 @@ class AddAccountHandler(BaseHandler):
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
+
         master_password = update.message.text
+        self.messages_for_del.append(update.message)
+
         if not master_password:
-            await update.message.reply_text(
-                messages.empty_input_error,
-                parse_mode=ParseMode.HTML,
+            self.messages_for_del.append(
+                await update.message.reply_text(
+                    messages.empty_input_error,
+                    parse_mode=ParseMode.HTML,
+                )
             )
+
             return AddConstraints.ADD_MASTER_PASSWORD_CONFIRM
 
         try:
@@ -139,9 +166,11 @@ class AddAccountHandler(BaseHandler):
             async with AccountRepository as repo:
                 await repo.create_account(data=data, master_password=master_password)
 
-                await update.message.reply_text(
-                    f"{messages.add_account.format(service=data.service_name, username=data.username)}",
-                    parse_mode=ParseMode.HTML,
+                self.messages_for_del.append(
+                    await update.message.reply_text(
+                        f"{messages.add_account.format(service=data.service_name, username=data.username,)}",
+                        parse_mode=ParseMode.HTML,
+                    )
                 )
             await update.message.delete()
 
@@ -151,6 +180,11 @@ class AddAccountHandler(BaseHandler):
             await update.message.reply_text(f"❌ Произошла ошибка при сохранении: {e}")
 
         finally:
+            await schedule_messages_deletion(
+                self.messages_for_del,
+                context=context,
+                delay_seconds=30,
+            )
             context.user_data.clear()
 
         return ConversationHandler.END
@@ -174,13 +208,15 @@ add_conv_handler = ConversationHandler(
         # Состояние 2: Ожидаем логин
         AddConstraints.ADD_USERNAME: [
             MessageHandler(
-                filters.TEXT & ~filters.COMMAND, add_handler_instance.receive_username
+                filters.TEXT & ~filters.COMMAND,
+                add_handler_instance.receive_username,
             )
         ],
         # Состояние 3: Ожидаем пароль
         AddConstraints.ADD_PASSWORD: [
             MessageHandler(
-                filters.TEXT & ~filters.COMMAND, add_handler_instance.receive_password
+                filters.TEXT & ~filters.COMMAND,
+                add_handler_instance.receive_password,
             )
         ],
         # Состояние 4 (Завершающее): Ожидаем мастер-пароль

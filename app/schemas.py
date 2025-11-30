@@ -3,6 +3,12 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class EditAccountSchema(BaseModel):
+    service_name: str
+    username: str | None
+    password: str | None
+
+
 class CreateAccountSchema(BaseModel):
     service_name: str
     username: str

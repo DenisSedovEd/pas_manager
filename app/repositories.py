@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -11,7 +11,7 @@ from app.crypto.encryption import (
 )
 from app.crypto.exception import InvalidTag
 from app.models.account import Account
-from app.schemas import CreateAccountSchema, ResponseAccountSchema
+from app.schemas import CreateAccountSchema, ResponseAccountSchema, EditAccountSchema
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -90,6 +90,43 @@ class AccountRepository:
         accounts = result.scalars().all()
         logger.info(accounts)
         return accounts
+
+    async def edit_account(
+        self, edited_service: EditAccountSchema, master_password: str
+    ):
+        new_data = {}
+        old_data = await self.get_account_by_name(
+            service_name=edited_service.service_name,
+            master_password=master_password,
+        )
+        new_data["service_name"] = old_data.service_name
+        if edited_service.username:
+            new_data["username"] = edited_service.username
+        if edited_service.password:
+            new_data["password"] = edited_service.password
+
+        new_data_for_crypto = f"{new_data["username"]}|{new_data["password"]}"
+
+        enc_data = encrypt_data(
+            new_data_for_crypto,
+            master_password,
+        )
+
+        new_account = Account(
+            service_name=old_data.service_name,
+            user_name=old_data.username,
+            encrypted_data=enc_data["encrypted_data"],
+            salt=enc_data["salt"],
+            nonce=enc_data["nonce"],
+            tag=enc_data["tag"],
+        )
+        stmt = update(Account).where(
+            Account.service_name == new_account.service_name,
+        )
+        await self._session.execute(stmt)
+        await self._session.commit()
+        await self._session.refresh(new_account)
+        return new_account
 
 
 class RepositoryFactory:

@@ -53,3 +53,9 @@ success_add_account_message = (
 start_list_accounts = "<b>📋 Список всех сервисов:</b>\n"
 
 item_list_accounts = "<b>{idx}: {account_name}</b>\n"
+
+# For editing handler
+
+start_edit_account = "➕ <b>Начнем изменение существующего аккаунта.</b>\n\n🖥 <b>Введи название сервиса:</b>"
+edit_doc = "‼️ <b>Если нужно оставить прежнее значение - пришли пустое сообщение.</b> ‼️"
+edit_password = "👤<b>Имя пользователя остается старое.</b> ‼️\n\n" "🔑 <b>Пароль:</b>"

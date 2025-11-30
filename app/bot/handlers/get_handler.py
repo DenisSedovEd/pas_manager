@@ -16,7 +16,10 @@ from app.bot import messages
 from app.bot.handlers.base_handler import BaseHandler
 from app.bot.handlers.constants import GetConstraints
 from app.repositories import AccountRepository
-from app.services.message_service import schedule_message_deletion
+from app.services.message_service import (
+    schedule_message_deletion,
+    schedule_messages_deletion,
+)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -25,17 +28,25 @@ logger = logging.getLogger(__name__)
 
 
 class GetAccountHandler(BaseHandler):
+
+    def __init__(self):
+        self.messages_for_del = []
+
     async def start_get(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> str | int:
+
+        self.messages_for_del.append(update.message)
         if not await self.check_admin(update):
             return ConversationHandler.END
 
         context.user_data.clear()
 
-        await update.message.reply_text(
-            messages.service_name_request,
-            parse_mode=ParseMode.HTML,
+        self.messages_for_del.append(
+            await update.message.reply_text(
+                messages.service_name_request,
+                parse_mode=ParseMode.HTML,
+            )
         )
         return GetConstraints.GET_SERVICE_NAME
 
@@ -55,18 +66,15 @@ class GetAccountHandler(BaseHandler):
             await query.edit_message_text("❌ Ошибка данных аккаунта.")
             return ConversationHandler.END
 
-        for msg in context.user_data["list_accounts"]:
-            await schedule_message_deletion(
-                message=msg, context=context, delay_seconds=1
-            )
-
         context.user_data.clear()
 
         context.user_data["service_name"] = service_name
 
-        await query.edit_message_text(
-            messages.master_password_request,
-            parse_mode=ParseMode.HTML,
+        self.messages_for_del.append(
+            await query.edit_message_text(
+                messages.master_password_request,
+                parse_mode=ParseMode.HTML,
+            )
         )
 
         return GetConstraints.GET_MASTER_PASSWORD
@@ -76,16 +84,22 @@ class GetAccountHandler(BaseHandler):
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
+
         service_name = update.message.text.strip()
+        self.messages_for_del.append(update.message)
         if not service_name:
-            await update.message.reply_text(messages.empty_input_error)
+            self.messages_for_del.append(
+                await update.message.reply_text(messages.empty_input_error)
+            )
             return GetConstraints.GET_SERVICE_NAME
 
         context.user_data["service_name"] = service_name
 
-        await update.message.reply_text(
-            messages.master_password_request,
-            parse_mode=ParseMode.HTML,
+        self.messages_for_del.append(
+            await update.message.reply_text(
+                messages.master_password_request,
+                parse_mode=ParseMode.HTML,
+            )
         )
         return GetConstraints.GET_MASTER_PASSWORD
 
@@ -95,9 +109,12 @@ class GetAccountHandler(BaseHandler):
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
         master_password = update.message.text
+        self.messages_for_del.append(update.message)
 
         if not master_password:
-            await update.message.reply_text(messages.empty_input_error)
+            self.messages_for_del.append(
+                await update.message.reply_text(messages.empty_input_error)
+            )
             return GetConstraints.GET_MASTER_PASSWORD
 
         service_name = context.user_data.get("service_name")
@@ -111,26 +128,25 @@ class GetAccountHandler(BaseHandler):
 
                 await update.message.delete()
 
-                await update.message.reply_text(
-                    messages.account_data_request.format(
-                        service=service_name,
-                        at_time=datetime.now(),
-                    ),
-                    parse_mode=ParseMode.HTML,
+                self.messages_for_del.append(
+                    await update.message.reply_text(
+                        messages.account_data_request.format(
+                            service=service_name,
+                            at_time=datetime.now(),
+                        ),
+                        parse_mode=ParseMode.HTML,
+                    )
                 )
 
-                sent_message = await update.message.reply_text(
-                    messages.success_decrypt_data_message.format(
-                        service=service_name,
-                        username=account.username,
-                        password=account.password,
-                    ),
-                    parse_mode=ParseMode.HTML,
-                )
-
-                await schedule_message_deletion(
-                    message=sent_message,
-                    context=context,
+                self.messages_for_del.append(
+                    await update.message.reply_text(
+                        messages.success_decrypt_data_message.format(
+                            service=service_name,
+                            username=account.username,
+                            password=account.password,
+                        ),
+                        parse_mode=ParseMode.HTML,
+                    )
                 )
 
         except Exception as e:
@@ -139,6 +155,10 @@ class GetAccountHandler(BaseHandler):
             await update.message.reply_text(f"❌ Произошла ошибка при дешифровке: {e}")
 
         finally:
+            await schedule_messages_deletion(
+                self.messages_for_del,
+                context=context,
+            )
             context.user_data.clear()
 
         return ConversationHandler.END
