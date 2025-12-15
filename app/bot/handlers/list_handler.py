@@ -15,6 +15,9 @@ class ListAccountsHandler(BaseHandler):
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ):
+
+        context.user_data["messages_for_del"] = []
+
         context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.start_list_accounts,

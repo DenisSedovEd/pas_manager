@@ -26,6 +26,8 @@ class BaseHandler:
     ) -> None:
         if not await self.check_admin(update):
             return
+        context.user_data.clear()
+        context.user_data["messages_for_del"] = []
         await update.message.reply_text(
             messages.start_message,
             reply_markup=START_MARKUP,

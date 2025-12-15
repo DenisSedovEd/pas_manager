@@ -37,8 +37,6 @@ class GetAccountHandler(BaseHandler):
         if not await self.check_admin(update):
             return ConversationHandler.END
 
-        context.user_data.clear()
-
         context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.service_name_request,
@@ -63,7 +61,7 @@ class GetAccountHandler(BaseHandler):
             await query.edit_message_text("❌ Ошибка данных аккаунта.")
             return ConversationHandler.END
 
-        context.user_data.clear()
+        # context.user_data.clear()
 
         context.user_data["service_name"] = service_name
 

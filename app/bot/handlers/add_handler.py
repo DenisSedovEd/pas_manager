@@ -33,7 +33,6 @@ class AddAccountHandler(BaseHandler):
         context.user_data["messages_for_del"] = []
 
         context.user_data["messages_for_del"].append(update.message)
-        context.user_data.clear()
 
         context.user_data["messages_for_del"].append(
             await update.message.reply_text(
