@@ -21,9 +21,6 @@ from app.services.message_service import (
 
 class AddAccountHandler(BaseHandler):
 
-    def __init__(self):
-        self.messages_for_del = []
-
     async def start_add(
         self,
         update: Update,
@@ -33,10 +30,12 @@ class AddAccountHandler(BaseHandler):
         if not await self.check_admin(update):
             return ConversationHandler.END
 
-        self.messages_for_del.append(update.message)
+        context.user_data["messages_for_del"] = []
+
+        context.user_data["messages_for_del"].append(update.message)
         context.user_data.clear()
 
-        self.messages_for_del.append(
+        context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.start_add_handler,
                 parse_mode=ParseMode.HTML,
@@ -52,10 +51,10 @@ class AddAccountHandler(BaseHandler):
     ) -> str | int:
 
         service_name = update.message.text.strip()
-        self.messages_for_del.append(update.message)
+        context.user_data["messages_for_del"].append(update.message)
 
         if not service_name:
-            self.messages_for_del.append(
+            context.user_data["messages_for_del"].append(
                 await update.message.reply_text(
                     messages.empty_input_error,
                     parse_mode=ParseMode.HTML,
@@ -65,7 +64,7 @@ class AddAccountHandler(BaseHandler):
 
         context.user_data["service_name"] = service_name
 
-        self.messages_for_del.append(
+        context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.username_request.format(service=service_name),
                 parse_mode=ParseMode.HTML,
@@ -80,10 +79,10 @@ class AddAccountHandler(BaseHandler):
     ) -> str | int:
 
         username = update.message.text.strip()
-        self.messages_for_del.append(update.message)
+        context.user_data["messages_for_del"].append(update.message)
 
         if not username:
-            self.messages_for_del.append(
+            context.user_data["messages_for_del"].append(
                 await update.message.reply_text(
                     messages.empty_input_error,
                     parse_mode=ParseMode.HTML,
@@ -92,7 +91,7 @@ class AddAccountHandler(BaseHandler):
             return AddConstraints.ADD_USERNAME
 
         context.user_data["username"] = username
-        self.messages_for_del.append(
+        context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.password_request.format(
                     service=context.user_data.get("service_name"),
@@ -109,10 +108,10 @@ class AddAccountHandler(BaseHandler):
         context: ContextTypes.DEFAULT_TYPE,
     ) -> str | int:
         password = update.message.text
-        self.messages_for_del.append(update.message)
+        context.user_data["messages_for_del"].append(update.message)
 
         if not password:
-            self.messages_for_del.append(
+            context.user_data["messages_for_del"].append(
                 await update.message.reply_text(
                     messages.empty_input_error,
                     parse_mode=ParseMode.HTML,
@@ -122,13 +121,13 @@ class AddAccountHandler(BaseHandler):
 
         context.user_data["password"] = password
 
-        self.messages_for_del.append(
+        context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.add_account,
                 parse_mode=ParseMode.HTML,
             )
         )
-        self.messages_for_del.append(
+        context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.master_password_request,
                 parse_mode=ParseMode.HTML,
@@ -144,10 +143,10 @@ class AddAccountHandler(BaseHandler):
     ) -> str | int:
 
         master_password = update.message.text
-        self.messages_for_del.append(update.message)
+        context.user_data["messages_for_del"].append(update.message)
 
         if not master_password:
-            self.messages_for_del.append(
+            context.user_data["messages_for_del"].append(
                 await update.message.reply_text(
                     messages.empty_input_error,
                     parse_mode=ParseMode.HTML,
@@ -166,7 +165,7 @@ class AddAccountHandler(BaseHandler):
             async with AccountRepository as repo:
                 await repo.create_account(data=data, master_password=master_password)
 
-                self.messages_for_del.append(
+                context.user_data["messages_for_del"].append(
                     await update.message.reply_text(
                         f"{messages.add_account.format(service=data.service_name, username=data.username,)}",
                         parse_mode=ParseMode.HTML,
@@ -181,7 +180,7 @@ class AddAccountHandler(BaseHandler):
 
         finally:
             await schedule_messages_deletion(
-                self.messages_for_del,
+                context.user_data["messages_for_del"],
                 context=context,
                 delay_seconds=30,
             )

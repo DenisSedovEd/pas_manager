@@ -10,15 +10,12 @@ from app.services.message_service import schedule_message_deletion
 
 class ListAccountsHandler(BaseHandler):
 
-    def __init__(self):
-        self.messages_for_del = []
-
     async def get_list_accounts(
         self,
         update: Update,
         context: ContextTypes.DEFAULT_TYPE,
     ):
-        self.messages_for_del.append(
+        context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.start_list_accounts,
                 parse_mode=ParseMode.HTML,
@@ -26,6 +23,7 @@ class ListAccountsHandler(BaseHandler):
         )
 
         all_massage = []
+        context.user_data["messages_for_del"] = []
 
         async with AccountRepository as repo:
             response = await repo.get_accounts()
@@ -50,7 +48,7 @@ class ListAccountsHandler(BaseHandler):
                 parse_mode=ParseMode.HTML,
             )
             all_massage.append(msg)
-            self.messages_for_del.append(msg)
+            context.user_data["messages_for_del"].append(msg)
 
         context.user_data["list_accounts"] = all_massage
 

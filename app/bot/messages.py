@@ -18,7 +18,7 @@ service_name_request = "🖥 <b>Введи название сервиса:</b>"
 success_decrypt_data_message = (
     "✅ <b>Аккаунт для {service}</b>\n\n"
     "👤 <b>Логин:</b> <code>{username}</code>\n"
-    '🔑 <b>Пароль:</b> <span class="tg-spoiler">{password}</span>'
+    "🔑 <b>Пароль:</b> <code>{password}</code>"
 )
 
 account_data_request = (
