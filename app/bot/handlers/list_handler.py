@@ -50,13 +50,13 @@ class ListAccountsHandler(BaseHandler):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            msg = await update.message.reply_text(
-                f"Сервис: {account.service_name}",
-                reply_markup=reply_markup,
-                parse_mode=ParseMode.HTML,
+            context.user_data["messages_for_del"].append(
+                await update.message.reply_text(
+                    f"Сервис: {account.service_name}",
+                    reply_markup=reply_markup,
+                    parse_mode=ParseMode.HTML,
+                )
             )
-            all_massage.append(msg)
-            context.user_data["messages_for_del"].append(msg)
 
         context.user_data["list_accounts"] = all_massage
 
