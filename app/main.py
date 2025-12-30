@@ -52,7 +52,7 @@ def main():
 
     app.add_handler(add_conv_handler)
     app.add_handler(get_conv_handler)
-    # app.add_handler(edit_conv_handler)
+    app.add_handler(edit_conv_handler)
 
     logger.info("Бот запущен. Ожидание команд...")
     app.run_polling()

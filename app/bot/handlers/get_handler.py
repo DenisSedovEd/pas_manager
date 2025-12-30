@@ -33,7 +33,9 @@ class GetAccountHandler(BaseHandler):
     ) -> str | int:
 
         context.user_data["messages_for_del"] = []
+
         context.user_data["messages_for_del"].append(update.message)
+
         if not await self.check_admin(update):
             return ConversationHandler.END
 
@@ -52,6 +54,7 @@ class GetAccountHandler(BaseHandler):
 
         if not await self.check_admin(update):
             return ConversationHandler.END
+        # context.user_data["messages_for_del"].append(update.message)
 
         await query.answer()
 

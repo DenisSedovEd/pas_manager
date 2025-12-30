@@ -18,6 +18,8 @@ class ListAccountsHandler(BaseHandler):
 
         context.user_data["messages_for_del"] = []
 
+        context.user_data["messages_for_del"].append(update.message)
+
         context.user_data["messages_for_del"].append(
             await update.message.reply_text(
                 messages.start_list_accounts,
@@ -26,7 +28,6 @@ class ListAccountsHandler(BaseHandler):
         )
 
         all_massage = []
-        context.user_data["messages_for_del"] = []
 
         async with AccountRepository as repo:
             response = await repo.get_accounts()
@@ -35,11 +36,15 @@ class ListAccountsHandler(BaseHandler):
             keyboard = [
                 [
                     InlineKeyboardButton(
-                        "🔑 Получить", callback_data=f"get:{account.service_name}"
+                        "🔑", callback_data=f"get:{account.service_name}"
                     ),
                     InlineKeyboardButton(
-                        "✏️ Редактировать",
+                        "✏️",
                         callback_data=f"edit:{account.service_name}",
+                    ),
+                    InlineKeyboardButton(
+                        "🗑",
+                        callback_data=f"delete:{account.service_name}",
                     ),
                 ]
             ]
@@ -67,7 +72,7 @@ class ListAccountsHandler(BaseHandler):
         if action == "get":
             await query.answer()
         elif action == "edit":
-            pass
+            await query.answer()
         else:
             raise Exception(f"Unknown action: {action}")
 
