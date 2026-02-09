@@ -66,13 +66,29 @@ class GetAccountHandler(BaseHandler):
 
         # context.user_data.clear()
 
+        messages_to_clean = context.user_data.get("messages_for_del", [])
+
+        for msg in messages_to_clean:
+            try:
+                # Удаляем все сообщения из списка, кроме того, на которое нажали
+                # (так как мы его будем редактировать через query.edit_message_text)
+                if msg.message_id != query.message.message_id:
+                    await context.bot.delete_message(
+                        chat_id=msg.chat.id, message_id=msg.message_id
+                    )
+            except Exception as e:
+                logger.debug(f"Не удалось удалить сообщение {msg.message_id}: {e}")
+
+            # Очищаем список, оставляя в нем только текущее (редактируемое) сообщение
+        context.user_data["messages_for_del"] = [query.message]
+        # ------------------------------------------------
+
         context.user_data["service_name"] = service_name
 
-        context.user_data["messages_for_del"].append(
-            await query.edit_message_text(
-                messages.master_password_request,
-                parse_mode=ParseMode.HTML,
-            )
+        # Теперь редактируем оставшееся сообщение
+        await query.edit_message_text(
+            messages.master_password_request,
+            parse_mode=ParseMode.HTML,
         )
 
         return GetConstraints.GET_MASTER_PASSWORD
