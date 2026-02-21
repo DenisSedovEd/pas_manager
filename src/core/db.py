@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -8,12 +7,13 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.core.config import settings
+from src.core.config import settings
 
 async_engine: AsyncEngine = create_async_engine(
     settings.db.url,
     echo=settings.db.echo,
     future=settings.db.future,
+    connect_args={"check_same_thread": False},
 )
 
 async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
@@ -23,12 +23,6 @@ async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
 )
 
 
-@asynccontextmanager
-async def get_session() -> AsyncGenerator[AsyncSession, Any]:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+        yield session

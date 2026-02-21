@@ -2,10 +2,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from app.bot import messages
-from app.bot.handlers.base_handler import BaseHandler
-from app.repositories import AccountRepository
-from app.services.message_service import schedule_message_deletion
+from src.old_bot import messages
+from src.old_bot.handlers.base_handler import BaseHandler
+from src.repositories import AccountRepository
+from src.services.message_service import schedule_message_deletion
 
 
 class ListAccountsHandler(BaseHandler):

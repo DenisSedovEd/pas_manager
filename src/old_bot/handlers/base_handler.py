@@ -7,9 +7,9 @@ from telegram.ext import (
     ConversationHandler,
 )
 
-from app.bot import messages
-from app.bot.keyboards import START_MARKUP
-from app.core.config import settings
+from src.old_bot import messages
+from src.old_bot.keyboards import START_MARKUP
+from src.core.config import settings
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

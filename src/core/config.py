@@ -20,11 +20,7 @@ class DbSettings(Base):
         env_prefix="DB",
     )
 
-    user: str = Field(...)
-    password: str = Field(...)
-    db: str = Field(...)
-    host: str = Field(...)
-    port: int = Field(5432, ge=1, le=65535)
+    path: str = Field(default="database.sqlite3")
     dialect: str = Field(...)
     engine: str = Field(...)
     echo: bool = Field(False)
@@ -32,11 +28,11 @@ class DbSettings(Base):
 
     @property
     def url(self):
-        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
+        return f"sqlite+aiosqlite:///{BASE_DIR / self.path}"
 
     @property
     def sync_url(self) -> str:
-        return f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
+        return f"sqlite:///{BASE_DIR / self.path}"
 
 
 class AppSettings(Base):

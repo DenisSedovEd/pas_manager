@@ -4,14 +4,14 @@ from typing import Optional, Sequence
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.db import get_session
-from app.crypto.encryption import (
+from src.core.db import get_session
+from src.repositories.encryption_repository import (
     decrypt_data,
     encrypt_data,
 )
-from app.crypto.exception import InvalidTag
-from app.models.account import Account
-from app.schemas import CreateAccountSchema, ResponseAccountSchema, EditAccountSchema
+from src.crypto.exception import InvalidTag
+from src.models.account import Account
+from src.schemas import CreateAccountSchema, ResponseAccountSchema, EditAccountSchema
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

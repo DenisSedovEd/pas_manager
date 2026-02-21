@@ -1,8 +1,8 @@
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler, filters
 
-from app.bot.handlers import BaseHandler, add_handler_instance, get_handler_instance
-from app.bot.keyboards import (
+from src.old_bot.handlers import BaseHandler, add_handler_instance, get_handler_instance
+from src.old_bot.keyboards import (
     BTN_ADD,
     BTN_CANCEL,
     BTN_GET,

@@ -41,17 +41,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
           script: |
-            # 1. Переходим в папку проекта
             cd ~/pas_manager
-            
-            # 2. Загружаем весь репозиторий
-            # git pull
-            
-            # 3. Загружаем образ с тегом latest
+            # Создаем папку для БД на сервере, если её нет
+            mkdir -p data
+            # Обновляем образ
             docker compose pull api 
-            
-            # 4. Перезапускаем контейнер (без изменений в docker-compose)
-            docker compose up -d --remove-orphans
-            
-            # 5. Очищаем старые неиспользуемые образы
+            # Перезапускаем только один сервис
+            docker compose up -d
+            # Чистим мусор
             docker image prune -f

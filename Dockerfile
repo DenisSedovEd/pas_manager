@@ -4,8 +4,6 @@ FROM docker.io/python:3.13-slim AS builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
-        libpq-dev \
-        python3-dev \
         libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,16 +21,13 @@ RUN uv sync --frozen --all-extras --no-editable
 
 FROM docker.io/python:3.13-slim AS runtime
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        libpq5 \
-    && rm -rf /var/lib/apt/lists/*
-
 RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
-COPY --from=builder /app/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+RUN mkdir -p /app/data
+
+COPY --from=builder /src/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 
 COPY . .
 
