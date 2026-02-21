@@ -9,12 +9,12 @@ from telegram.ext import (
     filters,
 )
 
-from app.bot import messages
-from app.bot.handlers.base_handler import BaseHandler
-from app.bot.handlers.constants import EditConstraints
-from app.repositories import AccountRepository
-from app.schemas import EditAccountSchema
-from app.services.message_service import schedule_message_deletion
+from src.old_bot import messages
+from src.old_bot.handlers.base_handler import BaseHandler
+from src.old_bot.handlers.constants import EditConstraints
+from src.repositories import AccountRepository
+from src.schemas import EditAccountSchema
+from src.services.message_service import schedule_message_deletion
 
 
 class EditAccountHandler(BaseHandler):

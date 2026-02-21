@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
-COPY --from=builder /app/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /src/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 
 COPY . .
 

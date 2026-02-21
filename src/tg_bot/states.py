@@ -1,0 +1,20 @@
+class AddAccountStates:
+    SERVICE = 1
+    LOGIN = 2
+    PASSWORD = 3
+    MASTER_PASSWORD = 4
+
+
+class ViewAccountStates:
+    SERVICE = 1
+    MASTER_PASSWORD = 2
+
+
+class ListAccountStates:
+    SELECTING_ACCOUNT = 1
+    SELECTING_ACTION = 2
+    WAITING_MASTER_VIEW = 3
+    WAITING_NEW_LOGIN = 4
+    WAITING_NEW_PASSWORD = 5
+    WAITING_MASTER_EDIT = 6
+    CONFIRM_DELETE = 7
