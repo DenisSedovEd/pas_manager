@@ -27,8 +27,8 @@ WORKDIR /app
 
 RUN mkdir -p /app/data
 
-COPY --from=builder /src/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
-
+#COPY --from=builder /src/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
