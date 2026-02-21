@@ -46,26 +46,9 @@ def main():
     app.add_handler(add_account_conv)
     app.add_handler(list_accounts_conv)
 
-    # app.add_handler(CommandHandler("start", base_handler_instance.start_command))
-    #
-    # app.add_handler(
-    #     MessageHandler(
-    #         filters.Text(btn_start) & ~filters.COMMAND,
-    #         base_handler_instance.start_command,
-    #     )
-    # )
-    #
-    # app.add_handler(CommandHandler("cancel", base_handler_instance.cancel_command))
-    # app.add_handler(CommandHandler("list", list_handler_instance.get_list_accounts))
-    #
-    # app.add_handler(add_conv_handler)
-    # app.add_handler(get_conv_handler)
-    # app.add_handler(edit_conv_handler)
-
     logger.info("Бот запущен. Ожидание команд...")
     app.run_polling()
 
 
 if __name__ == "__main__":
-    # пускаем на серваке
     main()
