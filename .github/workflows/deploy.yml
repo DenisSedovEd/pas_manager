@@ -43,10 +43,11 @@ jobs:
 
           script: |
             cd ~/pas_manager
+            git pull
             # Создаем папку для БД на сервере, если её нет
             mkdir -p data
             # Обновляем образ
-            docker compose pull api 
+            docker compose pull api
             # Перезапускаем только один сервис
             docker compose up -d
             # Чистим мусор

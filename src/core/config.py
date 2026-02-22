@@ -21,8 +21,8 @@ class DbSettings(Base):
     )
 
     path: str = Field(default="database.sqlite3")
-    dialect: str = Field(...)
-    engine: str = Field(...)
+    dialect: str = Field("sqlite")
+    engine: str = Field("aiosqlite")
     echo: bool = Field(False)
     future: bool = Field(True)
 
