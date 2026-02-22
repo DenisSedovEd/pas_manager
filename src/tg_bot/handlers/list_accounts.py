@@ -8,8 +8,8 @@ from telegram.ext import (
     CallbackContext,
 )
 
-from dependencies import get_account_service
-from services.message_service import safe_delete, schedule_deletion
+from src.dependencies import get_account_service
+from src.services.message_service import safe_delete, schedule_deletion
 from src.tg_bot.handlers.base import BaseHandler
 from src.tg_bot.handlers.edit_account import edit_handler
 from src.tg_bot.handlers.view_account import view_handler

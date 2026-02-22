@@ -7,16 +7,16 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 
-from dependencies import get_account_service
-from schemas import AccountSchema
+from src.dependencies import get_account_service
+from src.schemas import AccountSchema
 from src.tg_bot.handlers.base import BaseHandler
 from src.tg_bot.keyboards import get_main_menu, get_generate_pw_keyboard
 from src.tg_bot.states import AddAccountStates as States
 from src.tg_bot.states import ListAccountStates
 
-from services.message_service import safe_delete, schedule_deletion
+from src.services.message_service import safe_delete, schedule_deletion
 from src.tg_bot.messages import BotMessages
-from utils.password_generator import generate_secure_password, escape_md
+from src.utils.password_generator import generate_secure_password, escape_md
 
 
 class AddAccountHandler:
