@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+print(BASE_DIR)
+
 
 class Base(BaseSettings):
     model_config = SettingsConfigDict(
@@ -28,11 +30,13 @@ class DbSettings(Base):
 
     @property
     def url(self):
-        return f"sqlite+aiosqlite:///{BASE_DIR / self.path}"
+        db_path = BASE_DIR / "data" / self.path
+        return f"sqlite+aiosqlite:///{db_path}"
 
     @property
     def sync_url(self) -> str:
-        return f"sqlite:///{BASE_DIR / self.path}"
+        db_path = BASE_DIR / "data" / self.path
+        return f"sqlite:///{db_path}"
 
 
 class AppSettings(Base):
