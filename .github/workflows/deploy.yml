@@ -49,6 +49,6 @@ jobs:
             # Обновляем образ
             docker compose pull api
             # Перезапускаем только один сервис
-            docker compose up -d
+            docker compose up -d  --remove-orphans
             # Чистим мусор
             docker image prune -f
