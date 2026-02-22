@@ -38,5 +38,5 @@ ENV PYTHONPATH=/app \
     UV_PYTHON_DOWNLOADS=never
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["python", "-m", "app.main"]
+CMD ["python", "-m", "src.main"]
 
