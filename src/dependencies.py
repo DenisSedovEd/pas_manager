@@ -1,10 +1,10 @@
 from contextlib import asynccontextmanager
 
 
-from core.db import async_session, get_session
-from repositories import encryption_repository, DatabaseRepository
-from repositories.encryption_repository import EncryptionRepository
-from services.account_service import AccountService
+from src.core.db import async_session, get_session
+from src.repositories import encryption_repository, DatabaseRepository
+from src.repositories.encryption_repository import EncryptionRepository
+from src.services.account_service import AccountService
 
 
 @asynccontextmanager
