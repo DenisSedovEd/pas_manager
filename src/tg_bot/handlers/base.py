@@ -3,8 +3,8 @@ from telegram.ext import CallbackContext, ContextTypes, ConversationHandler
 
 from core.config import settings
 from services.message_service import safe_delete, schedule_deletion
-from tg_bot.keyboards import get_main_menu
-from tg_bot.messages import BotMessages
+from src.tg_bot.keyboards import get_main_menu
+from src.tg_bot.messages import BotMessages
 
 
 class BaseHandler:

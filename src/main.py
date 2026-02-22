@@ -9,10 +9,10 @@ from telegram.ext import (
 )
 
 from src.core.config import settings
-from tg_bot.handlers.add_account import add_account_conv
-from tg_bot.handlers.base import BaseHandler
-from tg_bot.handlers.list_accounts import list_accounts_conv
-from tg_bot.messages import BotMessages
+from src.tg_bot.handlers.add_account import add_account_conv
+from src.tg_bot.handlers.base import BaseHandler
+from src.tg_bot.handlers.list_accounts import list_accounts_conv
+from src.tg_bot.messages import BotMessages
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

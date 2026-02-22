@@ -10,13 +10,13 @@ from telegram.ext import (
 
 from dependencies import get_account_service
 from services.message_service import safe_delete, schedule_deletion
-from tg_bot.handlers.base import BaseHandler
-from tg_bot.handlers.edit_account import edit_handler
-from tg_bot.handlers.view_account import view_handler
-from tg_bot.keyboards import get_main_menu
-from tg_bot.messages import BotMessages
-from tg_bot.states import ListAccountStates as States
-from tg_bot.handlers.add_account import logic as add_logic
+from src.tg_bot.handlers.base import BaseHandler
+from src.tg_bot.handlers.edit_account import edit_handler
+from src.tg_bot.handlers.view_account import view_handler
+from src.tg_bot.keyboards import get_main_menu
+from src.tg_bot.messages import BotMessages
+from src.tg_bot.states import ListAccountStates as States
+from src.tg_bot.handlers.add_account import logic as add_logic
 
 
 class ListAccountsHandler:

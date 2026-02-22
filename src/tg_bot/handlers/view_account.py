@@ -3,9 +3,9 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from dependencies import get_account_service
 from services.message_service import schedule_deletion, safe_delete
-from tg_bot.keyboards import get_main_menu
-from tg_bot.messages import BotMessages
-from tg_bot.states import ListAccountStates as States
+from src.tg_bot.keyboards import get_main_menu
+from src.tg_bot.messages import BotMessages
+from src.tg_bot.states import ListAccountStates as States
 
 
 class ViewAccountHandler:
