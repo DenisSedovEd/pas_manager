@@ -27,8 +27,10 @@ class BaseHandler:
 
     @staticmethod
     async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text(
+        await update.message.delete()
+        sent_msg = await update.message.reply_text(
             BotMessages.CANCELLED,
             reply_markup=get_main_menu(),
         )
+        await safe_delete(sent_msg)
         return ConversationHandler.END
