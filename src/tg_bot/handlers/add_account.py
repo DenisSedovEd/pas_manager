@@ -5,6 +5,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    CommandHandler,
 )
 
 from src.dependencies import get_account_service
@@ -148,7 +149,10 @@ logic = AddAccountHandler()
 base = BaseHandler()
 
 add_account_conv = ConversationHandler(
-    entry_points=[MessageHandler(filters.Text([BotMessages.BTN_ADD]), logic.start_add)],
+    entry_points=[
+        MessageHandler(filters.Text([BotMessages.BTN_ADD]), logic.start_add),
+        CommandHandler("add", logic.start_add),
+    ],
     states={
         States.SERVICE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, logic.get_service)

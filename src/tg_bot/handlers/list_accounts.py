@@ -6,6 +6,7 @@ from telegram.ext import (
     filters,
     CallbackQueryHandler,
     CallbackContext,
+    CommandHandler,
 )
 
 from src.dependencies import get_account_service
@@ -137,7 +138,9 @@ base = BaseHandler()
 
 list_accounts_conv = ConversationHandler(
     entry_points=[
-        MessageHandler(filters.Text([BotMessages.BTN_LIST]), logic.show_accounts_list)
+        MessageHandler(filters.Text([BotMessages.BTN_LIST]), logic.show_accounts_list),
+        CommandHandler("list", logic.show_accounts_list),
+        CommandHandler("view", logic.show_accounts_list),
     ],
     states={
         States.SELECTING_ACCOUNT: [

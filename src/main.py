@@ -36,6 +36,9 @@ def main():
         .job_queue(job_queue)
         .build()
     )
+    app.add_handler(list_accounts_conv)
+    app.add_handler(add_account_conv)
+
     app.add_handler(CommandHandler("start", base_handler.start))
     app.add_handler(
         MessageHandler(
@@ -43,8 +46,6 @@ def main():
             base_handler.cancel,
         )
     )
-    app.add_handler(add_account_conv)
-    app.add_handler(list_accounts_conv)
 
     logger.info("Бот запущен. Ожидание команд...")
     app.run_polling()
