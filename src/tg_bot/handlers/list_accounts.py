@@ -18,6 +18,7 @@ from src.tg_bot.keyboards import get_main_menu
 from src.tg_bot.messages import BotMessages
 from src.tg_bot.states import ListAccountStates as States
 from src.tg_bot.handlers.add_account import logic as add_logic
+from utils.password_generator import escape_md
 
 
 class ListAccountsHandler:
@@ -68,6 +69,7 @@ class ListAccountsHandler:
         await query.answer()
 
         service_name = query.data.replace("select_", "")
+        escaped_service = escape_md(service_name)
 
         context.user_data["selected_service"] = service_name
 
