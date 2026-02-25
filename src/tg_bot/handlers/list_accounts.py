@@ -70,6 +70,7 @@ class ListAccountsHandler:
 
         _service_name = query.data.replace("select_", "")
         service_name = escape_md(_service_name)
+        service_name = "NextCloud_admin"
 
         context.user_data["selected_service"] = service_name
 
