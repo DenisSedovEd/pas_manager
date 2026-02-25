@@ -52,5 +52,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # last test for db
+    # last test
     main()
