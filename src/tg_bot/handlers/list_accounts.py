@@ -181,6 +181,9 @@ list_accounts_conv = ConversationHandler(
                 filters.TEXT & ~filters.COMMAND, edit_handler.ask_master_password
             ),
         ],
+        States.WAITING_MASTER_EDIT: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, edit_handler.finish_edit)
+        ],
     },
     fallbacks=[MessageHandler(filters.Text([BotMessages.BTN_CANCEL]), base.cancel)],
     allow_reentry=True,
