@@ -18,7 +18,7 @@ from src.tg_bot.keyboards import get_main_menu
 from src.tg_bot.messages import BotMessages
 from src.tg_bot.states import ListAccountStates as States
 from src.tg_bot.handlers.add_account import logic as add_logic
-from utils.password_generator import escape_md
+from src.utils.password_generator import escape_md
 
 
 class ListAccountsHandler:
