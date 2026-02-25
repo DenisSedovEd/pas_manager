@@ -68,8 +68,8 @@ class ListAccountsHandler:
         query = update.callback_query
         await query.answer()
 
-        service_name = query.data.replace("select_", "")
-        escaped_service = escape_md(service_name)
+        _service_name = query.data.replace("select_", "")
+        service_name = escape_md(_service_name)
 
         context.user_data["selected_service"] = service_name
 
