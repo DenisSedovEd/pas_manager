@@ -182,7 +182,7 @@ list_accounts_conv = ConversationHandler(
             ),
         ],
         States.WAITING_MASTER_EDIT: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, edit_handler.finish_edit)
+            MessageHandler(filters.TEXT & ~filters.COMMAND, edit_handler.save_changes)
         ],
     },
     fallbacks=[MessageHandler(filters.Text([BotMessages.BTN_CANCEL]), base.cancel)],

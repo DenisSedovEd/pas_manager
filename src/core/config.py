@@ -5,8 +5,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-print(BASE_DIR)
-
 
 class Base(BaseSettings):
     model_config = SettingsConfigDict(
