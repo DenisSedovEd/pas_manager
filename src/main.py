@@ -40,6 +40,7 @@ def main():
     app.add_handler(add_account_conv)
 
     app.add_handler(CommandHandler("start", base_handler.start))
+    app.add_handler(CommandHandler("clear", base_handler.clear_all))
     app.add_handler(
         MessageHandler(
             filters.Text([BotMessages.BTN_CANCEL]),
