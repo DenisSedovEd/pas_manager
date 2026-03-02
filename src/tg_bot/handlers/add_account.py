@@ -5,18 +5,19 @@ from telegram.ext import (
     MessageHandler,
     filters,
     CallbackQueryHandler,
+    CommandHandler,
 )
 
-from dependencies import get_account_service
-from schemas import AccountSchema
-from tg_bot.handlers.base import BaseHandler
-from tg_bot.keyboards import get_main_menu, get_generate_pw_keyboard
-from tg_bot.states import AddAccountStates as States
-from tg_bot.states import ListAccountStates
+from src.dependencies import get_account_service
+from src.schemas import AccountSchema
+from src.tg_bot.handlers.base import BaseHandler
+from src.tg_bot.keyboards import get_main_menu, get_generate_pw_keyboard
+from src.tg_bot.states import AddAccountStates as States
+from src.tg_bot.states import ListAccountStates
 
-from services.message_service import safe_delete, schedule_deletion
-from tg_bot.messages import BotMessages
-from utils.password_generator import generate_secure_password, escape_md
+from src.services.message_service import safe_delete, schedule_deletion
+from src.tg_bot.messages import BotMessages
+from src.utils.password_generator import generate_secure_password, escape_md
 
 
 class AddAccountHandler:
@@ -148,7 +149,10 @@ logic = AddAccountHandler()
 base = BaseHandler()
 
 add_account_conv = ConversationHandler(
-    entry_points=[MessageHandler(filters.Text([BotMessages.BTN_ADD]), logic.start_add)],
+    entry_points=[
+        MessageHandler(filters.Text([BotMessages.BTN_ADD]), logic.start_add),
+        CommandHandler("add", logic.start_add),
+    ],
     states={
         States.SERVICE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, logic.get_service)

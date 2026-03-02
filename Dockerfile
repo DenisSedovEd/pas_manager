@@ -21,22 +21,23 @@ RUN uv sync --frozen --all-extras --no-editable
 
 FROM docker.io/python:3.13-slim AS runtime
 
-RUN pip install --no-cache-dir uv
-
 WORKDIR /app
+
+RUN pip install --no-cache-dir uv
 
 RUN mkdir -p /app/data
 
-COPY --from=builder /src/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
-
+#COPY --from=builder /src/.venv/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 ENV PYTHONPATH=/app \
-    UV_PYTHON_DOWNLOADS=never
+    UV_PYTHON_DOWNLOADS=never \
+    PATH=/app/.venv/bin:$PATH
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["python", "-m", "app.main"]
+CMD ["python", "-m", "src.main"]
 

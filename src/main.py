@@ -9,10 +9,10 @@ from telegram.ext import (
 )
 
 from src.core.config import settings
-from tg_bot.handlers.add_account import add_account_conv
-from tg_bot.handlers.base import BaseHandler
-from tg_bot.handlers.list_accounts import list_accounts_conv
-from tg_bot.messages import BotMessages
+from src.tg_bot.handlers.add_account import add_account_conv
+from src.tg_bot.handlers.base import BaseHandler
+from src.tg_bot.handlers.list_accounts import list_accounts_conv
+from src.tg_bot.messages import BotMessages
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -36,6 +36,9 @@ def main():
         .job_queue(job_queue)
         .build()
     )
+    app.add_handler(list_accounts_conv)
+    app.add_handler(add_account_conv)
+
     app.add_handler(CommandHandler("start", base_handler.start))
     app.add_handler(
         MessageHandler(
@@ -43,12 +46,11 @@ def main():
             base_handler.cancel,
         )
     )
-    app.add_handler(add_account_conv)
-    app.add_handler(list_accounts_conv)
 
     logger.info("Бот запущен. Ожидание команд...")
     app.run_polling()
 
 
 if __name__ == "__main__":
+    # last test
     main()

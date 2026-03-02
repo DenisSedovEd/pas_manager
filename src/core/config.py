@@ -21,18 +21,20 @@ class DbSettings(Base):
     )
 
     path: str = Field(default="database.sqlite3")
-    dialect: str = Field(...)
-    engine: str = Field(...)
+    dialect: str = Field("sqlite")
+    engine: str = Field("aiosqlite")
     echo: bool = Field(False)
     future: bool = Field(True)
 
     @property
     def url(self):
-        return f"sqlite+aiosqlite:///{BASE_DIR / self.path}"
+        db_path = BASE_DIR / "data" / self.path
+        return f"sqlite+aiosqlite:///{db_path}"
 
     @property
     def sync_url(self) -> str:
-        return f"sqlite:///{BASE_DIR / self.path}"
+        db_path = BASE_DIR / "data" / self.path
+        return f"sqlite:///{db_path}"
 
 
 class AppSettings(Base):

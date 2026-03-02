@@ -1,7 +1,7 @@
-from models import Account
-from repositories import DatabaseRepository
-from repositories.encryption_repository import EncryptionRepository
-from schemas import AccountSchema, InvalidTag
+from src.models import Account
+from src.repositories import DatabaseRepository
+from src.repositories.encryption_repository import EncryptionRepository
+from src.schemas import AccountSchema, InvalidTag
 
 
 class AccountService:

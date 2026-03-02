@@ -6,17 +6,19 @@ from telegram.ext import (
     filters,
     CallbackQueryHandler,
     CallbackContext,
+    CommandHandler,
 )
 
-from dependencies import get_account_service
-from services.message_service import safe_delete, schedule_deletion
-from tg_bot.handlers.base import BaseHandler
-from tg_bot.handlers.edit_account import edit_handler
-from tg_bot.handlers.view_account import view_handler
-from tg_bot.keyboards import get_main_menu
-from tg_bot.messages import BotMessages
-from tg_bot.states import ListAccountStates as States
-from tg_bot.handlers.add_account import logic as add_logic
+from src.dependencies import get_account_service
+from src.services.message_service import safe_delete, schedule_deletion
+from src.tg_bot.handlers.base import BaseHandler
+from src.tg_bot.handlers.edit_account import edit_handler
+from src.tg_bot.handlers.view_account import view_handler
+from src.tg_bot.keyboards import get_main_menu
+from src.tg_bot.messages import BotMessages
+from src.tg_bot.states import ListAccountStates as States
+from src.tg_bot.handlers.add_account import logic as add_logic
+from src.utils.password_generator import escape_md
 
 
 class ListAccountsHandler:
@@ -66,7 +68,8 @@ class ListAccountsHandler:
         query = update.callback_query
         await query.answer()
 
-        service_name = query.data.replace("select_", "")
+        _service_name = query.data.replace("select_", "")
+        service_name = escape_md(_service_name)
 
         context.user_data["selected_service"] = service_name
 
@@ -137,7 +140,9 @@ base = BaseHandler()
 
 list_accounts_conv = ConversationHandler(
     entry_points=[
-        MessageHandler(filters.Text([BotMessages.BTN_LIST]), logic.show_accounts_list)
+        MessageHandler(filters.Text([BotMessages.BTN_LIST]), logic.show_accounts_list),
+        CommandHandler("list", logic.show_accounts_list),
+        CommandHandler("view", logic.show_accounts_list),
     ],
     states={
         States.SELECTING_ACCOUNT: [
@@ -177,6 +182,9 @@ list_accounts_conv = ConversationHandler(
             MessageHandler(
                 filters.TEXT & ~filters.COMMAND, edit_handler.ask_master_password
             ),
+        ],
+        States.WAITING_MASTER_EDIT: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, edit_handler.save_changes)
         ],
     },
     fallbacks=[MessageHandler(filters.Text([BotMessages.BTN_CANCEL]), base.cancel)],
