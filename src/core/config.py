@@ -41,6 +41,8 @@ class AppSettings(Base):
     model_config = SettingsConfigDict(
         env_prefix="APP",
     )
+    host: str = Field("localhost")
+    port: int = Field(8080)
     debug: bool = Field(False)
     user_id: int = Field(...)
     telegram_token: str = Field(...)

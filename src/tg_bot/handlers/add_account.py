@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 
 from src.dependencies import get_account_service
-from src.schemas import AccountSchema
+from src.schemas.account import AccountResponseSchema
 from src.tg_bot.handlers.base import BaseHandler
 from src.tg_bot.keyboards import get_main_menu, get_generate_pw_keyboard
 from src.tg_bot.states import AddAccountStates as States
@@ -123,7 +123,7 @@ class AddAccountHandler:
         await safe_delete(update.message)
         master_password = update.message.text
 
-        account_data = AccountSchema(
+        account_data = AccountResponseSchema(
             service_name=context.user_data["add_service"],
             username=context.user_data["add_login"],
             password=context.user_data["add_password"],

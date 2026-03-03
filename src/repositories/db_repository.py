@@ -23,7 +23,7 @@ class DatabaseRepository:
         return result.scalar_one_or_none()
 
     async def get_list(self, model, limit: int = 20):
-        query = select(model).order_by(desc(model.service_name)).limit(limit)
+        query = select(model).limit(limit)
         result = await self.session.execute(query)
         return result.scalars().all()
 

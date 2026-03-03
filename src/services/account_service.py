@@ -1,7 +1,9 @@
-from src.models import Account
+import uuid
+
+from src.schemas.account import AccountRequestSchema, AccountResponseSchema
+from src.models.account import Account
 from src.repositories import DatabaseRepository
 from src.repositories.encryption_repository import EncryptionRepository
-from src.schemas import AccountSchema, InvalidTag
 
 
 class AccountService:
@@ -15,10 +17,11 @@ class AccountService:
 
     async def create_account(
         self,
-        account: AccountSchema,
+        account: AccountRequestSchema,
         master_password: str,
+        platform_id: uuid.UUID,
     ) -> Account:
-        new_account_creds = f"{account.username}|{account.password}"
+        new_account_creds = f"{account.user_name}|{account.password}"
 
         enc_data = self.encrypt_repo.encrypt_data(
             new_account_creds,
@@ -26,8 +29,8 @@ class AccountService:
         )
 
         new_account = Account(
-            service_name=account.service_name,
-            user_name=account.username,
+            user_name=account.user_name,
+            platform_id=platform_id,
             encrypted_data=enc_data["encrypted_data"],
             salt=enc_data["salt"],
             nonce=enc_data["nonce"],
@@ -41,7 +44,7 @@ class AccountService:
         self,
         service_name: str,
         master_password: str,
-    ) -> AccountSchema:
+    ) -> AccountResponseSchema:
         search_account = await self.db_repo.get(
             Account,
             filters={"service_name": service_name},
@@ -68,18 +71,18 @@ class AccountService:
 
         user_name, password = decrypted_payload.split("|", 1)
 
-        return AccountSchema(
+        return AccountResponseSchema(
             service_name=search_account.service_name,
             username=user_name,
             password=password,
         )
 
-    async def get_accounts(self) -> list[AccountSchema]:
+    async def get_accounts(self) -> list[AccountResponseSchema]:
         accounts_list = await self.db_repo.get_list(Account)
         res = []
         for account in accounts_list:
             res.append(
-                AccountSchema(
+                AccountResponseSchema(
                     service_name=account.service_name,
                     username=account.user_name,
                     password="",
@@ -93,7 +96,7 @@ class AccountService:
         master_password: str,
         new_username: str | None = None,
         new_password: str | None = None,
-    ) -> AccountSchema:
+    ) -> AccountResponseSchema:
         current_account = await self.get_account(service_name, master_password)
 
         final_username = (
@@ -125,7 +128,7 @@ class AccountService:
             },
         )
 
-        return AccountSchema(
+        return AccountResponseSchema(
             service_name=service_name,
             username=final_username,
             password=final_password,

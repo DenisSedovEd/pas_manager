@@ -3,18 +3,6 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-class AccountSchema(BaseModel):
-    service_name: str = Field(
-        description="Название сервиса",
-    )
-    username: str = Field(
-        description="Имя пользователя/почта",
-    )
-    password: str = Field(
-        description="Пароль сервиса",
-    )
-
-
 class EncryptedAccountSchema(BaseModel):
     id: Optional[int]
     service_name: str
