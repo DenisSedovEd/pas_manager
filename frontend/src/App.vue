@@ -1,14 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useTelegram } from './composables/useTelegram';
-import { authApi } from './api/auth';
+import {ref, onMounted} from 'vue';
+import {useTelegram} from './composables/useTelegram';
+import {authApi} from './api/auth';
+import PlatformList from './components/PlatformList.vue';
+import AccountList from './components/AccountList.vue';
 
-const { tg, bio, initApp, initData } = useTelegram();
+const {tg, bio, initApp, initData} = useTelegram();
 
 const isUnlocked = ref(false);
 const password = ref('');
 const isBioSupported = ref(false);
 const isAuthLoading = ref(false);
+const currentScreen = ref('platforms');
+const selectedPlatform = ref(null);
 
 onMounted(async () => {
   initApp();
@@ -52,17 +56,30 @@ const handlePasswordUnlock = async () => {
 };
 
 const authenticateWithBio = () => {
-  bio.authenticate({ reason: 'Вход в сейф' }, async (success, token) => {
+  bio.authenticate({reason: 'Вход в сейф'}, async (success, token) => {
     if (success) {
       const res = await authApi.unlockWithBiometric(initData, token);
       if (res.ok) isUnlocked.value = true;
     }
   });
 };
+
+const onPlatformSelect = (platform) => {
+  selectedPlatform.value = platform;
+  currentScreen.value = 'accounts'; // Переключаем экран
+};
+
+// Функция для возврата назад
+const goBack = () => {
+  currentScreen.value = 'platforms';
+  selectedPlatform.value = null;
+};
+
 </script>
 
 <template>
   <div class="container">
+
     <div v-if="!isUnlocked" class="auth-card">
       <div class="logo">🛡️</div>
       <h1>Safe Manager</h1>
@@ -74,7 +91,11 @@ const authenticateWithBio = () => {
           placeholder="Мастер-пароль"
           @keyup.enter="handlePasswordUnlock"
         />
-        <button @click="handlePasswordUnlock" class="primary-btn" :disabled="isAuthLoading">
+        <button
+          @click="handlePasswordUnlock"
+          class="primary-btn"
+          :disabled="isAuthLoading"
+        >
           {{ isAuthLoading ? 'Вход...' : 'Войти' }}
         </button>
       </div>
@@ -87,19 +108,69 @@ const authenticateWithBio = () => {
       </div>
     </div>
 
-    <div v-else class="vault-screen">
-      <div class="status-badge">🔓 Сейф открыт</div>
-      <div class="placeholder-content">
-         <p>Ваши данные в безопасности.</p>
-         <p style="font-size: 0.8em; color: var(--tg-theme-hint-color);">
-           Чтобы закрыть сейф, просто закройте приложение.
-         </p>
+    <div v-else class="vault-wrapper">
+
+      <div v-if="currentScreen === 'platforms'">
+        <div class="header">
+          <h1>Мои платформы</h1>
+        </div>
+        <PlatformList @select-platform="onPlatformSelect" />
       </div>
+
+      <div v-else-if="currentScreen === 'accounts'">
+        <div class="header">
+          <div class="navigation-row">
+            <button @click="goBack" class="back-btn">←</button>
+            <h1>{{ selectedPlatform?.name }}</h1>
+          </div>
+        </div>
+        <AccountList :platform-id="selectedPlatform?.id" />
+      </div>
+
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Стили для навигации внутри сейфа */
+.vault-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 16px;
+  background: var(--tg-theme-bg-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.navigation-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--tg-theme-button-color);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+.header {
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  background: var(--tg-theme-bg-color);
+  z-index: 10;
+  text-align: center;
+}
+
 /* Добавим немного стиля для открытого состояния */
 .status-badge {
   background: #4caf5022;
@@ -110,10 +181,12 @@ const authenticateWithBio = () => {
   margin-bottom: 20px;
   display: inline-block;
 }
+
 .placeholder-content {
   text-align: center;
   margin-top: 40px;
 }
+
 /* Стили для аккуратного гибридного входа */
 .auth-card {
   text-align: center;
@@ -121,8 +194,17 @@ const authenticateWithBio = () => {
   max-width: 320px;
   margin-top: 40px;
 }
-.logo { font-size: 60px; margin-bottom: 10px; }
-.input-group { display: flex; flex-direction: column; gap: 12px; }
+
+.logo {
+  font-size: 60px;
+  margin-bottom: 10px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 input {
   padding: 14px;
@@ -149,7 +231,12 @@ input {
   line-height: 0.1em;
   opacity: 0.5;
 }
-.divider span { background: var(--tg-theme-bg-color); padding: 0 10px; font-size: 12px; }
+
+.divider span {
+  background: var(--tg-theme-bg-color);
+  padding: 0 10px;
+  font-size: 12px;
+}
 
 .bio-btn {
   background: none;
@@ -159,5 +246,29 @@ input {
   border-radius: 10px;
   width: 100%;
   font-weight: 500;
+}
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-wrapper, .vault-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 20px 16px 10px;
+  background: var(--tg-theme-bg-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header h1 {
+  font-size: 24px;
+  margin: 0;
 }
 </style>
