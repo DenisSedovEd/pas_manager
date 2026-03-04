@@ -19,6 +19,10 @@ const editingAccount = ref(null);
 onMounted(async () => {
   initApp();
 
+  if (tg.setHeaderColor) tg.setHeaderColor('bg_color');
+  if (tg.setBackgroundColor) tg.setBackgroundColor('bg_color');
+  tg.expand();
+
   // 1. Инициализация биометрии
   bio.init(async () => {
     isBioSupported.value = bio.isInited && bio.isBiometricAvailable;
@@ -99,7 +103,7 @@ const openAddAccount = () => {
 </script>
 
 <template>
-  <div class="container">
+  <div class="app-container">
 
     <div v-if="!isUnlocked" class="auth-card">
       <div class="logo">🛡️</div>
@@ -167,8 +171,8 @@ const openAddAccount = () => {
           </div>
         </div>
         <AccountList
-          :platform-id="selectedPlatform?.id"
-          @select-account="onAccountSelect"
+            :platform-id="selectedPlatform?.id"
+            @select-account="onAccountSelect"
         />
       </div>
 
@@ -180,9 +184,9 @@ const openAddAccount = () => {
           </div>
         </div>
         <AccountEditor
-          :account="editingAccount"
-          :currentPlatform="selectedPlatform"
-          @save="goBack"
+            :account="editingAccount"
+            :currentPlatform="selectedPlatform"
+            @save="goBack"
         />
       </div>
 
@@ -193,7 +197,7 @@ const openAddAccount = () => {
             <h1>Новый аккаунт</h1>
           </div>
         </div>
-        <AccountEditor @save="goBack" />
+        <AccountEditor @save="goBack"/>
       </div>
 
     </div>
@@ -201,25 +205,50 @@ const openAddAccount = () => {
 </template>
 
 <style scoped>
+:global(body) {
+  margin: 0;
+  padding: 0;
+  background: var(--tg-theme-bg-color);
+}
+
+:global(html), :global(body) {
+  margin: 0;
+  padding: 0;
+  background-color: var(--tg-theme-bg-color); /* Принудительно системный цвет */
+  color: var(--tg-theme-text-color);
+  height: 100%;
+  overflow: hidden; /* Основное окно не скроллим */
+}
+
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .account-card {
   cursor: pointer;
   transition: background 0.2s;
 }
+
 .account-card:active {
   background: var(--tg-theme-bg-color);
 }
+
 .arrow {
   color: var(--tg-theme-hint-color);
   font-size: 20px;
 }
+
 /* Стили для навигации внутри сейфа */
 .vault-wrapper {
   display: flex;
   flex-direction: column;
   flex: 1;
-  height: var(--tg-viewport-height, 100vh);
   width: 100%;
-  overflow: hidden; /* Запрещаем скролл всему окну */
+  min-height: 100vh;
+  background: var(--tg-theme-bg-color);
 }
 
 .header {
@@ -253,22 +282,6 @@ const openAddAccount = () => {
   background: var(--tg-theme-bg-color);
   z-index: 10;
   text-align: center;
-}
-
-/* Добавим немного стиля для открытого состояния */
-.status-badge {
-  background: #4caf5022;
-  color: #4caf50;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  display: inline-block;
-}
-
-.placeholder-content {
-  text-align: center;
-  margin-top: 40px;
 }
 
 /* Стили для аккуратного гибридного входа */
@@ -333,10 +346,20 @@ input {
 }
 
 .app-container {
-  min-height: 100vh;
+  /* Используем переменную вьюпорта Telegram для мобилок */
+  height: var(--tg-viewport-height, 100vh);
   display: flex;
   flex-direction: column;
+  background: var(--tg-theme-bg-color);
 }
+
+.vault-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Скроллиться будут только внутренние компоненты */
+}
+
 
 .auth-wrapper, .vault-wrapper {
   flex: 1;
@@ -358,17 +381,21 @@ input {
 }
 
 .main-menu {
+  flex: 1;
+  overflow-y: auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  align-items: center;
 }
 
 .menu-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-top: 20px;
+  width: 100%;
+  max-width: 500px; /* Чтобы на широких экранах кнопки не расползались слишком сильно */
 }
 
 .menu-item {

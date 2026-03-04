@@ -42,6 +42,8 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box; /* Важно для десктопа */
 }
 
 .account-card {
@@ -51,8 +53,8 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer; /* Делаем курсор указателем */
-  transition: opacity 0.1s ease;
+  width: 100%; /* Растягиваем */
+  box-sizing: border-box;
 }
 
 .account-card:active {
@@ -63,8 +65,9 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1; /* Занимает всё пространство до стрелочки */
+  min-width: 0;
 }
-
 .label {
   font-size: 12px;
   color: var(--tg-theme-hint-color);
@@ -73,6 +76,9 @@ onMounted(async () => {
 .login {
   font-weight: bold;
   color: var(--tg-theme-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .arrow {
