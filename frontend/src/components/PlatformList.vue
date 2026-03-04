@@ -17,7 +17,6 @@ onMounted(async () => {
   }
 });
 </script>
-
 <template>
   <div class="platforms-container">
     <div v-if="isLoading" class="loader">Загрузка платформ...</div>
@@ -43,7 +42,12 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.platforms-container { padding: 16px; }
+.platforms-container {
+  padding: 16px;
+  /* Используем системный фон Telegram */
+  background: var(--tg-theme-bg-color);
+  min-height: 100%;
+}
 
 .platform-grid {
   display: flex;

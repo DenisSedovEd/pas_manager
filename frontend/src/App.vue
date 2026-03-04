@@ -4,6 +4,7 @@ import {useTelegram} from './composables/useTelegram';
 import {authApi} from './api/auth';
 import PlatformList from './components/PlatformList.vue';
 import AccountList from './components/AccountList.vue';
+import AccountEditor from "./components/AccountEditor.vue";
 
 const {tg, bio, initApp, initData} = useTelegram();
 
@@ -11,8 +12,9 @@ const isUnlocked = ref(false);
 const password = ref('');
 const isBioSupported = ref(false);
 const isAuthLoading = ref(false);
-const currentScreen = ref('platforms');
+const currentScreen = ref('menu');
 const selectedPlatform = ref(null);
+const editingAccount = ref(null);
 
 onMounted(async () => {
   initApp();
@@ -64,15 +66,34 @@ const authenticateWithBio = () => {
   });
 };
 
+const onAccountSelect = (account) => {
+  editingAccount.value = account;
+  currentScreen.value = 'account_details';
+};
+
 const onPlatformSelect = (platform) => {
   selectedPlatform.value = platform;
-  currentScreen.value = 'accounts'; // Переключаем экран
+  currentScreen.value = 'accounts';
 };
 
 // Функция для возврата назад
 const goBack = () => {
+  if (currentScreen.value === 'account_details') {
+    currentScreen.value = 'accounts';
+    editingAccount.value = null;
+  } else if (currentScreen.value === 'accounts') {
+    currentScreen.value = 'platforms';
+  } else {
+    currentScreen.value = 'menu';
+  }
+};
+
+const openMyAccounts = () => {
   currentScreen.value = 'platforms';
-  selectedPlatform.value = null;
+};
+
+const openAddAccount = () => {
+  currentScreen.value = 'add_account';
 };
 
 </script>
@@ -86,15 +107,15 @@ const goBack = () => {
 
       <div class="input-group">
         <input
-          v-model="password"
-          type="password"
-          placeholder="Мастер-пароль"
-          @keyup.enter="handlePasswordUnlock"
+            v-model="password"
+            type="password"
+            placeholder="Мастер-пароль"
+            @keyup.enter="handlePasswordUnlock"
         />
         <button
-          @click="handlePasswordUnlock"
-          class="primary-btn"
-          :disabled="isAuthLoading"
+            @click="handlePasswordUnlock"
+            class="primary-btn"
+            :disabled="isAuthLoading"
         >
           {{ isAuthLoading ? 'Вход...' : 'Войти' }}
         </button>
@@ -110,11 +131,32 @@ const goBack = () => {
 
     <div v-else class="vault-wrapper">
 
-      <div v-if="currentScreen === 'platforms'">
+      <div v-if="currentScreen === 'menu'" class="main-menu">
         <div class="header">
-          <h1>Мои платформы</h1>
+          <h1>Safe Manager</h1>
         </div>
-        <PlatformList @select-platform="onPlatformSelect" />
+
+        <div class="menu-grid">
+          <button @click="openMyAccounts" class="menu-item">
+            <span class="menu-icon">📁</span>
+            <span class="menu-label">Мои аккаунты</span>
+          </button>
+
+          <button @click="openAddAccount" class="menu-item">
+            <span class="menu-icon">➕</span>
+            <span class="menu-label">Добавить аккаунт</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-else-if="currentScreen === 'platforms'">
+        <div class="header">
+          <div class="navigation-row">
+            <button @click="goBack" class="back-btn">←</button>
+            <h1>Платформы</h1>
+          </div>
+        </div>
+        <PlatformList @select-platform="onPlatformSelect"/>
       </div>
 
       <div v-else-if="currentScreen === 'accounts'">
@@ -124,7 +166,34 @@ const goBack = () => {
             <h1>{{ selectedPlatform?.name }}</h1>
           </div>
         </div>
-        <AccountList :platform-id="selectedPlatform?.id" />
+        <AccountList
+          :platform-id="selectedPlatform?.id"
+          @select-account="onAccountSelect"
+        />
+      </div>
+
+      <div v-else-if="currentScreen === 'account_details'">
+        <div class="header">
+          <div class="navigation-row">
+            <button @click="goBack" class="back-btn">←</button>
+            <h1>Редактирование</h1>
+          </div>
+        </div>
+        <AccountEditor
+          :account="editingAccount"
+          :currentPlatform="selectedPlatform"
+          @save="goBack"
+        />
+      </div>
+
+      <div v-else-if="currentScreen === 'add_account'">
+        <div class="header">
+          <div class="navigation-row">
+            <button @click="goBack" class="back-btn">←</button>
+            <h1>Новый аккаунт</h1>
+          </div>
+        </div>
+        <AccountEditor @save="goBack" />
       </div>
 
     </div>
@@ -132,11 +201,25 @@ const goBack = () => {
 </template>
 
 <style scoped>
+.account-card {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.account-card:active {
+  background: var(--tg-theme-bg-color);
+}
+.arrow {
+  color: var(--tg-theme-hint-color);
+  font-size: 20px;
+}
 /* Стили для навигации внутри сейфа */
 .vault-wrapper {
-  width: 100%;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  height: var(--tg-viewport-height, 100vh);
+  width: 100%;
+  overflow: hidden; /* Запрещаем скролл всему окну */
 }
 
 .header {
@@ -162,6 +245,7 @@ const goBack = () => {
   padding: 0;
   line-height: 1;
 }
+
 .header {
   padding: 16px;
   position: sticky;
@@ -247,6 +331,7 @@ input {
   width: 100%;
   font-weight: 500;
 }
+
 .app-container {
   min-height: 100vh;
   display: flex;
@@ -270,5 +355,54 @@ input {
 .header h1 {
   font-size: 24px;
   margin: 0;
+}
+
+.main-menu {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.menu-item {
+  background: var(--tg-theme-secondary-bg-color);
+  border: none;
+  border-radius: 16px;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.menu-item:active {
+  transform: scale(0.95);
+}
+
+.menu-icon {
+  font-size: 32px;
+}
+
+.menu-label {
+  color: var(--tg-theme-text-color);
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+}
+
+.placeholder-screen {
+  padding: 40px;
+  text-align: center;
+  color: var(--tg-theme-hint-color);
 }
 </style>
