@@ -5,7 +5,7 @@ import {platformApi} from '../api/platform.js';
 import {accountApi} from '../api/account.js';
 
 const props = defineProps(['account', 'currentPlatform']);
-const emit = defineEmits(['save', 'cancel', 'deleted']); // Добавили событие deleted
+const emit = defineEmits(['save', 'cancel', 'deleted']);
 const {tg, initData} = useTelegram();
 
 const platforms = ref([]);
@@ -13,7 +13,6 @@ const showPassword = ref(false);
 const showConfirmDialog = ref(false);
 const isSaving = ref(false);
 
-// Инициализация данных формы
 const editedData = ref({
   id: props.account?.id || null,
   label: props.account?.label || '',
@@ -27,7 +26,6 @@ const editedData = ref({
 onMounted(async () => {
   try {
     const response = await platformApi.getList(initData);
-    // Обработка разных форматов ответа (с оберткой data или просто массив)
     platforms.value = response.data || response;
   } catch (e) {
     console.error("Ошибка загрузки платформ:", e);
@@ -47,7 +45,6 @@ const validateAndConfirm = () => {
 const handleSave = async () => {
   showConfirmDialog.value = false;
   isSaving.value = true;
-
   try {
     let result;
     if (editedData.value.id) {
@@ -65,14 +62,13 @@ const handleSave = async () => {
   }
 };
 
-// Функция удаления
 const handleDelete = () => {
   tg.showConfirm("Удалить этот аккаунт безвозвратно?", async (ok) => {
     if (ok) {
       try {
         await accountApi.delete(initData, editedData.value.id);
         tg.HapticFeedback.notificationOccurred('warning');
-        emit('deleted'); // Уведомляем родителя об удалении
+        emit('deleted');
       } catch (error) {
         console.error('Ошибка удаления:', error);
         tg.showAlert("Не удалось удалить аккаунт");
@@ -102,65 +98,39 @@ const handleDelete = () => {
       </div>
 
       <div class="field-group">
-        <label>Username / Login *</label>
+        <label>Username *</label>
         <div class="field-row">
-          <input
-              v-model="editedData.login"
-              class="field-input"
-              type="text"
-              placeholder="Введите логин"
-          />
+          <input v-model="editedData.login" class="field-input" type="text" placeholder="Логин"/>
         </div>
       </div>
 
       <div class="field-group">
         <label>Password *</label>
         <div class="field-row">
-          <input
-              :type="showPassword ? 'text' : 'password'"
-              v-model="editedData.password"
-              class="field-input password-text"
-              placeholder="Введите пароль"
-          />
-          <button class="view-btn" @click="showPassword = !showPassword">
-            {{ showPassword ? '🙈' : '👁️' }}
-          </button>
+          <input :type="showPassword ? 'text' : 'password'" v-model="editedData.password"
+                 class="field-input password-text"/>
+          <button class="view-btn" @click="showPassword = !showPassword">{{ showPassword ? '🙈' : '👁️' }}</button>
         </div>
       </div>
 
       <div class="field-group">
         <label>Email</label>
         <div class="field-row">
-          <input
-              v-model="editedData.email"
-              class="field-input"
-              type="email"
-              placeholder="example@mail.com"
-          />
+          <input v-model="editedData.email" class="field-input" type="email" placeholder="mail@example.com"/>
         </div>
       </div>
 
       <div class="field-group">
         <label>Phone</label>
         <div class="field-row">
-          <input
-              v-model="editedData.phone"
-              class="field-input"
-              type="tel"
-              placeholder="+1234567890"
-          />
+          <input v-model="editedData.phone" class="field-input" type="tel" placeholder="+7..."/>
         </div>
       </div>
 
       <div class="field-group">
         <label>Название (опционально)</label>
         <div class="field-row">
-          <input
-              v-model="editedData.label"
-              class="field-input"
-              type="text"
-              placeholder="Напр: Личный, Рабочий"
-          />
+          <input v-model="editedData.label" class="field-input" type="text" placeholder="Напр: Личный"/>
         </div>
       </div>
 
@@ -168,6 +138,7 @@ const handleDelete = () => {
         <button class="save-btn" :disabled="isSaving" @click="validateAndConfirm">
           {{ isSaving ? 'Сохранение...' : '💾 Сохранить' }}
         </button>
+
         <button class="cancel-btn" @click="emit('cancel')">Отмена</button>
 
         <button v-if="editedData.id" class="delete-btn" @click="handleDelete">
@@ -179,7 +150,6 @@ const handleDelete = () => {
     <div v-if="showConfirmDialog" class="dialog-overlay" @click.self="showConfirmDialog = false">
       <div class="confirm-dialog">
         <h2>Сохранить?</h2>
-        <p>Данные будут зашифрованы в базе.</p>
         <div class="confirm-buttons">
           <button class="cancel-btn dialog-btn" @click="showConfirmDialog = false">Отмена</button>
           <button class="save-btn dialog-btn" @click="handleSave">Да</button>
@@ -195,7 +165,6 @@ const handleDelete = () => {
   flex-direction: column;
   height: calc(100vh - 60px);
   background: var(--tg-theme-bg-color);
-  overflow: hidden;
   width: 100%;
   align-items: center;
 }
@@ -207,24 +176,13 @@ const handleDelete = () => {
   gap: 16px;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   width: 92%;
   max-width: 500px;
   margin: 10px 0;
   max-height: calc(100% - 20px);
-}
-
-.editor-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.editor-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
 }
 
 .header-row h2 {
@@ -244,7 +202,6 @@ label {
   font-size: 12px;
   color: var(--tg-theme-hint-color);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
   margin-left: 4px;
 }
 
@@ -258,17 +215,11 @@ label {
   flex: 1;
   padding: 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08); /* Фон инпутов */
   border: 1px solid rgba(128, 128, 128, 0.2);
   color: var(--tg-theme-text-color);
   font-size: 15px;
   outline: none;
-  transition: all 0.2s ease;
-}
-
-.field-input:focus {
-  border-color: var(--tg-theme-button-color);
-  background: rgba(255, 255, 255, 0.12);
 }
 
 .select-input {
@@ -277,12 +228,10 @@ label {
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 14px;
-  padding-right: 35px;
 }
 
 .password-text {
   font-family: monospace;
-  letter-spacing: 1px;
 }
 
 .view-btn {
@@ -292,7 +241,6 @@ label {
   border: none;
   background: rgba(255, 255, 255, 0.1);
   color: var(--tg-theme-text-color);
-  cursor: pointer;
   font-size: 18px;
 }
 
@@ -303,6 +251,7 @@ label {
   margin-top: 10px;
 }
 
+/* КНОПКА СОХРАНИТЬ */
 .save-btn {
   padding: 14px;
   border-radius: 12px;
@@ -313,28 +262,30 @@ label {
   font-size: 16px;
 }
 
+/* КНОПКА ОТМЕНА (как инпуты) */
 .cancel-btn {
-  padding: 12px;
+  padding: 14px;
   border-radius: 12px;
-  border: none;
-  background: transparent;
-  color: var(--tg-theme-hint-color);
-  font-size: 14px;
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--tg-theme-text-color);
+  font-size: 15px;
 }
 
+/* КНОПКА УДАЛИТЬ (бледно-красная) */
 .delete-btn {
-  padding: 12px;
+  padding: 14px;
   border-radius: 12px;
   border: none;
-  background: transparent;
-  color: #ff4f4f; /* Красный цвет для кнопки удаления */
-  font-size: 14px;
-  font-weight: 500;
-  margin-top: 5px;
+  background: rgba(255, 79, 79, 0.15); /* Бледно-красный фон */
+  color: #ff4f4f;
+  font-weight: 600;
+  font-size: 15px;
+  margin-top: 4px;
 }
 
 .delete-btn:active {
-  background: rgba(255, 79, 79, 0.1);
+  background: rgba(255, 79, 79, 0.25);
 }
 
 .dialog-overlay {
@@ -358,7 +309,6 @@ label {
   width: 80%;
   max-width: 300px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .confirm-buttons {
@@ -369,9 +319,8 @@ label {
 
 .dialog-btn {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
   border-radius: 10px;
   border: none;
-  font-weight: 500;
 }
 </style>
