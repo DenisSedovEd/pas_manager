@@ -130,6 +130,7 @@ class AccountService:
             Account,
             filters={"id": account_id},
             values={
+                "platform_id": account.platform_id,
                 "user_name": account.login,
                 "email": account.email or None,
                 "phone": account.phone or None,

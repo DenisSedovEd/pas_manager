@@ -82,6 +82,18 @@ const onEditPlatform = (platform) => {
   currentScreen.value = 'edit_platform';
 };
 
+const handleAccountSave = (updatedAccount) => {
+  if (selectedPlatform.value && selectedPlatform.value.id !== updatedAccount.platform_id) {
+    selectedPlatform.value = null;
+    currentScreen.value = 'platforms';
+  } else {
+    currentScreen.value = 'accounts';
+  }
+
+  editingAccount.value = null;
+  tg.HapticFeedback.notificationOccurred('success');
+};
+
 const goBack = () => {
   if (currentScreen.value === 'account_view' || currentScreen.value === 'account_edit') {
     currentScreen.value = 'accounts';
@@ -216,7 +228,7 @@ const openEditAccount = (fullAccountData) => {
             <div class="spacer"></div>
           </div>
         </div>
-        <AccountEditor :account="editingAccount" :currentPlatform="selectedPlatform" @save="goBack"/>
+        <AccountEditor :account="editingAccount" :currentPlatform="selectedPlatform" @save="handleAccountSave"/>
       </div>
 
       <div v-else-if="currentScreen === 'add_account'">

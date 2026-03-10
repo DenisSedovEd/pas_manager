@@ -1,11 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useTelegram } from '../composables/useTelegram';
-import { accountApi } from '../api/account.js';
+import {ref, onMounted} from 'vue';
+import {useTelegram} from '../composables/useTelegram';
+import {accountApi} from '../api/account.js';
 
 const props = defineProps(['account']);
 const emit = defineEmits(['edit', 'deleted']);
-const { tg, initData } = useTelegram();
+const {tg, initData} = useTelegram();
 
 // Состояние для полных данных аккаунта и загрузки
 const fullAccount = ref(null);
@@ -55,21 +55,6 @@ const showCopyFeedback = (fieldName) => {
   }, 1500);
 };
 
-const handleDelete = () => {
-  tg.showConfirm("Удалить этот аккаунт?", async (ok) => {
-    if (ok) {
-      try {
-        await accountApi.delete(initData, props.account.id);
-        tg.HapticFeedback.notificationOccurred('success');
-        emit('deleted');
-      } catch (error) {
-        console.error('Ошибка при удалении:', error);
-        tg.showAlert('Ошибка при удалении аккаунта');
-      }
-    }
-  });
-};
-
 const handleEdit = () => {
   // Передаем полные данные обратно, чтобы редактор знал пароль
   emit('edit', fullAccount.value || props.account);
@@ -93,9 +78,9 @@ const handleEdit = () => {
         <div class="field-row">
           <div class="field-value">{{ fullAccount.login }}</div>
           <button
-            class="copy-btn"
-            :class="{ feedback: copyFeedback === 'login' }"
-            @click="copyToClipboard(fullAccount.login, 'login')"
+              class="copy-btn"
+              :class="{ feedback: copyFeedback === 'login' }"
+              @click="copyToClipboard(fullAccount.login, 'login')"
           >
             {{ copyFeedback === 'login' ? '✓' : '📋' }}
           </button>
@@ -112,9 +97,9 @@ const handleEdit = () => {
             {{ showPassword ? '🙈' : '👁️' }}
           </button>
           <button
-            class="copy-btn"
-            :class="{ feedback: copyFeedback === 'password' }"
-            @click="copyToClipboard(fullAccount.password, 'password')"
+              class="copy-btn"
+              :class="{ feedback: copyFeedback === 'password' }"
+              @click="copyToClipboard(fullAccount.password, 'password')"
           >
             {{ copyFeedback === 'password' ? '✓' : '📋' }}
           </button>
@@ -126,9 +111,9 @@ const handleEdit = () => {
         <div class="field-row">
           <div class="field-value">{{ fullAccount.email }}</div>
           <button
-            class="copy-btn"
-            :class="{ feedback: copyFeedback === 'email' }"
-            @click="copyToClipboard(fullAccount.email, 'email')"
+              class="copy-btn"
+              :class="{ feedback: copyFeedback === 'email' }"
+              @click="copyToClipboard(fullAccount.email, 'email')"
           >
             {{ copyFeedback === 'email' ? '✓' : '📋' }}
           </button>
@@ -140,24 +125,23 @@ const handleEdit = () => {
         <div class="field-row">
           <div class="field-value">{{ fullAccount.phone }}</div>
           <button
-            class="copy-btn"
-            :class="{ feedback: copyFeedback === 'phone' }"
-            @click="copyToClipboard(fullAccount.phone, 'phone')"
+              class="copy-btn"
+              :class="{ feedback: copyFeedback === 'phone' }"
+              @click="copyToClipboard(fullAccount.phone, 'phone')"
           >
             {{ copyFeedback === 'phone' ? '✓' : '📋' }}
           </button>
         </div>
       </div>
 
-      <div class="button-group">
-        <button class="delete-btn" @click="handleDelete">🗑️ Удалить аккаунт</button>
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 .detail-wrapper {
   display: flex;
@@ -203,9 +187,18 @@ const handleEdit = () => {
   scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
 }
 
-.detail-container::-webkit-scrollbar { width: 6px; }
-.detail-container::-webkit-scrollbar-track { background: transparent; }
-.detail-container::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.5); border-radius: 3px; }
+.detail-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.detail-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.detail-container::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.5);
+  border-radius: 3px;
+}
 
 .header-row {
   display: flex;
@@ -302,7 +295,9 @@ label {
   transform: scale(0.95);
 }
 
-.copy-btn.feedback { background: #4CAF50; }
+.copy-btn.feedback {
+  background: #4CAF50;
+}
 
 .button-group {
   display: flex;

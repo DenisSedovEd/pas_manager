@@ -139,8 +139,6 @@ const handleDelete = () => {
           {{ isSaving ? 'Сохранение...' : '💾 Сохранить' }}
         </button>
 
-        <button class="cancel-btn" @click="emit('cancel')">Отмена</button>
-
         <button v-if="editedData.id" class="delete-btn" @click="handleDelete">
           🗑️ Удалить аккаунт
         </button>
