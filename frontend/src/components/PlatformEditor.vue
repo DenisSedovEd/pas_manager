@@ -3,34 +3,30 @@ import { ref, onMounted } from 'vue';
 import { useTelegram } from '../composables/useTelegram';
 import { platformApi } from '../api/platform.js';
 
+const props = defineProps(['platform']);
 const emit = defineEmits(['save']);
 const { tg, initData } = useTelegram();
 
 const showConfirmDialog = ref(false);
 const isLoading = ref(false);
 const nameInput = ref(null);
-const descriptionInput = ref(null);
 
 const formData = ref({
-  name: '',
-  icon: '🌐',
-  description: ''
+  name: props.platform?.name || '',
+  icon: props.platform?.icon || '🌐',
+  description: props.platform?.description || ''
 });
 
+const isEditing = ref(!!props.platform?.id);
+
 onMounted(() => {
-  // Убираем автокоррекцию и автокапитализацию
   if (nameInput.value) {
     nameInput.value.setAttribute('autocorrect', 'off');
     nameInput.value.setAttribute('autocapitalize', 'off');
   }
-  if (descriptionInput.value) {
-    descriptionInput.value.setAttribute('autocorrect', 'off');
-    descriptionInput.value.setAttribute('autocapitalize', 'off');
-  }
 });
 
 const handleNameInput = (e) => {
-  // Позволяем любые символы, включая кириллицу
   formData.value.name = e.target.value;
 };
 
@@ -53,21 +49,44 @@ const confirmSave = async () => {
   isLoading.value = true;
 
   try {
-    const result = await platformApi.create(initData, {
-      name: formData.value.name,
-      icon: formData.value.icon,
-      description: formData.value.description || undefined
-    });
+    let result;
+    if (isEditing.value) {
+      result = await platformApi.update(initData, props.platform.id, {
+        name: formData.value.name,
+        icon: formData.value.icon,
+        description: formData.value.description || undefined
+      });
+    } else {
+      result = await platformApi.create(initData, {
+        name: formData.value.name,
+        icon: formData.value.icon,
+        description: formData.value.description || undefined
+      });
+    }
 
     tg.HapticFeedback.notificationOccurred('success');
-    tg.showAlert("Платформа создана!");
     emit('save', result);
   } catch (error) {
-    console.error('Ошибка при создании платформы:', error);
-    tg.showAlert('Ошибка при создании платформы');
+    console.error('Ошибка при сохранении платформы:', error);
+    tg.showAlert('Ошибка при сохранении платформы');
   } finally {
     isLoading.value = false;
   }
+};
+
+const handleDelete = () => {
+  tg.showConfirm("Удалить платформу и все её аккаунты?", async (ok) => {
+    if (ok) {
+      try {
+        await platformApi.delete(initData, props.platform.id);
+        tg.HapticFeedback.notificationOccurred('success');
+        emit('save', { deleted: true });
+      } catch (error) {
+        console.error('Ошибка при удалении:', error);
+        tg.showAlert('Ошибка при удалении платформы');
+      }
+    }
+  });
 };
 
 const cancelSave = () => {
@@ -130,29 +149,27 @@ const commonIcons = [
       <div class="field">
         <label>Описание (опционально)</label>
         <input
-          ref="descriptionInput"
           type="text"
           placeholder="Добавьте описание"
           maxlength="100"
           :value="formData.description"
           @input="handleDescriptionInput"
-          @compositionstart="true"
-          @compositionend="true"
           inputmode="text"
         />
       </div>
 
       <button class="save-btn" @click="handleSave" :disabled="isLoading">
-        {{ isLoading ? 'Создание...' : 'Создать платформу' }}
+        {{ isLoading ? (isEditing ? 'Сохранение...' : 'Создание...') : (isEditing ? 'Сохранить' : 'Создать платформу') }}
       </button>
+
+      <button v-if="isEditing" class="delete-btn" @click="handleDelete">🗑️ Удалить платформу</button>
     </div>
 
     <!-- Диалог подтверждения -->
     <div v-if="showConfirmDialog" class="confirm-overlay" @click.self="cancelSave">
       <div class="confirm-dialog">
-        <h2>Создать платформу?</h2>
+        <h2>{{ isEditing ? 'Сохранить изменения?' : 'Создать платформу?' }}</h2>
         <p>{{ formData.icon }} {{ formData.name }}</p>
-        <p v-if="formData.description" class="description">{{ formData.description }}</p>
         <div class="confirm-buttons">
           <button class="btn-cancel" @click="cancelSave">Нет</button>
           <button class="btn-confirm" @click="confirmSave">Да</button>
@@ -349,6 +366,23 @@ input::placeholder {
   cursor: not-allowed;
 }
 
+.delete-btn {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-btn:active {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
 .confirm-overlay {
   position: fixed;
   top: 0;
@@ -401,22 +435,15 @@ input::placeholder {
 }
 
 .confirm-dialog p {
-  margin: 0 0 4px 0;
+  margin: 0 0 20px 0;
   font-size: 14px;
   color: var(--tg-theme-text-color);
-}
-
-.confirm-dialog .description {
-  font-size: 12px;
-  color: var(--tg-theme-hint-color);
-  margin-bottom: 20px;
 }
 
 .confirm-buttons {
   display: flex;
   gap: 12px;
   width: 100%;
-  margin-top: 20px;
 }
 
 .btn-cancel, .btn-confirm {

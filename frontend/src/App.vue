@@ -1,9 +1,10 @@
 <script setup>
 import {ref, onMounted} from 'vue';
 import {useTelegram} from './composables/useTelegram';
-import {authApi} from './api/auth';
+import {authApi} from './api/auth.js';
 import PlatformList from './components/PlatformList.vue';
 import AccountList from './components/AccountList.vue';
+import AccountDetail from "./components/AccountDetail.vue";
 import AccountEditor from "./components/AccountEditor.vue";
 import PlatformEditor from "./components/PlatformEditor.vue";
 
@@ -26,7 +27,6 @@ onMounted(async () => {
 
   bio.init(async () => {
     isBioSupported.value = bio.isInited && bio.isBiometricAvailable;
-
     try {
       const status = await authApi.getStatus(initData);
       isUnlocked.value = status.is_unlocked;
@@ -36,14 +36,13 @@ onMounted(async () => {
   });
 
   window.addEventListener('beforeunload', () => {
-    navigator.sendBeacon('/pas-manager/main/auth/logout', initData);
+    navigator.sendBeacon('/pas-manager/v1/main/auth/logout', initData);
   });
 });
 
 const handlePasswordUnlock = async () => {
   if (!password.value) return;
   isAuthLoading.value = true;
-
   try {
     const res = await authApi.unlockWithPassword(initData, password.value);
     if (res.ok) {
@@ -70,7 +69,7 @@ const authenticateWithBio = () => {
 
 const onAccountSelect = (account) => {
   editingAccount.value = account;
-  currentScreen.value = 'account_details';
+  currentScreen.value = 'account_view';
 };
 
 const onPlatformSelect = (platform) => {
@@ -78,36 +77,53 @@ const onPlatformSelect = (platform) => {
   currentScreen.value = 'accounts';
 };
 
+const onEditPlatform = (platform) => {
+  selectedPlatform.value = platform;
+  currentScreen.value = 'edit_platform';
+};
+
 const goBack = () => {
-  if (currentScreen.value === 'account_details') {
+  if (currentScreen.value === 'account_view' || currentScreen.value === 'account_edit') {
     currentScreen.value = 'accounts';
     editingAccount.value = null;
   } else if (currentScreen.value === 'accounts') {
     currentScreen.value = 'platforms';
+    selectedPlatform.value = null;
   } else if (currentScreen.value === 'add_account') {
     currentScreen.value = 'accounts';
   } else if (currentScreen.value === 'add_platform') {
     currentScreen.value = 'platforms';
+  } else if (currentScreen.value === 'edit_platform') {
+    currentScreen.value = 'accounts';
   } else {
     currentScreen.value = 'menu';
   }
 };
 
-const openMyAccounts = () => {
-  currentScreen.value = 'platforms';
-};
+const openMyAccounts = () => currentScreen.value = 'platforms';
+const openAddAccount = () => currentScreen.value = 'add_account';
+const openAddPlatform = () => currentScreen.value = 'add_platform';
 
-const openAddAccount = () => {
-  currentScreen.value = 'add_account';
-};
-
-const openAddPlatform = () => {
-  currentScreen.value = 'add_platform';
+const onAccountDeleted = () => {
+  currentScreen.value = 'accounts';
+  editingAccount.value = null;
 };
 
 const onPlatformCreated = () => {
   currentScreen.value = 'platforms';
+  selectedPlatform.value = null;
 };
+
+const onPlatformSaved = (result) => {
+  if (result.deleted) {
+    currentScreen.value = 'platforms';
+    selectedPlatform.value = null;
+  } else {
+    currentScreen.value = 'accounts';
+  }
+};
+
+const openEditAccount = () => currentScreen.value = 'account_edit';
 </script>
 
 <template>
@@ -116,44 +132,26 @@ const onPlatformCreated = () => {
     <div v-if="!isUnlocked" class="auth-card">
       <div class="logo">🛡️</div>
       <h1>Safe Manager</h1>
-
       <div class="input-group">
-        <input
-            v-model="password"
-            type="password"
-            placeholder="Мастер-пароль"
-            @keyup.enter="handlePasswordUnlock"
-        />
-        <button
-            @click="handlePasswordUnlock"
-            class="primary-btn"
-            :disabled="isAuthLoading"
-        >
+        <input v-model="password" type="password" placeholder="Мастер-пароль" @keyup.enter="handlePasswordUnlock"/>
+        <button @click="handlePasswordUnlock" class="primary-btn" :disabled="isAuthLoading">
           {{ isAuthLoading ? 'Вход...' : 'Войти' }}
         </button>
       </div>
-
       <div v-if="isBioSupported" class="bio-section">
         <div class="divider"><span>или</span></div>
-        <button @click="authenticateWithBio" class="bio-btn">
-          🧬 Использовать FaceID
-        </button>
+        <button @click="authenticateWithBio" class="bio-btn">🧬 Использовать FaceID</button>
       </div>
     </div>
 
     <div v-else class="vault-wrapper">
-
       <div v-if="currentScreen === 'menu'" class="main-menu">
-        <div class="header">
-          <h1>Safe Manager</h1>
-        </div>
-
+        <div class="header"><h1>Safe Manager</h1></div>
         <div class="menu-grid">
           <button @click="openMyAccounts" class="menu-item">
             <span class="menu-icon">📁</span>
             <span class="menu-label">Мои аккаунты</span>
           </button>
-
           <button @click="openAddAccount" class="menu-item">
             <span class="menu-icon">➕</span>
             <span class="menu-label">Добавить аккаунт</span>
@@ -169,40 +167,51 @@ const onPlatformCreated = () => {
             <div class="spacer"></div>
           </div>
         </div>
-        <PlatformList
-          @select-platform="onPlatformSelect"
-          @add-platform="openAddPlatform"
-        />
+        <PlatformList @select-platform="onPlatformSelect" @add-platform="openAddPlatform"/>
       </div>
 
       <div v-else-if="currentScreen === 'accounts'">
         <div class="header">
-          <div class="navigation-row">
+          <div class="navigation-row center-elements">
             <button @click="goBack" class="back-btn">←</button>
-            <h1>{{ selectedPlatform?.name }}</h1>
-            <div class="spacer"></div>
+            <div class="header-platform-info">
+              <span class="header-icon">{{ selectedPlatform?.icon }}</span>
+              <h1>{{ selectedPlatform?.name }}</h1>
+            </div>
+            <button
+                v-if="selectedPlatform?.name !== 'Other'"
+                class="header-edit-btn"
+                @click="onEditPlatform(selectedPlatform)"
+            >
+              ✏️
+            </button>
+            <div v-else class="spacer"></div>
           </div>
         </div>
-        <AccountList
-            :platform-id="selectedPlatform?.id"
-            @select-account="onAccountSelect"
-            @add-account="openAddAccount"
-        />
+        <AccountList :platform-id="selectedPlatform?.id" @select-account="onAccountSelect"
+                     @add-account="openAddAccount"/>
       </div>
 
-      <div v-else-if="currentScreen === 'account_details'">
+      <div v-else-if="currentScreen === 'account_view'">
         <div class="header">
           <div class="navigation-row">
             <button @click="goBack" class="back-btn">←</button>
-            <h1>Редактирование</h1>
+            <h1>Аккаунт</h1>
             <div class="spacer"></div>
           </div>
         </div>
-        <AccountEditor
-            :account="editingAccount"
-            :currentPlatform="selectedPlatform"
-            @save="goBack"
-        />
+        <AccountDetail :account="editingAccount" @edit="openEditAccount" @deleted="onAccountDeleted"/>
+      </div>
+
+      <div v-else-if="currentScreen === 'account_edit'">
+        <div class="header">
+          <div class="navigation-row">
+            <button @click="goBack" class="back-btn">←</button>
+            <h1>Редактировать</h1>
+            <div class="spacer"></div>
+          </div>
+        </div>
+        <AccountEditor :account="editingAccount" :currentPlatform="selectedPlatform" @save="goBack"/>
       </div>
 
       <div v-else-if="currentScreen === 'add_account'">
@@ -213,7 +222,7 @@ const onPlatformCreated = () => {
             <div class="spacer"></div>
           </div>
         </div>
-        <AccountEditor @save="goBack"/>
+        <AccountEditor @save="goBack" :currentPlatform="selectedPlatform"/>
       </div>
 
       <div v-else-if="currentScreen === 'add_platform'">
@@ -227,11 +236,23 @@ const onPlatformCreated = () => {
         <PlatformEditor @save="onPlatformCreated"/>
       </div>
 
+      <div v-else-if="currentScreen === 'edit_platform'">
+        <div class="header">
+          <div class="navigation-row">
+            <button @click="goBack" class="back-btn">←</button>
+            <h1>Редактировать платформу</h1>
+            <div class="spacer"></div>
+          </div>
+        </div>
+        <PlatformEditor :platform="selectedPlatform" @save="onPlatformSaved"/>
+      </div>
+
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Твои базовые стили остаются */
 :global(body) {
   margin: 0;
   padding: 0;
@@ -247,25 +268,11 @@ const onPlatformCreated = () => {
   overflow: hidden;
 }
 
-.container {
-  width: 100%;
+.app-container {
+  height: var(--tg-viewport-height, 100vh);
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-.account-card {
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.account-card:active {
   background: var(--tg-theme-bg-color);
-}
-
-.arrow {
-  color: var(--tg-theme-hint-color);
-  font-size: 20px;
 }
 
 .vault-wrapper {
@@ -291,6 +298,43 @@ const onPlatformCreated = () => {
   gap: 12px;
 }
 
+/* Новые стили для шапки платформы */
+.center-elements {
+  justify-content: space-between;
+}
+
+.header-platform-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.header-icon {
+  font-size: 20px;
+}
+
+.header-edit-btn {
+  background: var(--tg-theme-button-color);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.header-edit-btn:active {
+  opacity: 0.7;
+  transform: scale(0.95);
+}
+
 .back-btn {
   background: none;
   border: none;
@@ -305,22 +349,23 @@ const onPlatformCreated = () => {
 }
 
 .spacer {
-  width: 24px;
+  width: 32px;
   flex-shrink: 0;
 }
 
 .header h1 {
   font-size: 20px;
   margin: 0;
-  flex: 1;
   text-align: center;
 }
 
+/* Остальные стили для auth-card и main-menu без изменений */
 .auth-card {
   text-align: center;
   width: 100%;
   max-width: 320px;
   margin-top: 40px;
+  align-self: center;
 }
 
 .logo {
@@ -353,6 +398,11 @@ input {
   cursor: pointer;
 }
 
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .divider {
   margin: 20px 0;
   border-bottom: 1px solid var(--tg-theme-hint-color);
@@ -374,19 +424,12 @@ input {
   border-radius: 10px;
   width: 100%;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.app-container {
-  height: var(--tg-viewport-height, 100vh);
-  display: flex;
-  flex-direction: column;
-  background: var(--tg-theme-bg-color);
-}
-
-.auth-wrapper, .vault-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.bio-btn:active {
+  opacity: 0.7;
 }
 
 .main-menu {
@@ -434,11 +477,5 @@ input {
   font-weight: 600;
   font-size: 14px;
   text-align: center;
-}
-
-.placeholder-screen {
-  padding: 40px;
-  text-align: center;
-  color: var(--tg-theme-hint-color);
 }
 </style>

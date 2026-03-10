@@ -14,8 +14,11 @@ async_engine: AsyncEngine = create_async_engine(
     settings.db.url,
     echo=settings.db.echo,
     future=settings.db.future,
-    poolclass=StaticPool,  # ← ВАЖНО для SQLite async
-    connect_args={"timeout": 30},
+    poolclass=StaticPool,
+    connect_args={
+        "timeout": 30,
+        "check_same_thread": False,
+    },
 )
 
 async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
@@ -31,7 +34,24 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db():
-    """Инициализировать БД"""
+    """Инициализировать БД и создать дефолтные данные"""
     async with async_engine.begin() as conn:
         from src.models.base import Base
         await conn.run_sync(Base.metadata.create_all)
+
+    # Создаём дефолтную платформу
+    async with async_session() as session:
+        from src.models.platform import Platform
+
+        # Проверяем есть ли уже платформа "Other"
+        from sqlalchemy import select
+        result = await session.execute(
+            select(Platform).where(Platform.platform_name == "Other")
+        )
+        if not result.scalar():
+            other_platform = Platform(
+                platform_name="Other",
+                description="📌"
+            )
+            session.add(other_platform)
+            await session.commit()

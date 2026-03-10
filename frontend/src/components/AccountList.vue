@@ -1,21 +1,23 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useTelegram } from '../composables/useTelegram';
+import {ref, onMounted} from 'vue';
+import {useTelegram} from '../composables/useTelegram';
+import {accountApi} from '../api/account.js';
 
 const props = defineProps(['platformId']);
 const emit = defineEmits(['select-account', 'add-account']);
-const { initData } = useTelegram();
+const {tg, initData} = useTelegram();
 const accounts = ref([]);
 const isLoading = ref(true);
+const error = ref(null);
 
 onMounted(async () => {
   try {
-    const res = await fetch(`/pas-manager/v1/account/list/${props.platformId}`, {
-      headers: { 'Authorization': initData }
-    });
-    accounts.value = await res.json();
+    // Получаем только аккаунты, инфа о платформе уже в App.vue
+    accounts.value = await accountApi.getList(initData, props.platformId);
   } catch (e) {
-    console.error("Ошибка загрузки аккаунтов:", e);
+    console.error("Ошибка загрузки:", e);
+    error.value = "Не удалось загрузить";
+    tg.showAlert("Ошибка загрузки");
   } finally {
     isLoading.value = false;
   }
@@ -23,21 +25,28 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="account-list-container">
+  <div class="accounts-container">
     <div v-if="isLoading" class="loader">Загрузка аккаунтов...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
-      <div class="account-grid">
+      <div v-if="accounts.length === 0" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">Нет аккаунтов</div>
+      </div>
+
+      <div v-else class="accounts-list">
         <div
-          v-for="acc in accounts"
-          :key="acc.id"
-          class="account-card"
-          @click="emit('select-account', acc)"
+            v-for="account in accounts"
+            :key="account.id"
+            class="account-card"
+            @click="emit('select-account', account)"
         >
           <div class="account-content">
-            <div class="label">{{ acc.label }}</div>
-            <div class="login">{{ acc.login }}</div>
+            <div class="login">{{ account.login }}</div>
+            <div class="label">{{ account.label }}</div>
           </div>
+          <div class="arrow">→</div>
         </div>
       </div>
 
@@ -51,7 +60,7 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-.account-list-container {
+.accounts-container {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 60px);
@@ -68,52 +77,92 @@ onMounted(async () => {
   color: var(--tg-theme-hint-color);
 }
 
-.account-grid {
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #ff6b6b;
+  text-align: center;
+  padding: 20px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 12px;
+  color: var(--tg-theme-hint-color);
+}
+
+.empty-icon {
+  font-size: 48px;
+}
+
+.empty-text {
+  font-size: 14px;
+}
+
+.accounts-list {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 16px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   width: 100%;
-  align-content: start;
 }
 
 .account-card {
   background: var(--tg-theme-secondary-bg-color);
   border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   cursor: pointer;
   border: 1px solid rgba(0, 0, 0, 0.05);
   transition: transform 0.1s ease;
 }
 
 .account-card:active {
-  transform: scale(0.95);
+  transform: scale(0.98);
 }
 
 .account-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 12px;
-  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.login {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--tg-theme-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .label {
   font-size: 11px;
   color: var(--tg-theme-hint-color);
-  font-weight: 500;
-}
-
-.login {
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--tg-theme-text-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.arrow {
+  color: var(--tg-theme-hint-color);
+  font-size: 16px;
+  margin-left: 8px;
+  flex-shrink: 0;
 }
 
 .add-btn {
@@ -121,10 +170,9 @@ onMounted(async () => {
   background: var(--tg-theme-secondary-bg-color);
   border: 2px dashed var(--tg-theme-hint-color);
   color: var(--tg-theme-hint-color);
-  padding: 16px;
-  border-radius: 16px;
+  padding: 12px;
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 14px;
   cursor: pointer;
   margin: 16px;
   width: calc(100% - 32px);

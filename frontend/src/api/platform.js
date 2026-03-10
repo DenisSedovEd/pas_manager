@@ -9,6 +9,14 @@ export const platformApi = {
     return response.json();
   },
 
+  async getDetail(initData, platformId) {
+    const response = await fetch(`${BASE_URL}/platform/${platformId}`, {
+      headers: { 'Authorization': initData }
+    });
+    if (!response.ok) throw new Error('Failed to fetch platform');
+    return response.json();
+  },
+
   async create(initData, platform) {
     const response = await fetch(`${BASE_URL}/platform`, {
       method: 'POST',
@@ -16,13 +24,31 @@ export const platformApi = {
         'Authorization': initData,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        name: platform.name,
-        icon: platform.icon,
-        description: platform.description || null
-      })
+      body: JSON.stringify(platform)
     });
     if (!response.ok) throw new Error('Failed to create platform');
+    return response.json();
+  },
+
+  async update(initData, platformId, platform) {
+    const response = await fetch(`${BASE_URL}/platform/${platformId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': initData,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(platform)
+    });
+    if (!response.ok) throw new Error('Failed to update platform');
+    return response.json();
+  },
+
+  async delete(initData, platformId, transfer = true) {
+    const response = await fetch(`${BASE_URL}/platform/${platformId}?transfer=${transfer}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': initData }
+    });
+    if (!response.ok) throw new Error('Failed to delete platform');
     return response.json();
   }
 };

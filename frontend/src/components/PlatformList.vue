@@ -100,6 +100,7 @@ onMounted(async () => {
   cursor: pointer;
   border: 1px solid rgba(0, 0, 0, 0.05);
   transition: transform 0.1s ease;
+  overflow: hidden;
 }
 
 .platform-card:active {

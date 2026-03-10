@@ -1,4 +1,3 @@
-import uuid
 from sqlalchemy import Integer, String, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,8 +13,8 @@ class Account(Base):
         primary_key=True,
         autoincrement=True,
     )
-    platform_id: Mapped[str] = mapped_column(  # ← Строка для SQLite
-        Text,  # ← SQLite хранит как TEXT
+    platform_id: Mapped[str] = mapped_column(
+        Text,
         ForeignKey("platforms.id"),
         nullable=False,
     )
@@ -39,8 +38,6 @@ class Account(Base):
         String,
         nullable=True,
     )
-
-    # Encryption fields
     encrypted_data: Mapped[str] = mapped_column(
         String,
         nullable=False,
