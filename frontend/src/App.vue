@@ -5,6 +5,7 @@ import {authApi} from './api/auth';
 import PlatformList from './components/PlatformList.vue';
 import AccountList from './components/AccountList.vue';
 import AccountEditor from "./components/AccountEditor.vue";
+import PlatformEditor from "./components/PlatformEditor.vue";
 
 const {tg, bio, initApp, initData} = useTelegram();
 
@@ -23,7 +24,6 @@ onMounted(async () => {
   if (tg.setBackgroundColor) tg.setBackgroundColor('bg_color');
   tg.expand();
 
-  // 1. Инициализация биометрии
   bio.init(async () => {
     isBioSupported.value = bio.isInited && bio.isBiometricAvailable;
 
@@ -35,8 +35,6 @@ onMounted(async () => {
     }
   });
 
-  // 2. ГАРАНТИРОВАННЫЙ ВЫХОД: вызываем логаут при закрытии Mini App
-  // Это сработает, когда пользователь нажмет (X) в Telegram
   window.addEventListener('beforeunload', () => {
     navigator.sendBeacon('/pas-manager/main/auth/logout', initData);
   });
@@ -80,12 +78,15 @@ const onPlatformSelect = (platform) => {
   currentScreen.value = 'accounts';
 };
 
-// Функция для возврата назад
 const goBack = () => {
   if (currentScreen.value === 'account_details') {
     currentScreen.value = 'accounts';
     editingAccount.value = null;
   } else if (currentScreen.value === 'accounts') {
+    currentScreen.value = 'platforms';
+  } else if (currentScreen.value === 'add_account') {
+    currentScreen.value = 'accounts';
+  } else if (currentScreen.value === 'add_platform') {
     currentScreen.value = 'platforms';
   } else {
     currentScreen.value = 'menu';
@@ -100,6 +101,13 @@ const openAddAccount = () => {
   currentScreen.value = 'add_account';
 };
 
+const openAddPlatform = () => {
+  currentScreen.value = 'add_platform';
+};
+
+const onPlatformCreated = () => {
+  currentScreen.value = 'platforms';
+};
 </script>
 
 <template>
@@ -158,9 +166,13 @@ const openAddAccount = () => {
           <div class="navigation-row">
             <button @click="goBack" class="back-btn">←</button>
             <h1>Платформы</h1>
+            <div class="spacer"></div>
           </div>
         </div>
-        <PlatformList @select-platform="onPlatformSelect"/>
+        <PlatformList
+          @select-platform="onPlatformSelect"
+          @add-platform="openAddPlatform"
+        />
       </div>
 
       <div v-else-if="currentScreen === 'accounts'">
@@ -168,11 +180,13 @@ const openAddAccount = () => {
           <div class="navigation-row">
             <button @click="goBack" class="back-btn">←</button>
             <h1>{{ selectedPlatform?.name }}</h1>
+            <div class="spacer"></div>
           </div>
         </div>
         <AccountList
             :platform-id="selectedPlatform?.id"
             @select-account="onAccountSelect"
+            @add-account="openAddAccount"
         />
       </div>
 
@@ -181,6 +195,7 @@ const openAddAccount = () => {
           <div class="navigation-row">
             <button @click="goBack" class="back-btn">←</button>
             <h1>Редактирование</h1>
+            <div class="spacer"></div>
           </div>
         </div>
         <AccountEditor
@@ -195,9 +210,21 @@ const openAddAccount = () => {
           <div class="navigation-row">
             <button @click="goBack" class="back-btn">←</button>
             <h1>Новый аккаунт</h1>
+            <div class="spacer"></div>
           </div>
         </div>
         <AccountEditor @save="goBack"/>
+      </div>
+
+      <div v-else-if="currentScreen === 'add_platform'">
+        <div class="header">
+          <div class="navigation-row">
+            <button @click="goBack" class="back-btn">←</button>
+            <h1>Новая платформа</h1>
+            <div class="spacer"></div>
+          </div>
+        </div>
+        <PlatformEditor @save="onPlatformCreated"/>
       </div>
 
     </div>
@@ -214,10 +241,10 @@ const openAddAccount = () => {
 :global(html), :global(body) {
   margin: 0;
   padding: 0;
-  background-color: var(--tg-theme-bg-color); /* Принудительно системный цвет */
+  background-color: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);
   height: 100%;
-  overflow: hidden; /* Основное окно не скроллим */
+  overflow: hidden;
 }
 
 .container {
@@ -241,7 +268,6 @@ const openAddAccount = () => {
   font-size: 20px;
 }
 
-/* Стили для навигации внутри сейфа */
 .vault-wrapper {
   display: flex;
   flex-direction: column;
@@ -273,18 +299,23 @@ const openAddAccount = () => {
   cursor: pointer;
   padding: 0;
   line-height: 1;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
 }
 
-.header {
-  padding: 16px;
-  position: sticky;
-  top: 0;
-  background: var(--tg-theme-bg-color);
-  z-index: 10;
+.spacer {
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.header h1 {
+  font-size: 20px;
+  margin: 0;
+  flex: 1;
   text-align: center;
 }
 
-/* Стили для аккуратного гибридного входа */
 .auth-card {
   text-align: center;
   width: 100%;
@@ -346,38 +377,16 @@ input {
 }
 
 .app-container {
-  /* Используем переменную вьюпорта Telegram для мобилок */
   height: var(--tg-viewport-height, 100vh);
   display: flex;
   flex-direction: column;
   background: var(--tg-theme-bg-color);
 }
 
-.vault-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Скроллиться будут только внутренние компоненты */
-}
-
-
 .auth-wrapper, .vault-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-}
-
-.header {
-  padding: 20px 16px 10px;
-  background: var(--tg-theme-bg-color);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.header h1 {
-  font-size: 24px;
-  margin: 0;
 }
 
 .main-menu {
@@ -395,7 +404,7 @@ input {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   width: 100%;
-  max-width: 500px; /* Чтобы на широких экранах кнопки не расползались слишком сильно */
+  max-width: 500px;
 }
 
 .menu-item {

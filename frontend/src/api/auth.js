@@ -1,33 +1,42 @@
-const BASE_URL = '/pas-manager/main';
+const BASE_URL = '/pas-manager/v1';
 
 export const authApi = {
   async getStatus(initData) {
-    const res = await fetch(`${BASE_URL}/auth/status`, {
+    const response = await fetch(`${BASE_URL}/main/auth/status`, {
       headers: { 'Authorization': initData }
     });
-    return res.json();
+    return response.json();
   },
 
-  async unlockWithPassword(initData, password) {
-    return fetch(`${BASE_URL}/auth/unlock`, {
+  async unlockWithPassword(initData, masterPassword) {
+    const response = await fetch(`${BASE_URL}/main/auth/unlock`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': initData },
-      body: JSON.stringify({ master_password: password })
+      headers: {
+        'Authorization': initData,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ master_password: masterPassword })
     });
+    return response.json();
   },
 
-  async unlockWithBiometric(initData, token) {
-    return fetch(`${BASE_URL}/auth/unlock-biometric`, {
+  async unlockWithBiometric(initData, bioToken) {
+    const response = await fetch(`${BASE_URL}/main/auth/unlock-biometric`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': initData },
-      body: JSON.stringify({ bio_token: token })
+      headers: {
+        'Authorization': initData,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ bio_token: bioToken })
     });
+    return response.json();
   },
 
   async logout(initData) {
-    return fetch(`${BASE_URL}/auth/logout`, {
+    const response = await fetch(`${BASE_URL}/main/auth/logout`, {
       method: 'POST',
       headers: { 'Authorization': initData }
     });
+    return response.json();
   }
 };

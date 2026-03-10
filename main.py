@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
@@ -16,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from src.core.config import settings
+from src.core.db import init_db
 from src.tg_bot.handlers.add_account import add_account_conv
 from src.tg_bot.handlers.base import BaseHandler
 from src.tg_bot.handlers.list_accounts import list_accounts_conv
@@ -28,6 +30,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await init_db()
+    print("✅ Database initialized")
+    yield
+    # Shutdown
+    print("🛑 Shutting down")
+
+
 async def start() -> None:
     uvicorn_config = uvicorn.Config(
         app,
@@ -38,7 +50,7 @@ async def start() -> None:
     await server.serve()
 
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)  # ← Добавь lifespan
 
 app.add_middleware(
     CORSMiddleware,

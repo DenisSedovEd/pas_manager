@@ -1,7 +1,6 @@
-from fastapi import FastAPI, Depends, Header, HTTPException, APIRouter
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from src.schemas.bio import BioUnlockRequest
 from src.core.security import verify_telegram_data
 from src.core.session import session_manager
 
@@ -12,55 +11,66 @@ class UnlockRequest(BaseModel):
     master_password: str
 
 
-# Эндпоинт 1: Проверка статуса (нужно ли вводить пароль?)
+class StatusResponse(BaseModel):
+    user_id: int
+    is_unlocked: bool
+
+
+class SuccessResponse(BaseModel):
+    status: str
+    ok: bool
+
+
 @router.get("/auth/status")
-async def check_status(authorization: str = Header(...)):
+async def check_status(authorization: str = Header(...)) -> StatusResponse:
+    """Проверка статуса разблокировки"""
     user = verify_telegram_data(authorization)
     is_unlocked = session_manager.is_active(user["id"])
 
-    return {"user_id": user["id"], "is_unlocked": is_unlocked}
+    return StatusResponse(
+        user_id=user["id"],
+        is_unlocked=is_unlocked
+    )
 
 
-# Эндпоинт 2: Разблокировка (Мастер-пароль или эмуляция FaceID)
 @router.post("/auth/unlock")
-async def unlock(payload: UnlockRequest, authorization: str = Header(...)):
+async def unlock(
+    payload: UnlockRequest,
+    authorization: str = Header(...),
+) -> SuccessResponse:
+    """Разблокировка с мастер-паролем"""
     user = verify_telegram_data(authorization)
 
-    # Тут будет твоя проверка Argon2 из БД. Пока сделаем хардкод:
+    # TODO: Проверить пароль из БД через Argon2
+    # Пока хардкод:
     if payload.master_password == "1234":
-        session_manager.create_session(user["id"])
-        return {"status": "success"}
+        session_manager.create_session(user["id"], payload.master_password)
+        return SuccessResponse(status="success", ok=True)
 
     raise HTTPException(status_code=403, detail="Wrong password")
 
 
-# Эндпоинт 3: Тот самый "Секретный" функционал
-# @router.get("/data/hello")
-# async def get_secret_message(authorization: str = Header(...)):
-#     user = verify_telegram_data(authorization)
-#
-#     if not session_manager.is_active(user["id"]):
-#         raise HTTPException(status_code=401, detail="Locker is closed")
-#
-#     return {"message": "Привет, у тебя получилось!"}
-
-
 @router.post("/auth/unlock-biometric")
-async def unlock_bio(payload: BioUnlockRequest, authorization: str = Header(None)):
+async def unlock_bio(
+    bio_token: str = Header(...),
+    authorization: str = Header(...),
+) -> SuccessResponse:
+    """Разблокировка с биометрией"""
     user = verify_telegram_data(authorization)
 
-    # В реальной базе мы бы проверили, привязан ли этот bio_token к user_id
-    # Для теста просто разрешаем:
-    if payload.bio_token:
-        session_manager.create_session(user["id"])
-        return {"status": "success"}
+    # TODO: Проверить bio_token в БД и получить мастер-пароль
+    if bio_token:
+        # Получаем мастер-пароль из БД по bio_token
+        master_password = "1234"  # Заглушка
+        session_manager.create_session(user["id"], master_password)
+        return SuccessResponse(status="success", ok=True)
 
     raise HTTPException(status_code=403, detail="Invalid token")
 
 
 @router.post("/auth/logout")
-async def logout(authorization: str = Header(...)):
+async def logout(authorization: str = Header(...)) -> dict:
+    """Логаут и закрытие сейфа"""
     user = verify_telegram_data(authorization)
-    # Используем официальный метод вместо обращения к приватным полям
     session_manager.close_session(user["id"])
     return {"status": "locked"}

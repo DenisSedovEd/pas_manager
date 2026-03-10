@@ -1,150 +1,173 @@
 import uuid
-
-from src.schemas.account import AccountRequestSchema, AccountResponseSchema
+from src.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema, AccountResponseSchema
 from src.models.account import Account
 from src.repositories import DatabaseRepository
 from src.repositories.encryption_repository import EncryptionRepository
+from src.schemas.crypto import InvalidTag
 
 
 class AccountService:
     def __init__(
-        self,
-        db_repo: DatabaseRepository,
-        encrypt_repo: EncryptionRepository,
+            self,
+            db_repo: DatabaseRepository,
+            encrypt_repo: EncryptionRepository,
     ):
         self.db_repo = db_repo
         self.encrypt_repo = encrypt_repo
 
-    async def create_account(
-        self,
-        account: AccountRequestSchema,
-        master_password: str,
-        platform_id: uuid.UUID,
-    ) -> Account:
-        new_account_creds = f"{account.user_name}|{account.password}"
+    async def get_accounts_by_platform(self, platform_id: str) -> list[AccountListItemSchema]:
+        """Получить все аккаунты платформы (без расшифровки паролей)"""
+        accounts = await self.db_repo.get_list(
+            Account, filters=Account.platform_id == platform_id
+        )
 
+        result = []
+        for account in accounts:
+            item = AccountListItemSchema(
+                id=account.id,
+                label=account.tags or account.user_name,
+                login=account.user_name,
+                platform_id=account.platform_id,
+            )
+            result.append(item)
+
+        return result
+
+    async def get_account_decrypted(
+            self,
+            account_id: int,
+            master_password: str
+    ) -> AccountDetailSchema:
+        """Получить расшифрованные данные аккаунта"""
+        account = await self.db_repo.get(Account, filters={"id": account_id})
+
+        if not account:
+            raise ValueError(f"Account with id {account_id} not found")
+
+        try:
+            decrypted_password = self.encrypt_repo.decrypt_data(
+                account.encrypted_data,
+                account.salt,
+                account.nonce,
+                master_password,
+            )
+        except InvalidTag:
+            raise ValueError("Invalid master password")
+        except Exception as e:
+            raise ValueError(f"Decryption error: {str(e)}")
+
+        return AccountDetailSchema(
+            id=account.id,
+            login=account.user_name,
+            password=decrypted_password,
+            email=account.email or "",
+            phone=account.phone or "",
+            label=account.tags or account.user_name,
+            platform_id=account.platform_id,
+        )
+
+    async def create_account(
+            self,
+            account: AccountRequestSchema,
+            master_password: str,
+    ) -> AccountResponseSchema:
+        """Создать новый аккаунт"""
+        # Шифруем пароль
         enc_data = self.encrypt_repo.encrypt_data(
-            new_account_creds,
+            account.password,
             master_password,
         )
 
         new_account = Account(
-            user_name=account.user_name,
-            platform_id=platform_id,
+            user_name=account.login,
+            email=account.email or None,
+            phone=account.phone or None,
+            tags=account.label or account.login,
+            platform_id=account.platform_id,  # ← Строка
             encrypted_data=enc_data["encrypted_data"],
             salt=enc_data["salt"],
             nonce=enc_data["nonce"],
             tag=enc_data["tag"],
         )
+
         await self.db_repo.add(new_account)
 
-        return new_account
-
-    async def get_account(
-        self,
-        service_name: str,
-        master_password: str,
-    ) -> AccountResponseSchema:
-        search_account = await self.db_repo.get(
-            Account,
-            filters={"service_name": service_name},
+        detail = AccountDetailSchema(
+            id=new_account.id,
+            login=new_account.user_name,
+            password=account.password,
+            email=new_account.email or "",
+            phone=new_account.phone or "",
+            label=new_account.tags or new_account.user_name,
+            platform_id=new_account.platform_id,
         )
-        if not search_account:
-            raise ValueError(f"Сервис {service_name} не найден.")
-
-        try:
-            decrypted_payload = self.encrypt_repo.decrypt_data(
-                search_account.encrypted_data,
-                search_account.salt,
-                search_account.nonce,
-                master_password,
-            )
-        except InvalidTag as e:
-            raise ValueError(f"Неверный мастер пароль: {e}")
-        except Exception as e:
-            raise ValueError(
-                f"Критическая ошибка дешифрования: {type(e).__name__} - {e}"
-            )
-
-        if "|" not in decrypted_payload:
-            raise ValueError("Ошибка формата данных при дешифровании.")
-
-        user_name, password = decrypted_payload.split("|", 1)
 
         return AccountResponseSchema(
-            service_name=search_account.service_name,
-            username=user_name,
-            password=password,
+            status="success",
+            message="Account created successfully",
+            data=detail
         )
 
-    async def get_accounts(self) -> list[AccountResponseSchema]:
-        accounts_list = await self.db_repo.get_list(Account)
-        res = []
-        for account in accounts_list:
-            res.append(
-                AccountResponseSchema(
-                    service_name=account.service_name,
-                    username=account.user_name,
-                    password="",
-                )
-            )
-        return res
-
-    async def edit_account(
-        self,
-        service_name: str,
-        master_password: str,
-        new_username: str | None = None,
-        new_password: str | None = None,
+    async def update_account(
+            self,
+            account_id: int,
+            account: AccountRequestSchema,
+            master_password: str,
     ) -> AccountResponseSchema:
-        current_account = await self.get_account(service_name, master_password)
+        """Обновить аккаунт"""
+        existing = await self.db_repo.get(Account, filters={"id": account_id})
 
-        final_username = (
-            new_username
-            if new_username and new_username != "-"
-            else current_account.username
-        )
-        final_password = (
-            new_password
-            if new_password and new_password != "-"
-            else current_account.password
+        if not existing:
+            raise ValueError(f"Account with id {account_id} not found")
+
+        # Шифруем новый пароль
+        enc_data = self.encrypt_repo.encrypt_data(
+            account.password,
+            master_password,
         )
 
-        new_creds = f"{final_username}|{final_password}"
-        enc_data = self.encrypt_repo.encrypt_data(new_creds, master_password)
-
-        search_account = await self.db_repo.get(
-            Account, filters={"service_name": service_name}
-        )
         await self.db_repo.update(
             Account,
-            filters={"id": search_account.id},
+            filters={"id": account_id},
             values={
-                "user_name": final_username,
+                "user_name": account.login,
+                "email": account.email or None,
+                "phone": account.phone or None,
+                "tags": account.label or account.login,
                 "encrypted_data": enc_data["encrypted_data"],
                 "salt": enc_data["salt"],
                 "nonce": enc_data["nonce"],
                 "tag": enc_data["tag"],
-            },
+            }
+        )
+
+        detail = AccountDetailSchema(
+            id=account_id,
+            login=account.login,
+            password=account.password,
+            email=account.email or "",
+            phone=account.phone or "",
+            label=account.label or account.login,
+            platform_id=account.platform_id,
         )
 
         return AccountResponseSchema(
-            service_name=service_name,
-            username=final_username,
-            password=final_password,
+            status="success",
+            message="Account updated successfully",
+            data=detail
         )
 
-    async def delete_account(
-        self,
-        service_name: str,
-        master_password: str,
-    ) -> bool:
-        await self.get_account(service_name, master_password)
+    async def delete_account(self, account_id: int) -> AccountResponseSchema:
+        """Удалить аккаунт"""
+        account = await self.db_repo.get(Account, filters={"id": account_id})
 
-        search_account = await self.db_repo.get(
-            Account, filters={"service_name": service_name}
+        if not account:
+            raise ValueError(f"Account with id {account_id} not found")
+
+        await self.db_repo.delete(account)
+
+        return AccountResponseSchema(
+            status="success",
+            message="Account deleted successfully",
+            data=None
         )
-        if not search_account:
-            raise ValueError
-        await self.db_repo.delete(search_account)
-        return True

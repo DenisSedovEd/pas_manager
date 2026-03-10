@@ -7,6 +7,7 @@ from src.core.db import async_session, get_session
 from src.repositories import encryption_repository, DatabaseRepository
 from src.repositories.encryption_repository import EncryptionRepository
 from src.services.account_service import AccountService
+from src.services.platform_service import PlatformService
 
 
 def get_account_service(
@@ -15,6 +16,13 @@ def get_account_service(
     db_repo = DatabaseRepository(session)
     encrypt_repo = EncryptionRepository()
     return AccountService(db_repo, encrypt_repo)
+
+
+def get_platform_service(
+    session: AsyncSession = Depends(get_session),
+) -> PlatformService:
+    db_repo = DatabaseRepository(session)
+    return PlatformService(db_repo)
 
 
 # @asynccontextmanager

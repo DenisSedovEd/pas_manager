@@ -1,17 +1,21 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useTelegram } from '../composables/useTelegram';
-import { vaultApi } from '../api/vault';
+import { platformApi } from '../api/platform.js';
 
-const { initData } = useTelegram();
+const emit = defineEmits(['select-platform', 'add-platform']);
+const { tg, initData } = useTelegram();
 const platforms = ref([]);
 const isLoading = ref(true);
+const error = ref(null);
 
 onMounted(async () => {
   try {
-    platforms.value = await vaultApi.getPlatforms(initData);
+    platforms.value = await platformApi.getList(initData);
   } catch (e) {
-    console.error(e);
+    console.error("Ошибка загрузки платформ:", e);
+    error.value = "Не удалось загрузить платформы";
+    tg.showAlert("Ошибка загрузки платформ");
   } finally {
     isLoading.value = false;
   }
@@ -20,6 +24,7 @@ onMounted(async () => {
 <template>
   <div class="platforms-container">
     <div v-if="isLoading" class="loader">Загрузка платформ...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
       <div class="platform-grid">
@@ -27,7 +32,7 @@ onMounted(async () => {
           v-for="platform in platforms"
           :key="platform.id"
           class="platform-card"
-          @click="$emit('select-platform', platform)"
+          @click="emit('select-platform', platform)"
         >
           <div class="platform-content">
             <div class="icon-box">{{ platform.icon }}</div>
@@ -35,19 +40,18 @@ onMounted(async () => {
               <div class="name">{{ platform.name }}</div>
               <div class="count">{{ platform.accounts_count }} аккаунтов</div>
             </div>
-            <div class="arrow">›</div>
           </div>
         </div>
       </div>
 
-      <button class="add-btn">+ Добавить платформу</button>
+      <button class="add-btn" @click="emit('add-platform')">+ Добавить платформу</button>
     </template>
   </div>
 </template>
 
 <style scoped>
 * {
-  box-sizing: border-box; /* Важно для точного расчета ширины */
+  box-sizing: border-box;
 }
 
 .platforms-container {
@@ -67,38 +71,53 @@ onMounted(async () => {
   color: var(--tg-theme-hint-color);
 }
 
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #ff6b6b;
+  text-align: center;
+  padding: 20px;
+}
+
 .platform-grid {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden; /* Убираем горизонтальный скролл */
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  width: 100%; /* Убедимся, что берет всю ширину */
+  width: 100%;
+  align-content: start;
 }
 
 .platform-card {
-  width: 100%;
   background: var(--tg-theme-secondary-bg-color);
   border-radius: 16px;
   cursor: pointer;
   border: 1px solid rgba(0, 0, 0, 0.05);
-  flex-shrink: 0;
-  min-width: 0; /* Важно для предотвращения переполнения */
+  transition: transform 0.1s ease;
+}
+
+.platform-card:active {
+  transform: scale(0.95);
 }
 
 .platform-content {
   display: flex;
+  flex-direction: column;
   align-items: center;
   padding: 16px;
-  gap: 16px;
-  min-width: 0; /* Предотвращает переполнение */
+  gap: 12px;
+  text-align: center;
+  min-width: 0;
 }
 
 .icon-box {
-  font-size: 24px;
+  font-size: 32px;
   width: 48px;
   height: 48px;
   display: flex;
@@ -106,18 +125,19 @@ onMounted(async () => {
   justify-content: center;
   background: var(--tg-theme-bg-color);
   border-radius: 12px;
-  flex-shrink: 0;
 }
 
 .info {
-  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
   min-width: 0;
-  overflow: hidden; /* Обрезаем переполняющийся контент */
 }
 
 .name {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--tg-theme-text-color);
   white-space: nowrap;
   overflow: hidden;
@@ -125,18 +145,11 @@ onMounted(async () => {
 }
 
 .count {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--tg-theme-hint-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.arrow {
-  color: var(--tg-theme-hint-color);
-  font-size: 20px;
-  font-weight: bold;
-  flex-shrink: 0;
 }
 
 .add-btn {

@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator
+from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import StaticPool
 
 from src.core.config import settings
 
@@ -13,7 +14,8 @@ async_engine: AsyncEngine = create_async_engine(
     settings.db.url,
     echo=settings.db.echo,
     future=settings.db.future,
-    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,  # ← ВАЖНО для SQLite async
+    connect_args={"timeout": 30},
 )
 
 async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
@@ -26,3 +28,10 @@ async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
+
+
+async def init_db():
+    """Инициализировать БД"""
+    async with async_engine.begin() as conn:
+        from src.models.base import Base
+        await conn.run_sync(Base.metadata.create_all)

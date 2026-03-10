@@ -1,4 +1,4 @@
-const BASE_URL = '/pas-manager/platform';
+const BASE_URL = '/pas-manager';
 
 export const vaultApi = {
   async getPlatforms(initData) {
