@@ -5,7 +5,7 @@ import {platformApi} from '../api/platform.js';
 import {accountApi} from '../api/account.js';
 
 const props = defineProps(['account', 'currentPlatform']);
-const emit = defineEmits(['save', 'cancel']);
+const emit = defineEmits(['save', 'cancel', 'deleted']); // Добавили событие deleted
 const {tg, initData} = useTelegram();
 
 const platforms = ref([]);
@@ -63,6 +63,22 @@ const handleSave = async () => {
   } finally {
     isSaving.value = false;
   }
+};
+
+// Функция удаления
+const handleDelete = () => {
+  tg.showConfirm("Удалить этот аккаунт безвозвратно?", async (ok) => {
+    if (ok) {
+      try {
+        await accountApi.delete(initData, editedData.value.id);
+        tg.HapticFeedback.notificationOccurred('warning');
+        emit('deleted'); // Уведомляем родителя об удалении
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+        tg.showAlert("Не удалось удалить аккаунт");
+      }
+    }
+  });
 };
 </script>
 
@@ -153,6 +169,10 @@ const handleSave = async () => {
           {{ isSaving ? 'Сохранение...' : '💾 Сохранить' }}
         </button>
         <button class="cancel-btn" @click="emit('cancel')">Отмена</button>
+
+        <button v-if="editedData.id" class="delete-btn" @click="handleDelete">
+          🗑️ Удалить аккаунт
+        </button>
       </div>
     </div>
 
@@ -198,7 +218,6 @@ const handleSave = async () => {
   max-height: calc(100% - 20px);
 }
 
-/* Красивый скроллбар */
 .editor-container::-webkit-scrollbar {
   width: 4px;
 }
@@ -252,7 +271,6 @@ label {
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* Стилизация Select */
 .select-input {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -302,6 +320,21 @@ label {
   background: transparent;
   color: var(--tg-theme-hint-color);
   font-size: 14px;
+}
+
+.delete-btn {
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: #ff4f4f; /* Красный цвет для кнопки удаления */
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 5px;
+}
+
+.delete-btn:active {
+  background: rgba(255, 79, 79, 0.1);
 }
 
 .dialog-overlay {
