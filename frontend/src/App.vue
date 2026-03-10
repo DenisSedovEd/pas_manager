@@ -123,7 +123,12 @@ const onPlatformSaved = (result) => {
   }
 };
 
-const openEditAccount = () => currentScreen.value = 'account_edit';
+const openEditAccount = (fullAccountData) => {
+  if (fullAccountData) {
+    editingAccount.value = fullAccountData;
+  }
+  currentScreen.value = 'account_edit';
+};
 </script>
 
 <template>

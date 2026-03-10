@@ -10,12 +10,10 @@ class PlatformService:
         self.db_repo = db_repo
 
     async def get_platforms(self) -> list[PlatformResponseSchema]:
-        """Получить все платформы с количеством аккаунтов"""
         platforms = await self.db_repo.get_list(Platform)
 
         result = []
         for platform in platforms:
-            # Теперь accounts доступен благодаря lazy="selectin"
             accounts_count = len(platform.accounts) if platform.accounts else 0
             response = PlatformResponseSchema(
                 id=platform.id,
@@ -86,7 +84,6 @@ class PlatformService:
 
     async def delete_platform(self, platform_id: str, transfer_accounts: bool = True):
         """Удалить платформу с выбором: перенос или удаление аккаунтов"""
-        # 1. Ищем удаляемую платформу
         platform = await self.db_repo.get(Platform, filters={"id": platform_id})
         if not platform:
             raise ValueError(f"Platform with id {platform_id} not found")
@@ -95,7 +92,6 @@ class PlatformService:
             raise ValueError("Нельзя удалить системную платформу 'Other'")
 
         if transfer_accounts:
-            # 2. Ищем или создаем платформу Other
             other_platform = await self.db_repo.get(Platform, filters={"platform_name": "Other"})
             if not other_platform:
                 other_platform = Platform(
@@ -104,8 +100,6 @@ class PlatformService:
                 )
                 await self.db_repo.add(other_platform)
 
-            # 3. Переносим все аккаунты на 'Other'
-            # Используем модель Account напрямую через репозиторий
             from src.models.account import Account
             await self.db_repo.update(
                 Account,
@@ -113,6 +107,4 @@ class PlatformService:
                 values={"platform_id": str(other_platform.id)}
             )
 
-        # 4. Удаляем саму платформу
-        # Если transfer_accounts=False, сработает cascade="all, delete-orphan" и аккаунты удалятся
         await self.db_repo.delete(platform)

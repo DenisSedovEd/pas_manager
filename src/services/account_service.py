@@ -60,9 +60,9 @@ class AccountService:
             id=account.id,
             login=account.user_name,
             password=decrypted_password,
-            email=account.email or "",
-            phone=account.phone or "",
-            label=account.tags or account.user_name,
+            email=account.email,
+            phone=account.phone,
+            label=account.tags,
             platform_id=account.platform_id,
         )
 

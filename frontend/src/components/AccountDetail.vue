@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useTelegram } from '../composables/useTelegram';
 import { accountApi } from '../api/account.js';
 
@@ -7,7 +7,25 @@ const props = defineProps(['account']);
 const emit = defineEmits(['edit', 'deleted']);
 const { tg, initData } = useTelegram();
 
+// Состояние для полных данных аккаунта и загрузки
+const fullAccount = ref(null);
+const isLoading = ref(true);
 const copyFeedback = ref('');
+const showPassword = ref(true); // По умолчанию пароль открыт, как ты просил
+
+// Загружаем полные данные при открытии компонента
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    // Получаем расшифрованные данные с паролем, email и phone
+    fullAccount.value = await accountApi.getDetail(initData, props.account.id);
+  } catch (error) {
+    console.error("Ошибка загрузки деталей:", error);
+    tg.showAlert("Не удалось загрузить данные аккаунта");
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 const copyToClipboard = (text, fieldName) => {
   if (!text) return;
@@ -51,24 +69,33 @@ const handleDelete = () => {
     }
   });
 };
+
+const handleEdit = () => {
+  // Передаем полные данные обратно, чтобы редактор знал пароль
+  emit('edit', fullAccount.value || props.account);
+};
 </script>
 
 <template>
   <div class="detail-wrapper">
-    <div class="detail-container">
+    <div v-if="isLoading" class="loader-container">
+      <div class="loader-text">Расшифровка данных...</div>
+    </div>
+
+    <div v-else class="detail-container">
       <div class="header-row">
-        <h2>{{ account.label }}</h2>
-        <button class="edit-btn" @click="emit('edit')">✏️</button>
+        <h2>{{ fullAccount.label || props.account.label }}</h2>
+        <button class="edit-btn" @click="handleEdit">✏️</button>
       </div>
 
       <div class="field-group">
         <label>Username</label>
         <div class="field-row">
-          <div class="field-value">{{ account.login }}</div>
+          <div class="field-value">{{ fullAccount.login }}</div>
           <button
             class="copy-btn"
             :class="{ feedback: copyFeedback === 'login' }"
-            @click="copyToClipboard(account.login, 'login')"
+            @click="copyToClipboard(fullAccount.login, 'login')"
           >
             {{ copyFeedback === 'login' ? '✓' : '📋' }}
           </button>
@@ -78,39 +105,44 @@ const handleDelete = () => {
       <div class="field-group">
         <label>Password</label>
         <div class="field-row">
-          <div class="field-value">{{ account.password }}</div>
+          <div class="field-value password-text">
+            {{ showPassword ? fullAccount.password : '••••••••' }}
+          </div>
+          <button class="view-btn" @click="showPassword = !showPassword">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
           <button
             class="copy-btn"
             :class="{ feedback: copyFeedback === 'password' }"
-            @click="copyToClipboard(account.password, 'password')"
+            @click="copyToClipboard(fullAccount.password, 'password')"
           >
             {{ copyFeedback === 'password' ? '✓' : '📋' }}
           </button>
         </div>
       </div>
 
-      <div v-if="account.email" class="field-group">
+      <div v-if="fullAccount.email" class="field-group">
         <label>Email</label>
         <div class="field-row">
-          <div class="field-value">{{ account.email }}</div>
+          <div class="field-value">{{ fullAccount.email }}</div>
           <button
             class="copy-btn"
             :class="{ feedback: copyFeedback === 'email' }"
-            @click="copyToClipboard(account.email, 'email')"
+            @click="copyToClipboard(fullAccount.email, 'email')"
           >
             {{ copyFeedback === 'email' ? '✓' : '📋' }}
           </button>
         </div>
       </div>
 
-      <div v-if="account.phone" class="field-group">
+      <div v-if="fullAccount.phone" class="field-group">
         <label>Phone</label>
         <div class="field-row">
-          <div class="field-value">{{ account.phone }}</div>
+          <div class="field-value">{{ fullAccount.phone }}</div>
           <button
             class="copy-btn"
             :class="{ feedback: copyFeedback === 'phone' }"
-            @click="copyToClipboard(account.phone, 'phone')"
+            @click="copyToClipboard(fullAccount.phone, 'phone')"
           >
             {{ copyFeedback === 'phone' ? '✓' : '📋' }}
           </button>
@@ -138,6 +170,19 @@ const handleDelete = () => {
   position: relative;
 }
 
+.loader-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.loader-text {
+  color: var(--tg-theme-hint-color);
+  font-size: 14px;
+}
+
 .detail-container {
   padding: 16px;
   display: flex;
@@ -158,22 +203,9 @@ const handleDelete = () => {
   scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
 }
 
-.detail-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.detail-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.detail-container::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.5);
-  border-radius: 3px;
-}
-
-.detail-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.7);
-}
+.detail-container::-webkit-scrollbar { width: 6px; }
+.detail-container::-webkit-scrollbar-track { background: transparent; }
+.detail-container::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.5); border-radius: 3px; }
 
 .header-row {
   display: flex;
@@ -202,11 +234,6 @@ h2 {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-}
-
-.edit-btn:active {
-  opacity: 0.7;
-  transform: scale(0.95);
 }
 
 .field-group {
@@ -241,13 +268,16 @@ label {
   -webkit-user-select: text;
 }
 
-.copy-btn {
+.password-text {
+  font-family: monospace;
+  font-size: 15px;
+}
+
+.copy-btn, .view-btn {
   flex: 0 0 44px;
   height: 44px;
   border-radius: 10px;
   border: none;
-  background: var(--tg-theme-button-color);
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -257,14 +287,22 @@ label {
   font-size: 18px;
 }
 
-.copy-btn:active {
+.copy-btn {
+  background: var(--tg-theme-button-color);
+  color: white;
+}
+
+.view-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--tg-theme-text-color);
+}
+
+.copy-btn:active, .view-btn:active {
   opacity: 0.7;
   transform: scale(0.95);
 }
 
-.copy-btn.feedback {
-  background: #4CAF50;
-}
+.copy-btn.feedback { background: #4CAF50; }
 
 .button-group {
   display: flex;
@@ -282,11 +320,5 @@ label {
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.delete-btn:active {
-  opacity: 0.7;
-  transform: scale(0.98);
 }
 </style>
