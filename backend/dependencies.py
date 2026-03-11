@@ -3,11 +3,11 @@ from contextlib import asynccontextmanager
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.db import async_session, get_session
-from src.repositories import encryption_repository, DatabaseRepository
-from src.repositories.encryption_repository import EncryptionRepository
-from src.services.account_service import AccountService
-from src.services.platform_service import PlatformService
+from backend.core.db import async_session, get_session
+from backend.repositories import encryption_repository, DatabaseRepository
+from backend.repositories.encryption_repository import EncryptionRepository
+from backend.services.account_service import AccountService
+from backend.services.platform_service import PlatformService
 
 
 def get_account_service(

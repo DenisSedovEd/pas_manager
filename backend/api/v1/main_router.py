@@ -2,12 +2,12 @@ from cryptography.exceptions import InvalidTag
 from fastapi import APIRouter, Header, HTTPException, Depends
 from pydantic import BaseModel
 
-from src.core.security import verify_telegram_data, MasterPasswordService
-from src.core.session import session_manager
-from src.dependencies import get_db_repo, get_encrypt_repo
-from src.models import AppSettings
-from src.repositories import DatabaseRepository
-from src.repositories.encryption_repository import EncryptionRepository
+from backend.core.security import verify_telegram_data, MasterPasswordService
+from backend.core.session import session_manager
+from backend.dependencies import get_db_repo, get_encrypt_repo
+from backend.models import AppSettings
+from backend.repositories import DatabaseRepository
+from backend.repositories.encryption_repository import EncryptionRepository
 
 router = APIRouter(prefix="/main")
 
@@ -29,7 +29,7 @@ class BiometricRequest(BaseModel):
     bio_token: str
 
 class EnableBiometricRequest(BaseModel):
-    encrypted_master_password: str  # Зашифрованный мастер-пароль
+    encrypted_master_password: str
     bio_enc_data: dict
 
 
@@ -101,7 +101,6 @@ async def unlock_bio(
     """Разблокировка по FaceID: восстанавливаем мастер-пароль из зашифрованного хранилища"""
     user = verify_telegram_data(authorization)
 
-    # Получаем настройки с зашифрованным паролем и метаданными (salt, nonce)
     settings = await db_repo.get(AppSettings, filters={'id': 1})
 
     if not settings or not settings.encrypted_master_password or not settings.bio_enc_data:
@@ -111,7 +110,6 @@ async def unlock_bio(
         )
 
     try:
-        # Используем пришедший bio_token как ключ для расшифровки основного мастер-пароля
         recovered_master_password = encrypt_repo.decrypt_data(
             encrypted_data=settings.encrypted_master_password,
             salt=settings.bio_enc_data["salt"],
@@ -119,12 +117,10 @@ async def unlock_bio(
             master_password=request_data.bio_token
         )
 
-        # Если расшифровка прошла успешно, инициализируем сессию
         session_manager.create_session(user["id"], recovered_master_password)
         return SuccessResponse(status="success", ok=True)
 
     except (InvalidTag, Exception):
-        # Если био-токен неверный (другой палец/лицо или сброс токена на клиенте)
         raise HTTPException(status_code=403, detail="Ошибка биометрической авторизации")
 
 
@@ -138,21 +134,16 @@ async def enable_biometric(
     """Включение биометрии: шифруем текущий мастер-пароль из памяти био-токеном"""
     user = verify_telegram_data(authorization)
 
-    # 1. Проверяем, что пользователь СЕЙЧАС авторизован (ввел пароль руками)
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Unlock with password first")
 
-    # 2. Достаем ваш РЕАЛЬНЫЙ мастер-пароль из оперативной памяти
     current_master = session_manager.get_master_password(user["id"])
 
-    # 3. ШИФРУЕМ его. Ключом для шифрования выступает bio_token
-    # Результат (salt, nonce, ciphertext) сохраняем в базу
     encryption_result = encrypt_repo.encrypt_data(
         data=current_master,
         master_password=payload.bio_token
     )
 
-    # 4. Обновляем AppSettings (id=1)
     await db_repo.update(
         AppSettings,
         filters={'id': 1},

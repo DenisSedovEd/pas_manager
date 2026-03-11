@@ -1,10 +1,10 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import CallbackContext, ContextTypes, ConversationHandler
 
-from src.core.config import settings
-from src.services.message_service import safe_delete, schedule_deletion
-from src.tg_bot.keyboards import get_main_menu
-from src.tg_bot.messages import BotMessages
+from backend.core.config import settings
+from backend.services.message_service import safe_delete, schedule_deletion
+from backend.tg_bot.keyboards import get_main_menu
+from backend.tg_bot.messages import BotMessages
 
 
 class BaseHandler:

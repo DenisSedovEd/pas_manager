@@ -1,8 +1,8 @@
 import uuid
-from src.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema, AccountResponseSchema
-from src.models.account import Account
-from src.repositories import DatabaseRepository
-from src.repositories.encryption_repository import EncryptionRepository
+from backend.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema, AccountResponseSchema
+from backend.models.account import Account
+from backend.repositories import DatabaseRepository
+from backend.repositories.encryption_repository import EncryptionRepository
 from cryptography.exceptions import InvalidTag as CryptoInvalidTag
 # from src.schemas.crypto import InvalidTag
 

@@ -1,10 +1,10 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from src.dependencies import get_account_service
-from src.services.message_service import schedule_deletion, safe_delete
-from src.tg_bot.keyboards import get_generate_pw_keyboard, get_main_menu
-from src.tg_bot.states import ListAccountStates as States
+from backend.dependencies import get_account_service
+from backend.services.message_service import schedule_deletion, safe_delete
+from backend.tg_bot.keyboards import get_generate_pw_keyboard, get_main_menu
+from backend.tg_bot.states import ListAccountStates as States
 
 
 class EditAccountHandler:

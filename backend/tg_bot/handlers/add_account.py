@@ -8,16 +8,16 @@ from telegram.ext import (
     CommandHandler,
 )
 
-from src.dependencies import get_account_service
-from src.schemas.account import AccountResponseSchema
-from src.tg_bot.handlers.base import BaseHandler
-from src.tg_bot.keyboards import get_main_menu, get_generate_pw_keyboard
-from src.tg_bot.states import AddAccountStates as States
-from src.tg_bot.states import ListAccountStates
+from backend.dependencies import get_account_service
+from backend.schemas.account import AccountResponseSchema
+from backend.tg_bot.handlers.base import BaseHandler
+from backend.tg_bot.keyboards import get_main_menu, get_generate_pw_keyboard
+from backend.tg_bot.states import AddAccountStates as States
+from backend.tg_bot.states import ListAccountStates
 
-from src.services.message_service import safe_delete, schedule_deletion
-from src.tg_bot.messages import BotMessages
-from src.utils.password_generator import generate_secure_password, escape_md
+from backend.services.message_service import safe_delete, schedule_deletion
+from backend.tg_bot.messages import BotMessages
+from backend.utils.password_generator import generate_secure_password, escape_md
 
 
 class AddAccountHandler:

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Header, Depends, HTTPException
 
-from src.core.security import verify_telegram_data
-from src.core.session import session_manager
-from src.dependencies import get_platform_service
-from src.schemas.platform import PlatformResponseSchema, PlatformRequestSchema
-from src.services.platform_service import PlatformService
+from backend.core.security import verify_telegram_data
+from backend.core.session import session_manager
+from backend.dependencies import get_platform_service
+from backend.schemas.platform import PlatformResponseSchema, PlatformRequestSchema
+from backend.services.platform_service import PlatformService
 
 router = APIRouter(prefix="/platform")
 

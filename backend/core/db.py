@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import StaticPool
-from src.models.platform import Platform
+from backend.models.platform import Platform
 
 from sqlalchemy import select
-from src.core.config import settings
+from backend.core.config import settings
 
 async_engine: AsyncEngine = create_async_engine(
     settings.db.url,

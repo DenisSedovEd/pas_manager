@@ -54,17 +54,13 @@ const handlePasswordUnlock = async () => {
     if (res.ok) {
       isUnlocked.value = true;
 
-      // Логика регистрации биометрии
       if (isBioSupported.value) {
         const bioSettings = await authApi.getBioSettings(initData);
 
         if (!bioSettings.is_enabled) {
-          // Вызываем стандартное окно Telegram
           bio.authenticate({reason: 'Включить вход по FaceID'}, async (success, token) => {
             if (success) {
               try {
-                // ОТПРАВЛЯЕМ ТОЛЬКО ТОКЕН.
-                // Бэкенд сам возьмет пароль из сессии и зашифрует его этим токеном.
                 await authApi.enableBiometric(initData, {bio_token: token});
 
                 tg.showAlert("Биометрия успешно настроена!");
@@ -86,7 +82,6 @@ const handlePasswordUnlock = async () => {
 const authenticateWithBio = () => {
   bio.authenticate({reason: 'Вход в сейф'}, async (success, token) => {
     if (success) {
-      // Отправляем токен на сервер, чтобы он нашел зашифрованный пароль
       const res = await authApi.unlockWithBiometric(initData, token);
       if (res.ok) {
         isUnlocked.value = true;

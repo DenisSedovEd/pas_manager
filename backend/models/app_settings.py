@@ -1,7 +1,7 @@
 from sqlalchemy import Integer, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.models.base import Base
+from backend.models.base import Base
 
 
 class AppSettings(Base):

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.api.v1.router import router as v1_router
+from backend.api.v1.router import router as v1_router
 
 router = APIRouter(prefix="/pas-manager", tags=["v1"])
 

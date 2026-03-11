@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from src.core.security import verify_telegram_data
-from src.core.session import session_manager
-from src.dependencies import get_account_service
-from src.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema
-from src.services.account_service import AccountService
+from backend.core.security import verify_telegram_data
+from backend.core.session import session_manager
+from backend.dependencies import get_account_service
+from backend.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema
+from backend.services.account_service import AccountService
 
 router = APIRouter(prefix="/account")
 

@@ -16,13 +16,13 @@ from telegram.ext import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from src.core.config import settings
-from src.core.db import init_db
-from src.tg_bot.handlers.add_account import add_account_conv
-from src.tg_bot.handlers.base import BaseHandler
-from src.tg_bot.handlers.list_accounts import list_accounts_conv
-from src.tg_bot.messages import BotMessages
-from src.api.router import router
+from backend.core.config import settings
+from backend.core.db import init_db
+from backend.tg_bot.handlers.add_account import add_account_conv
+from backend.tg_bot.handlers.base import BaseHandler
+from backend.tg_bot.handlers.list_accounts import list_accounts_conv
+from backend.tg_bot.messages import BotMessages
+from backend.api.router import router
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

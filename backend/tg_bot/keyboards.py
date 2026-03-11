@@ -1,6 +1,6 @@
 from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 
-from src.tg_bot.messages import BotMessages
+from backend.tg_bot.messages import BotMessages
 
 
 def get_main_menu():

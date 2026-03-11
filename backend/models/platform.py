@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import Base
+from backend.models.base import Base
 
 if TYPE_CHECKING:
-    from src.models.account import Account
+    from backend.models.account import Account
 
 
 class Platform(Base):

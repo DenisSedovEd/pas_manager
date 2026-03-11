@@ -5,7 +5,7 @@ import json
 
 from argon2 import PasswordHasher
 from fastapi import HTTPException
-from src.core.config import settings
+from backend.core.config import settings
 from passlib.context import CryptContext
 
 

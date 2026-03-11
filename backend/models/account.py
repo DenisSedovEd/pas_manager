@@ -1,8 +1,8 @@
 from sqlalchemy import Integer, String, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.platform import Platform
-from src.models.base import Base
+from backend.models.platform import Platform
+from backend.models.base import Base
 
 
 class Account(Base):

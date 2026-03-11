@@ -1,7 +1,7 @@
-from src.models import Account
-from src.models.platform import Platform
-from src.repositories import DatabaseRepository
-from src.schemas.platform import PlatformResponseSchema, PlatformRequestSchema
+from backend.models import Account
+from backend.models.platform import Platform
+from backend.repositories import DatabaseRepository
+from backend.schemas.platform import PlatformResponseSchema, PlatformRequestSchema
 import uuid
 
 
@@ -103,7 +103,7 @@ class PlatformService:
                 )
                 await self.db_repo.add(other_platform)
 
-            from src.models.account import Account
+            from backend.models.account import Account
             await self.db_repo.update(
                 Account,
                 filters={"platform_id": platform_id},
