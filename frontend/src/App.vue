@@ -71,26 +71,6 @@ onMounted(async () => {
   window.addEventListener('beforeunload', handleLogout);
 });
 
-const executeProtectedAction = async (actionFn) => {
-  try {
-    // 1. Быстрая проверка TTL сессии на бэкенде
-    const status = await authApi.getStatus(initData);
-
-    if (!status.is_unlocked) {
-      isUnlocked.value = false; // Блокируем интерфейс фронтенда
-      tg.showAlert("Время сессии истекло. Пожалуйста, разблокируйте сейф.");
-      return;
-    }
-
-    // 2. Если сессия активна — выполняем действие
-    await actionFn();
-
-  } catch (e) {
-    console.error("Protected action failed:", e);
-    // Если бэкенд вернул 401/403, тоже блокируем
-    isUnlocked.value = false;
-  }
-};
 
 const handlePasswordUnlock = async () => {
   if (!password.value) return;
@@ -189,10 +169,8 @@ const openAddAccount = () => currentScreen.value = 'add_account';
 const openAddPlatform = () => currentScreen.value = 'add_platform';
 
 const onAccountDeleted = () => {
-  executeProtectedAction(() => {
-    currentScreen.value = 'accounts';
-    editingAccount.value = null;
-  });
+  currentScreen.value = 'accounts';
+  editingAccount.value = null;
 };
 
 const onPlatformCreated = () => {
