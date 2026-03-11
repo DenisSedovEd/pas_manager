@@ -49,14 +49,16 @@ class PlatformService:
         new_platform = Platform(
             id=new_id,
             platform_name=platform_data.name,
-            description=platform_data.icon,
+            icon=platform_data.icon,
+            description=platform_data.description,
         )
         await self.db_repo.add(new_platform)
 
         return PlatformResponseSchema(
             id=new_platform.id,
             name=new_platform.platform_name,
-            icon=new_platform.description,
+            icon=new_platform.icon,
+            description=new_platform.description,
             accounts_count=0,
         )
 
