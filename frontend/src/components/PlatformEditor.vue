@@ -19,10 +19,18 @@ const formData = ref({
 
 const isEditing = ref(!!props.platform?.id);
 
+const handleFocus = (e) => {
+  e.target.focus();
+};
+
 onMounted(() => {
   if (nameInput.value) {
     nameInput.value.setAttribute('autocorrect', 'off');
     nameInput.value.setAttribute('autocapitalize', 'off');
+    nameInput.value.addEventListener('paste', (e) => {
+      // Это позволяет событию всплыть и обработаться браузером
+      console.log('Paste event detected');
+    });
   }
 });
 
@@ -122,6 +130,7 @@ const commonIcons = [
           @input="handleNameInput"
           @compositionstart="true"
           @compositionend="true"
+          @click="handleFocus"
           inputmode="text"
         />
       </div>
@@ -262,6 +271,8 @@ input {
   font-family: inherit;
   -webkit-user-select: text;
   user-select: text;
+  z-index: 1;
+  cursor: text;
 }
 
 input:focus {
