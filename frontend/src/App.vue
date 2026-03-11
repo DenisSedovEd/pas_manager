@@ -140,10 +140,8 @@ const authenticateWithBio = () => {
 
 
 const onAccountSelect = (account) => {
-  executeProtectedAction(() => {
-    editingAccount.value = account;
-    currentScreen.value = 'account_view';
-  });
+  editingAccount.value = account;
+  currentScreen.value = 'account_view';
 };
 
 const onPlatformSelect = (platform) => {
@@ -152,24 +150,20 @@ const onPlatformSelect = (platform) => {
 };
 
 const onEditPlatform = (platform) => {
-  executeProtectedAction(() => {
-    selectedPlatform.value = platform;
-    currentScreen.value = 'edit_platform';
-  });
+  selectedPlatform.value = platform;
+  currentScreen.value = 'edit_platform';
 };
 
 const handleAccountSave = (updatedAccount) => {
-  executeProtectedAction(() => {
-    if (selectedPlatform.value && selectedPlatform.value.id !== updatedAccount.platform_id) {
-      selectedPlatform.value = null;
-      currentScreen.value = 'platforms';
-    } else {
-      currentScreen.value = 'accounts';
-    }
+  if (selectedPlatform.value && selectedPlatform.value.id !== updatedAccount.platform_id) {
+    selectedPlatform.value = null;
+    currentScreen.value = 'platforms';
+  } else {
+    currentScreen.value = 'accounts';
+  }
 
-    editingAccount.value = null;
-    tg.HapticFeedback.notificationOccurred('success');
-  });
+  editingAccount.value = null;
+  tg.HapticFeedback.notificationOccurred('success');
 };
 
 const goBack = () => {
@@ -207,23 +201,19 @@ const onPlatformCreated = () => {
 };
 
 const onPlatformSaved = (result) => {
-  executeProtectedAction(() => {
-    if (result.deleted) {
-      currentScreen.value = 'platforms';
-      selectedPlatform.value = null;
-    } else {
-      currentScreen.value = 'accounts';
-    }
-  });
+  if (result.deleted) {
+    currentScreen.value = 'platforms';
+    selectedPlatform.value = null;
+  } else {
+    currentScreen.value = 'accounts';
+  }
 };
 
 const openEditAccount = (fullAccountData) => {
-  executeProtectedAction(() => {
-    if (fullAccountData) {
-      editingAccount.value = fullAccountData;
-    }
-    currentScreen.value = 'account_edit';
-  });
+  if (fullAccountData) {
+    editingAccount.value = fullAccountData;
+  }
+  currentScreen.value = 'account_edit';
 };
 </script>
 
