@@ -1,12 +1,14 @@
 import time
 from typing import Any
 
+from src.core.config import settings
+
 
 class SessionManager:
     def __init__(self):
         # {user_id: expiry_timestamp}
         self._active_sessions: dict[str, dict] = {}
-        self.ttl = 360
+        self.ttl = settings.app.session_ttl
 
     def create_session(self, user_id: int, master_password: str, ttl: int = None):
         """Создаем сессию с мастер-паролем"""

@@ -38,5 +38,24 @@ export const authApi = {
       headers: { 'Authorization': initData }
     });
     return response.json();
+  },
+
+  async getBioSettings(initData) {
+    const response = await fetch(`${BASE_URL}/main/auth/bio-settings`, {
+      headers: { 'Authorization': initData }
+    });
+    return response.json();
+  },
+
+  async enableBiometric(initData, payload) {
+    const response = await fetch(`${BASE_URL}/main/auth/enable-biometric`, {
+      method: 'POST',
+      headers: {
+        'Authorization': initData,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    return response.json();
   }
 };

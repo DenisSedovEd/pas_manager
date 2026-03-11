@@ -50,6 +50,7 @@ class AppSettings(Base):
     salt_size: int = Field(...)
     iterations: int = Field(...)
     delete_timeout_seconds: int = Field(...)
+    session_ttl: int = Field(...)
 
 
 class Settings(Base):

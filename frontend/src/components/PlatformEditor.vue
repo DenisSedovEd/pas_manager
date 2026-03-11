@@ -191,6 +191,7 @@ const commonIcons = [
   width: 100%;
   align-items: center;
   position: relative;
+  padding: 16px;
 }
 
 .editor-container {
@@ -209,8 +210,9 @@ const commonIcons = [
   max-width: 500px;
   margin: 16px;
   max-height: calc(100% - 32px);
-  scrollbar-width: thin;
+  scrollbar-width: none;
   scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
+
 }
 
 .editor-container::-webkit-scrollbar {
@@ -281,7 +283,7 @@ input::placeholder {
   max-height: 220px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
 }
 

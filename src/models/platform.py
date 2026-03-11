@@ -28,10 +28,15 @@ class Platform(Base):
         String,
         nullable=True,
     )
+    icon: Mapped[str] = mapped_column(
+        String,
+        server_default='🌐',
+        nullable=False,
+    )
     accounts: Mapped[list["Account"]] = relationship(
         "Account",
         back_populates="platform",
-        lazy="selectin",  # ← ИЗМЕНИТЬ на selectin
+        lazy="selectin",
         cascade="all, delete-orphan",
     )
 

@@ -35,7 +35,7 @@ onMounted(async () => {
           @click="emit('select-platform', platform)"
         >
           <div class="platform-content">
-            <div class="icon-box">{{ platform.icon }}</div>
+            <div class="icon-box">{{ platform.icon || '🌐'}}</div>
             <div class="info">
               <div class="name">{{ platform.name }}</div>
               <div class="count">{{ platform.accounts_count }} аккаунтов</div>

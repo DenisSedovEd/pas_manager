@@ -30,6 +30,12 @@ onMounted(async () => {
     try {
       const status = await authApi.getStatus(initData);
       isUnlocked.value = status.is_unlocked;
+      if (!isUnlocked.value && isBioSupported.value) {
+        const bioSettings = await authApi.getBioSettings(initData);
+        if (bioSettings.is_enabled) {
+          authenticateWithBio(); // Автовызов окна FaceID
+        }
+      }
     } catch (e) {
       console.error("Ошибка проверки статуса:", e);
     }
@@ -47,8 +53,27 @@ const handlePasswordUnlock = async () => {
     const res = await authApi.unlockWithPassword(initData, password.value);
     if (res.ok) {
       isUnlocked.value = true;
-      if (isBioSupported.value && !bio.isBiometricTokenSaved) {
-        bio.updateBiometricToken('SECURE_TOKEN');
+
+      // Логика регистрации биометрии
+      if (isBioSupported.value) {
+        const bioSettings = await authApi.getBioSettings(initData);
+
+        if (!bioSettings.is_enabled) {
+          // Вызываем стандартное окно Telegram
+          bio.authenticate({reason: 'Включить вход по FaceID'}, async (success, token) => {
+            if (success) {
+              try {
+                // ОТПРАВЛЯЕМ ТОЛЬКО ТОКЕН.
+                // Бэкенд сам возьмет пароль из сессии и зашифрует его этим токеном.
+                await authApi.enableBiometric(initData, {bio_token: token});
+
+                tg.showAlert("Биометрия успешно настроена!");
+              } catch (e) {
+                console.error("Ошибка сохранения биометрии:", e);
+              }
+            }
+          });
+        }
       }
     } else {
       tg.showAlert("Неверный мастер-пароль");
@@ -61,8 +86,13 @@ const handlePasswordUnlock = async () => {
 const authenticateWithBio = () => {
   bio.authenticate({reason: 'Вход в сейф'}, async (success, token) => {
     if (success) {
+      // Отправляем токен на сервер, чтобы он нашел зашифрованный пароль
       const res = await authApi.unlockWithBiometric(initData, token);
-      if (res.ok) isUnlocked.value = true;
+      if (res.ok) {
+        isUnlocked.value = true;
+      } else {
+        tg.showAlert("Ошибка биометрии. Введите пароль вручную.");
+      }
     }
   });
 };
@@ -193,7 +223,12 @@ const openEditAccount = (fullAccountData) => {
             <button @click="goBack" class="back-btn">←</button>
             <div class="header-platform-info">
               <span class="header-icon">{{ selectedPlatform?.icon }}</span>
-              <h1>{{ selectedPlatform?.name }}</h1>
+              <div class="title-with-desc">
+                <h1>{{ selectedPlatform?.name }}</h1>
+                <p v-if="selectedPlatform?.description" class="header-desc">
+                  {{ selectedPlatform.description }}
+                </p>
+              </div>
             </div>
             <button
                 v-if="selectedPlatform?.name !== 'Other'"
@@ -371,9 +406,10 @@ const openEditAccount = (fullAccountData) => {
 }
 
 .header h1 {
-  font-size: 20px;
+  font-size: 18px;
   margin: 0;
   text-align: center;
+  line-height: 1.2;
 }
 
 /* Остальные стили для auth-card и main-menu без изменений */
@@ -493,6 +529,26 @@ input {
   color: var(--tg-theme-text-color);
   font-weight: 600;
   font-size: 14px;
+  text-align: center;
+}
+
+.title-with-desc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-desc {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: var(--tg-theme-hint-color);
+  font-weight: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
   text-align: center;
 }
 </style>

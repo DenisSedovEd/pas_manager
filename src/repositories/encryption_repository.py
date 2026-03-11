@@ -46,14 +46,13 @@ class EncryptionRepository:
         data_bytes = data.encode("utf-8")
         nonce = os.urandom(12)
 
-        ciphertext_with_tag = aesgcm.encrypt(nonce, data_bytes, associated_data=None)
-        tag = ciphertext_with_tag[-16:]
+        ciphertext = aesgcm.encrypt(nonce, data_bytes, associated_data=None)
 
         return {
-            "encrypted_data": self.to_base64_str(ciphertext_with_tag),
+            "encrypted_data": self.to_base64_str(ciphertext),
             "salt": self.to_base64_str(salt),
             "nonce": self.to_base64_str(nonce),
-            "tag": self.to_base64_str(tag),
+            "tag": '',
         }
 
     def decrypt_data(

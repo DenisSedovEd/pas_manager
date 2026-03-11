@@ -18,7 +18,8 @@ class PlatformService:
             response = PlatformResponseSchema(
                 id=platform.id,
                 name=platform.platform_name,
-                icon=platform.description,
+                icon=platform.icon,
+                description=platform.description,
                 accounts_count=accounts_count,
             )
             result.append(response)
@@ -36,7 +37,8 @@ class PlatformService:
         return PlatformResponseSchema(
             id=platform.id,
             name=platform.platform_name,
-            icon=platform.description,
+            icon=platform.icon,
+            description=platform.description,
             accounts_count=accounts_count,
         )
 
@@ -70,7 +72,8 @@ class PlatformService:
             filters={"id": platform_id},
             values={
                 "platform_name": platform_data.name,
-                "description": platform_data.icon,
+                'icon': platform_data.icon,
+                "description": platform_data.description,
             }
         )
 

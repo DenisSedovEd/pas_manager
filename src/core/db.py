@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import StaticPool
+from src.models.platform import Platform
 
+from sqlalchemy import select
 from src.core.config import settings
 
 async_engine: AsyncEngine = create_async_engine(
@@ -35,16 +37,13 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     """Инициализировать БД и создать дефолтные данные"""
-    async with async_engine.begin() as conn:
-        from src.models.base import Base
-        await conn.run_sync(Base.metadata.create_all)
+    # async with async_engine.begin() as conn:
+    #     from src.models.base import Base
+    #     await conn.run_sync(Base.metadata.create_all)
 
     # Создаём дефолтную платформу
     async with async_session() as session:
-        from src.models.platform import Platform
 
-        # Проверяем есть ли уже платформа "Other"
-        from sqlalchemy import select
         result = await session.execute(
             select(Platform).where(Platform.platform_name == "Other")
         )

@@ -3,7 +3,8 @@ from src.schemas.account import AccountRequestSchema, AccountListItemSchema, Acc
 from src.models.account import Account
 from src.repositories import DatabaseRepository
 from src.repositories.encryption_repository import EncryptionRepository
-from src.schemas.crypto import InvalidTag
+from cryptography.exceptions import InvalidTag as CryptoInvalidTag
+# from src.schemas.crypto import InvalidTag
 
 
 class AccountService:
@@ -51,10 +52,8 @@ class AccountService:
                 account.nonce,
                 master_password,
             )
-        except InvalidTag:
-            raise ValueError("Invalid master password")
-        except Exception as e:
-            raise ValueError(f"Decryption error: {str(e)}")
+        except CryptoInvalidTag:
+            raise ValueError("Ключ не подходит. Проверьте мастер-пароль или настройки итераций.")
 
         return AccountDetailSchema(
             id=account.id,

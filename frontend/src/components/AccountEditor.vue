@@ -167,6 +167,7 @@ const handleDelete = () => {
   align-items: center;
   padding: 0 16px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .editor-container {
@@ -183,6 +184,7 @@ const handleDelete = () => {
   max-width: 500px;
   margin: 10px 0;
   max-height: calc(100% - 20px);
+  scrollbar-width: none;
 }
 
 .header-row h2 {
