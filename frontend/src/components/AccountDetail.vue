@@ -246,10 +246,12 @@ label {
   display: flex;
   gap: 8px;
   align-items: center;
+  width: 100%;
 }
 
 .field-value {
   flex: 1;
+  min-width: 0;
   padding: 12px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
@@ -257,6 +259,9 @@ label {
   color: var(--tg-theme-text-color);
   font-size: 14px;
   word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   user-select: text;
   -webkit-user-select: text;
 }
@@ -264,6 +269,8 @@ label {
 .password-text {
   font-family: monospace;
   font-size: 15px;
+  white-space: nowrap;
+  word-break: break-all;
 }
 
 .copy-btn, .view-btn {
@@ -278,6 +285,7 @@ label {
   padding: 0;
   transition: all 0.2s ease;
   font-size: 18px;
+  flex-shrink: 0;
 }
 
 .copy-btn {
