@@ -43,8 +43,8 @@ onMounted(async () => {
             @click="emit('select-account', account)"
         >
           <div class="account-content">
-            <div class="login">{{ account.login }}</div>
-            <div class="label">{{ account.label }}</div>
+            <div class="login">{{ account.label }}</div>
+            <div class="label">{{ account.login }}</div>
           </div>
           <div class="arrow">→</div>
         </div>
