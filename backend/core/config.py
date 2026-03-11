@@ -51,6 +51,7 @@ class AppSettings(Base):
     iterations: int = Field(...)
     delete_timeout_seconds: int = Field(...)
     session_ttl: int = Field(...)
+    tunnel_token: str = Field(...)
 
 
 class Settings(Base):

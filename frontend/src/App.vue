@@ -33,7 +33,7 @@ onMounted(async () => {
       if (!isUnlocked.value && isBioSupported.value) {
         const bioSettings = await authApi.getBioSettings(initData);
         if (bioSettings.is_enabled) {
-          authenticateWithBio(); // Автовызов окна FaceID
+          authenticateWithBio();
         }
       }
     } catch (e) {
@@ -41,10 +41,56 @@ onMounted(async () => {
     }
   });
 
-  window.addEventListener('beforeunload', () => {
-    navigator.sendBeacon('/pas-manager/v1/main/auth/logout', initData);
+  const handleLogout = () => {
+    if (!initData) return;
+
+    const url = '/pas-manager/v1/main/auth/logout';
+    const body = JSON.stringify({init_data: initData});
+
+    // keepalive: true позволяет запросу "выжить" после закрытия вкладки
+    // Мы используем fetch вместо sendBeacon для лучшего контроля
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: body,
+      keepalive: true,
+    }).catch(e => console.error("Logout error", e));
+  };
+
+  // Слушаем все возможные события закрытия/скрытия
+  window.addEventListener('pagehide', handleLogout);
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      handleLogout();
+    }
   });
+
+  // Для десктопных браузеров (Safari/Chrome)
+  window.addEventListener('beforeunload', handleLogout);
 });
+
+const executeProtectedAction = async (actionFn) => {
+  try {
+    // 1. Быстрая проверка TTL сессии на бэкенде
+    const status = await authApi.getStatus(initData);
+
+    if (!status.is_unlocked) {
+      isUnlocked.value = false; // Блокируем интерфейс фронтенда
+      tg.showAlert("Время сессии истекло. Пожалуйста, разблокируйте сейф.");
+      return;
+    }
+
+    // 2. Если сессия активна — выполняем действие
+    await actionFn();
+
+  } catch (e) {
+    console.error("Protected action failed:", e);
+    // Если бэкенд вернул 401/403, тоже блокируем
+    isUnlocked.value = false;
+  }
+};
 
 const handlePasswordUnlock = async () => {
   if (!password.value) return;
@@ -92,9 +138,12 @@ const authenticateWithBio = () => {
   });
 };
 
+
 const onAccountSelect = (account) => {
-  editingAccount.value = account;
-  currentScreen.value = 'account_view';
+  executeProtectedAction(() => {
+    editingAccount.value = account;
+    currentScreen.value = 'account_view';
+  });
 };
 
 const onPlatformSelect = (platform) => {
@@ -103,20 +152,24 @@ const onPlatformSelect = (platform) => {
 };
 
 const onEditPlatform = (platform) => {
-  selectedPlatform.value = platform;
-  currentScreen.value = 'edit_platform';
+  executeProtectedAction(() => {
+    selectedPlatform.value = platform;
+    currentScreen.value = 'edit_platform';
+  });
 };
 
 const handleAccountSave = (updatedAccount) => {
-  if (selectedPlatform.value && selectedPlatform.value.id !== updatedAccount.platform_id) {
-    selectedPlatform.value = null;
-    currentScreen.value = 'platforms';
-  } else {
-    currentScreen.value = 'accounts';
-  }
+  executeProtectedAction(() => {
+    if (selectedPlatform.value && selectedPlatform.value.id !== updatedAccount.platform_id) {
+      selectedPlatform.value = null;
+      currentScreen.value = 'platforms';
+    } else {
+      currentScreen.value = 'accounts';
+    }
 
-  editingAccount.value = null;
-  tg.HapticFeedback.notificationOccurred('success');
+    editingAccount.value = null;
+    tg.HapticFeedback.notificationOccurred('success');
+  });
 };
 
 const goBack = () => {
@@ -142,8 +195,10 @@ const openAddAccount = () => currentScreen.value = 'add_account';
 const openAddPlatform = () => currentScreen.value = 'add_platform';
 
 const onAccountDeleted = () => {
-  currentScreen.value = 'accounts';
-  editingAccount.value = null;
+  executeProtectedAction(() => {
+    currentScreen.value = 'accounts';
+    editingAccount.value = null;
+  });
 };
 
 const onPlatformCreated = () => {
@@ -152,19 +207,23 @@ const onPlatformCreated = () => {
 };
 
 const onPlatformSaved = (result) => {
-  if (result.deleted) {
-    currentScreen.value = 'platforms';
-    selectedPlatform.value = null;
-  } else {
-    currentScreen.value = 'accounts';
-  }
+  executeProtectedAction(() => {
+    if (result.deleted) {
+      currentScreen.value = 'platforms';
+      selectedPlatform.value = null;
+    } else {
+      currentScreen.value = 'accounts';
+    }
+  });
 };
 
 const openEditAccount = (fullAccountData) => {
-  if (fullAccountData) {
-    editingAccount.value = fullAccountData;
-  }
-  currentScreen.value = 'account_edit';
+  executeProtectedAction(() => {
+    if (fullAccountData) {
+      editingAccount.value = fullAccountData;
+    }
+    currentScreen.value = 'account_edit';
+  });
 };
 </script>
 

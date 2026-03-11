@@ -25,13 +25,18 @@ class SuccessResponse(BaseModel):
     status: str
     ok: bool
 
+
 class BiometricRequest(BaseModel):
     bio_token: str
+
 
 class EnableBiometricRequest(BaseModel):
     encrypted_master_password: str
     bio_enc_data: dict
 
+
+class LogoutRequest(BaseModel):
+    init_data: str
 
 
 @router.get("/auth/status")
@@ -48,15 +53,15 @@ async def check_status(authorization: str = Header(...)) -> StatusResponse:
 
 @router.post("/auth/unlock")
 async def unlock(
-    payload: UnlockRequest,
-    authorization: str = Header(...),
-    db_repo: DatabaseRepository = Depends(get_db_repo),
+        payload: UnlockRequest,
+        authorization: str = Header(...),
+        db_repo: DatabaseRepository = Depends(get_db_repo),
 ) -> SuccessResponse:
     """Разблокировка с мастер-паролем"""
     secure = MasterPasswordService()
     user = verify_telegram_data(authorization)
 
-    settings = await db_repo.get(AppSettings, filters = {'id': 1})
+    settings = await db_repo.get(AppSettings, filters={'id': 1})
 
     if not settings:
         raise HTTPException(status_code=500, detail="Application settings not initialized")
@@ -126,10 +131,10 @@ async def unlock_bio(
 
 @router.post("/auth/enable-biometric")
 async def enable_biometric(
-    payload: BiometricRequest,
-    authorization: str = Header(...),
-    db_repo: DatabaseRepository = Depends(get_db_repo),
-    encrypt_repo: EncryptionRepository = Depends(get_encrypt_repo),
+        payload: BiometricRequest,
+        authorization: str = Header(...),
+        db_repo: DatabaseRepository = Depends(get_db_repo),
+        encrypt_repo: EncryptionRepository = Depends(get_encrypt_repo),
 ) -> SuccessResponse:
     """Включение биометрии: шифруем текущий мастер-пароль из памяти био-токеном"""
     user = verify_telegram_data(authorization)
@@ -158,9 +163,15 @@ async def enable_biometric(
 
     return SuccessResponse(status="biometric_enabled", ok=True)
 
+
 @router.post("/auth/logout")
-async def logout(authorization: str = Header(...)) -> dict:
+async def logout(
+        payload: LogoutRequest
+) -> dict:
     """Логаут и закрытие сейфа"""
-    user = verify_telegram_data(authorization)
-    session_manager.close_session(user["id"])
-    return {"status": "locked"}
+    user = verify_telegram_data(payload.init_data)
+    if user and "id" in user:
+        session_manager.close_session(user["id"])
+        return {"status": "locked", "ok": True}
+
+    return {"status": "error", "ok": False}

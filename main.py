@@ -5,23 +5,13 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    JobQueue,
-    MessageHandler,
-    filters,
-)
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from backend.core.config import settings
 from backend.core.db import init_db
-from backend.tg_bot.handlers.add_account import add_account_conv
-from backend.tg_bot.handlers.base import BaseHandler
-from backend.tg_bot.handlers.list_accounts import list_accounts_conv
-from backend.tg_bot.messages import BotMessages
 from backend.api.router import router
 
 logging.basicConfig(
@@ -64,11 +54,27 @@ app.include_router(router)
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONT_DIR = BASE_DIR / "frontend"
+STATIC_DIR = BASE_DIR / "static"
+
+if STATIC_DIR.exists():
+    # Монтируем папку assets, чтобы ссылки в index.html заработали
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
 
 
-@app.get("/")
-async def index():
-    return FileResponse(FRONT_DIR / "index.html")
+    # Главная страница и обработка Vue Router (fallback на index.html)
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # Если путь начинается с pas-manager/v1, значит это ошибочный запрос к API (404)
+        if full_path.startswith("pas-manager/v1"):
+            return {"detail": "Not Found", "ok": False}, 404
+
+        # Для всех остальных путей отдаем index.html (нужно для работы навигации Vue)
+        index_path = STATIC_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        return {"error": "Frontend build not found"}
+else:
+    logger.warning(f"Static directory not found at {STATIC_DIR}")
 
 
 if __name__ == "__main__":
