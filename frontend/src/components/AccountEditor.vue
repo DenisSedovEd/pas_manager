@@ -165,6 +165,8 @@ const handleDelete = () => {
   background: var(--tg-theme-bg-color);
   width: 100%;
   align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .editor-container {

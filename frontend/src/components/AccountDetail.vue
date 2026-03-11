@@ -152,6 +152,8 @@ const handleEdit = () => {
   width: 100%;
   align-items: center;
   position: relative;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 .loader-container {
