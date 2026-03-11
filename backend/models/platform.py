@@ -30,8 +30,7 @@ class Platform(Base):
     )
     icon: Mapped[str] = mapped_column(
         String,
-        server_default='🌐',
-        nullable=False,
+        nullable=True,
     )
     accounts: Mapped[list["Account"]] = relationship(
         "Account",

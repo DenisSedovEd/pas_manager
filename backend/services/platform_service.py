@@ -82,6 +82,7 @@ class PlatformService:
             id=platform_id,
             name=platform_data.name,
             icon=platform_data.icon,
+            description=platform_data.description,
             accounts_count=accounts_count,
         )
 
