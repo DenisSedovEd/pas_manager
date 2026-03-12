@@ -1,5 +1,6 @@
 <script setup>
 import {ref, computed, onMounted} from 'vue'
+import {initTelegramClipboard} from "./utils/clipboard"
 import {useTelegram} from './composables/useTelegram'
 import {authApi} from './api/auth.js'
 
@@ -19,7 +20,6 @@ const currentProps = computed(() => screenStack.value[screenStack.value.length -
 const pushScreen = (name, props = {}) => {
   screenStack.value.push({name, props})
   tg.BackButton.show()
-  // Скроллим сам контейнер, так как body у нас заблокирован
   const container = document.querySelector('.app-container')
   if (container) container.scrollTo(0, 0)
 }
@@ -33,7 +33,6 @@ const popScreen = () => {
   if (screenStack.value.length === 1) tg.BackButton.hide()
 }
 
-tg.BackButton.onClick(popScreen)
 
 // ==================== АВТОРИЗАЦИЯ ====================
 const isUnlocked = ref(false)
@@ -78,14 +77,25 @@ const handleUnlock = async () => {
 onMounted(async () => {
   initApp()
 
-  const safeTop = tg.safeAreaInset?.top || 0
+
+  // Telegram Mini App ready
+  if (tg) {
+    tg.ready()
+    tg.expand()
+  }
+  initTelegramClipboard()
+  tg?.BackButton?.onClick(popScreen)
+
+  const safeTop = tg?.safeAreaInset?.top || 0
   const finalPadding = safeTop > 0 ? safeTop + 20 : 20
+
   document.documentElement.style.setProperty('--safe-area-top', `${finalPadding}px`)
+  if (tg?.setHeaderColor) tg.setHeaderColor('bg_color')
+  if (tg?.setBackgroundColor) tg.setBackgroundColor('bg_color')
 
-  if (tg.setHeaderColor) tg.setHeaderColor('bg_color')
-  if (tg.setBackgroundColor) tg.setBackgroundColor('bg_color')
-  tg.expand()
+  // Запуск clipboard модуля
 
+  // Инициализация биометрии
   bio.init(async () => {
     isBioSupported.value = bio.isInited && bio.isBiometricAvailable
     const status = await authApi.getStatus(initData)
@@ -96,6 +106,7 @@ onMounted(async () => {
     }
   })
 
+  // --- ЗАВЕРШЕНИЕ СЕССИИ ---
   const handleLogout = () => {
     fetch('/pas-manager/v1/main/auth/logout', {
       method: 'POST',
@@ -105,12 +116,8 @@ onMounted(async () => {
     })
   }
   window.addEventListener('pagehide', handleLogout)
-  document.addEventListener('click', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-      e.target.focus();
-    }
-  });
 })
+
 </script>
 
 <template>
@@ -120,9 +127,8 @@ onMounted(async () => {
       <h2>Safe Manager</h2>
       <div class="lock-input-wrapper">
         <input v-model="password" type="password" class="lock-input" placeholder="Пароль" @keyup.enter="handleUnlock"/>
-        <button class="unlock-btn" @click="handleUnlock" :disabled="isAuthLoading">{{
-            isAuthLoading ? '...' : '→'
-                                                                                   }}
+        <button class="unlock-btn" @click="handleUnlock" :disabled="isAuthLoading">
+          {{ isAuthLoading ? '...' : '→' }}
         </button>
       </div>
       <button v-if="isBioSupported" class="bio-btn" @click="authenticateWithBio">Face ID / Touch ID</button>
@@ -153,14 +159,18 @@ body {
   background-color: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);
   overflow: hidden;
+  /* Разрешаем выделение текста для работы копирования/вставки */
   -webkit-user-select: text !important;
   user-select: text !important;
 }
 
 input, textarea {
+  /* Принудительно разблокируем взаимодействие на десктопе */
   -webkit-user-select: text !important;
   user-select: text !important;
   pointer-events: auto !important;
+  z-index: 10;
+  position: relative;
 }
 
 .app-container {
@@ -178,6 +188,7 @@ input, textarea {
   margin-top: 15px;
 }
 
+/* Остальные стили экрана блокировки */
 .lock-screen {
   height: 100vh;
   display: flex;
@@ -207,6 +218,7 @@ input, textarea {
   border-radius: 12px;
   color: var(--tg-theme-text-color);
   font-size: 16px;
+  outline: none;
 }
 
 .unlock-btn {
@@ -216,6 +228,7 @@ input, textarea {
   border: none;
   border-radius: 12px;
   font-size: 20px;
+  cursor: pointer;
 }
 
 .bio-btn {
@@ -226,5 +239,6 @@ input, textarea {
   border-radius: 12px;
   width: 100%;
   font-weight: 600;
+  cursor: pointer;
 }
 </style>

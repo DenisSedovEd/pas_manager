@@ -57,18 +57,14 @@ FRONT_DIR = BASE_DIR / "frontend"
 STATIC_DIR = BASE_DIR / "static"
 
 if STATIC_DIR.exists():
-    # Монтируем папку assets, чтобы ссылки в index.html заработали
     app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
 
 
-    # Главная страница и обработка Vue Router (fallback на index.html)
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        # Если путь начинается с pas-manager/v1, значит это ошибочный запрос к API (404)
         if full_path.startswith("pas-manager/v1"):
             return {"detail": "Not Found", "ok": False}, 404
 
-        # Для всех остальных путей отдаем index.html (нужно для работы навигации Vue)
         index_path = STATIC_DIR / "index.html"
         if index_path.exists():
             return FileResponse(index_path)
