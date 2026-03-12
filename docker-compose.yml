@@ -12,9 +12,9 @@ services:
     ports:
       - "5173:8080"
 
-#  tunel:
-#    image: cloudflare/cloudflared:latest
-#    restart: unless-stopped
-#    command: tunnel --no-autoupdate run --token ${APP__TUNNEL_TOKEN}
-#    env_file:
-#      - .env
+  tunel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${APP__TUNNEL_TOKEN}
+    env_file:
+      - .env
