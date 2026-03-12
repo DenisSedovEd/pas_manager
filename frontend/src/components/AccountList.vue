@@ -1,23 +1,23 @@
 <script setup>
-import {ref, onMounted} from 'vue';
-import {useTelegram} from '../composables/useTelegram';
-import {accountApi} from '../api/account.js';
+import { ref, onMounted } from 'vue';
+import { useTelegram } from '../composables/useTelegram';
+import { accountApi } from '../api/account.js';
 
-const props = defineProps(['platformId']);
+const props = defineProps(['platformId', 'platformIcon']); // Добавили иконку платформы в пропсы
 const emit = defineEmits(['select-account', 'add-account']);
-const {tg, initData} = useTelegram();
+const { tg, initData } = useTelegram();
+
 const accounts = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
 
 onMounted(async () => {
   try {
-    // Получаем только аккаунты, инфа о платформе уже в App.vue
-    accounts.value = await accountApi.getList(initData, props.platformId);
+    const response = await accountApi.getList(initData, props.platformId);
+    accounts.value = response.data || response;
   } catch (e) {
     console.error("Ошибка загрузки:", e);
-    error.value = "Не удалось загрузить";
-    tg.showAlert("Ошибка загрузки");
+    error.value = "Не удалось загрузить аккаунты";
   } finally {
     isLoading.value = false;
   }
@@ -26,160 +26,172 @@ onMounted(async () => {
 
 <template>
   <div class="accounts-container">
-    <div v-if="isLoading" class="loader">Загрузка аккаунтов...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-if="isLoading" class="status-msg">
+      <div class="spinner"></div>
+      <p>Загрузка данных...</p>
+    </div>
+
+    <div v-else-if="error" class="status-msg error">
+      <p>{{ error }}</p>
+    </div>
 
     <template v-else>
-      <div v-if="accounts.length === 0" class="empty-state">
-        <div class="empty-icon">📭</div>
-        <div class="empty-text">Нет аккаунтов</div>
-      </div>
+      <div class="accounts-list">
 
-      <div v-else class="accounts-list">
-        <div
-            v-for="account in accounts"
-            :key="account.id"
-            class="account-card"
-            @click="emit('select-account', account)"
-        >
-          <div class="account-content">
-            <div class="login">{{ account.label }}</div>
-            <div class="label">{{ account.login }}</div>
-          </div>
-          <div class="arrow">→</div>
+        <div v-if="accounts.length === 0" class="empty-state">
+          <div class="empty-icon">📂</div>
+          <p>В этой категории пока нет аккаунтов</p>
         </div>
-      </div>
 
-      <button class="add-btn" @click="emit('add-account')">+ Добавить аккаунт</button>
+        <div
+          v-for="account in accounts"
+          :key="account.id"
+          class="account-item"
+          @click="emit('select-account', account)"
+        >
+          <div class="icon-box">{{ platformIcon || '👤' }}</div>
+
+          <div class="main-content">
+            <div class="login-text">{{ account.login }}</div>
+            <div v-if="account.label" class="label-text">{{ account.label }}</div>
+          </div>
+
+          <div class="chevron">›</div>
+        </div>
+
+        <div class="account-item add-button" @click="emit('add-account')">
+          <div class="icon-box add-icon">+</div>
+          <div class="main-content">
+            <div class="name">Add New Account</div>
+            <div class="description">Save credentials for this platform</div>
+          </div>
+        </div>
+
+      </div>
     </template>
   </div>
 </template>
 
 <style scoped>
-* {
+.accounts-container {
+  width: 100%;
+  padding: 16px;
   box-sizing: border-box;
 }
 
-.accounts-container {
+.accounts-list {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px);
-  background: var(--tg-theme-bg-color);
-  overflow: hidden;
-  width: 100%;
+  gap: 10px;
 }
 
-.loader {
+.account-item {
+  background: var(--tg-theme-secondary-bg-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  gap: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.account-item:active {
+  transform: scale(0.98);
+  opacity: 0.8;
+}
+
+.icon-box {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  background: var(--tg-theme-bg-color);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 22px;
+}
+
+.main-content {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-text {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--tg-theme-text-color);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label-text {
+  font-size: 11px;
+  color: var(--tg-theme-hint-color);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  color: var(--tg-theme-hint-color);
+  font-size: 20px;
+  opacity: 0.4;
+}
+
+/* Кнопка добавления */
+.add-button {
+  border: 1px dashed var(--tg-theme-button-color);
+  background: transparent;
+  margin-top: 8px;
+}
+
+.add-icon {
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+  font-weight: bold;
+}
+
+.add-button .name {
+  color: var(--tg-theme-button-color);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.add-button .description {
+  font-size: 11px;
   color: var(--tg-theme-hint-color);
 }
 
-.error {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  color: #ff6b6b;
+/* Вспомогательные стили */
+.status-msg, .empty-state {
   text-align: center;
-  padding: 20px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  gap: 12px;
+  padding: 40px 20px;
   color: var(--tg-theme-hint-color);
 }
 
 .empty-icon {
-  font-size: 48px;
+  font-size: 40px;
+  margin-bottom: 12px;
 }
 
-.empty-text {
-  font-size: 14px;
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--tg-theme-hint-color);
+  border-top-color: var(--tg-theme-button-color);
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  animation: spin 1s linear infinite;
 }
 
-.accounts-list {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.account-card {
-  background: var(--tg-theme-secondary-bg-color);
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: transform 0.1s ease;
-}
-
-.account-card:active {
-  transform: scale(0.98);
-}
-
-.account-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
-}
-
-.login {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--tg-theme-text-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.label {
-  font-size: 11px;
-  color: var(--tg-theme-hint-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.arrow {
-  color: var(--tg-theme-hint-color);
-  font-size: 16px;
-  margin-left: 8px;
-  flex-shrink: 0;
-}
-
-.add-btn {
-  flex-shrink: 0;
-  background: var(--tg-theme-secondary-bg-color);
-  border: 2px dashed var(--tg-theme-hint-color);
-  color: var(--tg-theme-hint-color);
-  padding: 12px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  margin: 16px;
-  width: calc(100% - 32px);
-  transition: opacity 0.2s;
-}
-
-.add-btn:active {
-  opacity: 0.7;
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
