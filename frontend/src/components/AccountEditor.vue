@@ -1,156 +1,169 @@
 <script setup>
-import {ref, onMounted} from 'vue';
+import {ref, computed} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import {platformApi} from '../api/platform.js';
 import {accountApi} from '../api/account.js';
 
 const props = defineProps(['account', 'currentPlatform']);
-const emit = defineEmits(['save', 'cancel', 'deleted']);
+const emit = defineEmits(['save', 'cancel']);
 const {tg, initData} = useTelegram();
 
-const platforms = ref([]);
-const showPassword = ref(false);
 const showConfirmDialog = ref(false);
-const isSaving = ref(false);
+const isLoading = ref(false);
+const showPassword = ref(false);
 
-const editedData = ref({
+const isEditing = computed(() => !!props.account?.id);
+
+const formData = ref({
   id: props.account?.id || null,
+  platform_id: props.currentPlatform?.id || props.account?.platform_id,
   label: props.account?.label || '',
   login: props.account?.login || '',
   password: props.account?.password || '',
   email: props.account?.email || '',
-  phone: props.account?.phone || '',
-  platform_id: props.currentPlatform?.id || props.account?.platform_id || ''
+  phone: props.account?.phone || ''
 });
-
-onMounted(async () => {
-  try {
-    const response = await platformApi.getList(initData);
-    platforms.value = response.data || response;
-  } catch (e) {
-    console.error("Ошибка загрузки платформ:", e);
-    tg.showAlert("Не удалось загрузить список платформ");
-  }
-});
-
-const validateAndConfirm = () => {
-  if (!editedData.value.login || !editedData.value.password || !editedData.value.platform_id) {
-    tg.showAlert("Заполните логин, пароль и выберите платформу");
-    return;
-  }
-  tg.HapticFeedback.impactOccurred('medium');
-  showConfirmDialog.value = true;
-};
 
 const handleSave = async () => {
-  showConfirmDialog.value = false;
-  isSaving.value = true;
+  if (!formData.value.login.trim() || !formData.value.password.trim()) {
+    tg.showAlert("Логин и пароль обязательны");
+    return;
+  }
+
+  isLoading.value = true;
   try {
-    let result;
-    if (editedData.value.id) {
-      result = await accountApi.update(initData, editedData.value.id, editedData.value);
+    if (isEditing.value) {
+      await accountApi.update(initData, formData.value.id, formData.value);
     } else {
-      result = await accountApi.create(initData, editedData.value);
+      await accountApi.create(initData, formData.value);
     }
     tg.HapticFeedback.notificationOccurred('success');
-    emit('save', result);
-  } catch (error) {
-    console.error('Ошибка сохранения:', error);
-    tg.showAlert("Не удалось сохранить данные");
+    emit('save');
+  } catch (e) {
+    tg.showAlert("Ошибка при сохранении");
   } finally {
-    isSaving.value = false;
+    isLoading.value = false;
   }
 };
 
-const handleDelete = () => {
-  tg.showConfirm("Удалить этот аккаунт безвозвратно?", async (ok) => {
-    if (ok) {
-      try {
-        await accountApi.delete(initData, editedData.value.id);
-        tg.HapticFeedback.notificationOccurred('warning');
-        emit('deleted');
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
-        tg.showAlert("Не удалось удалить аккаунт");
-      }
-    }
-  });
+const handleDelete = async () => {
+  try {
+    await accountApi.delete(initData, formData.value.id);
+    tg.HapticFeedback.notificationOccurred('success');
+    emit('save');
+  } catch (e) {
+    tg.showAlert("Ошибка при удалении");
+  }
 };
+
+const generatePassword = () => {
+  const charset = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*";
+  const length = 16;
+
+  const array = new Uint32Array(length);
+  window.crypto.getRandomValues(array);
+
+  let pass = "";
+  for (let i = 0; i < length; i++) {
+    pass += charset[array[i] % charset.length];
+  }
+
+  formData.value.password = pass;
+  showPassword.value = true;
+
+  tg.HapticFeedback.impactOccurred('medium');
+};
+
 </script>
 
 <template>
-  <div class="editor-wrapper">
-    <div class="editor-container">
-      <div class="header-row">
-        <h2>{{ editedData.id ? 'Редактирование' : 'Новый аккаунт' }}</h2>
+  <div class="editor-container">
+    <div class="form">
+
+      <div class="icon-section">
+        <div class="icon-preview">👤</div>
+        <p class="platform-name">{{ currentPlatform?.name || 'Аккаунт' }}</p>
       </div>
 
-      <div class="field-group">
-        <label>Платформа *</label>
-        <div class="field-row">
-          <select v-model="editedData.platform_id" class="field-input select-input">
-            <option disabled value="">Выберите сервис</option>
-            <option v-for="p in platforms" :key="p.id" :value="p.id">
-              {{ p.icon || '🌐' }} {{ p.name }}
-            </option>
-          </select>
+      <div class="input-group">
+        <label>Название / Метка</label>
+        <input
+            v-model="formData.label"
+            type="text"
+            placeholder="Например: Основной"
+            class="main-input"
+        />
+      </div>
+
+      <div class="input-group">
+        <label>Логин / Имя пользователя</label>
+        <input
+            v-model="formData.login"
+            type="text"
+            placeholder="username"
+            class="main-input"
+        />
+      </div>
+
+      <div class="input-group">
+        <div class="label-row">
+          <label>Пароль</label>
+          <span class="generate-btn" @click="generatePassword">Сгенерировать</span>
+        </div>
+        <div class="password-wrapper">
+          <input
+              :type="showPassword ? 'text' : 'password'"
+              v-model="formData.password"
+              placeholder="••••••••"
+              class="main-input pr-45"
+          />
+          <button
+              class="eye-btn"
+              @click.prevent="showPassword = !showPassword"
+              type="button"
+          >
+            {{ showPassword ? '🔓' : '🔒' }}
+          </button>
         </div>
       </div>
 
-      <div class="field-group">
-        <label>Username *</label>
-        <div class="field-row">
-          <input v-model="editedData.login" class="field-input" type="text" placeholder="Логин"/>
-        </div>
+      <div class="input-group">
+        <label>E-mail</label>
+        <input
+            v-model="formData.email"
+            type="email"
+            placeholder="example@mail.com"
+            class="main-input"
+        />
       </div>
 
-      <div class="field-group">
-        <label>Password *</label>
-        <div class="field-row">
-          <input :type="showPassword ? 'text' : 'password'" v-model="editedData.password"
-                 class="field-input password-text"/>
-          <button class="view-btn" @click="showPassword = !showPassword">{{ showPassword ? '🙈' : '👁️' }}</button>
-        </div>
+      <div class="input-group">
+        <label>Телефон</label>
+        <input
+            v-model="formData.phone"
+            type="tel"
+            placeholder="+7 (___) ___-__-__"
+            class="main-input"
+        />
       </div>
 
-      <div class="field-group">
-        <label>Email</label>
-        <div class="field-row">
-          <input v-model="editedData.email" class="field-input" type="email" placeholder="mail@example.com"/>
-        </div>
-      </div>
-
-      <div class="field-group">
-        <label>Phone</label>
-        <div class="field-row">
-          <input v-model="editedData.phone" class="field-input" type="tel" placeholder="+7..."/>
-        </div>
-      </div>
-
-      <div class="field-group">
-        <label>Название (опционально)</label>
-        <div class="field-row">
-          <input v-model="editedData.label" class="field-input" type="text" placeholder="Напр: Личный"/>
-        </div>
-      </div>
-
-      <div class="button-group">
-        <button class="save-btn" :disabled="isSaving" @click="validateAndConfirm">
-          {{ isSaving ? 'Сохранение...' : '💾 Сохранить' }}
+      <div class="actions">
+        <button class="btn primary" @click="handleSave" :disabled="isLoading">
+          {{ isLoading ? 'Сохранение...' : (isEditing ? 'Обновить данные' : 'Сохранить аккаунт') }}
         </button>
 
-        <button v-if="editedData.id" class="delete-btn" @click="handleDelete">
-          🗑️ Удалить аккаунт
+        <button v-if="isEditing" class="btn danger" @click="showConfirmDialog = true">
+          Удалить аккаунт
         </button>
       </div>
     </div>
 
-    <div v-if="showConfirmDialog" class="dialog-overlay" @click.self="showConfirmDialog = false">
-      <div class="confirm-dialog">
-        <h2>Сохранить?</h2>
-        <div class="confirm-buttons">
-          <button class="cancel-btn dialog-btn" @click="showConfirmDialog = false">Отмена</button>
-          <button class="save-btn dialog-btn" @click="handleSave">Да</button>
+    <div v-if="showConfirmDialog" class="modal-overlay">
+      <div class="modal">
+        <h3>Удалить аккаунт?</h3>
+        <p>Вы потеряете доступ к сохраненным данным этой учетной записи.</p>
+        <div class="modal-buttons">
+          <button class="btn danger" @click="handleDelete">Да, удалить</button>
+          <button class="btn secondary" @click="showConfirmDialog = false">Отмена</button>
         </div>
       </div>
     </div>
@@ -158,171 +171,167 @@ const handleDelete = () => {
 </template>
 
 <style scoped>
-.editor-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 60px);
-  background: var(--tg-theme-bg-color);
-  width: 100%;
-  align-items: center;
-  padding: 0 16px;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
 .editor-container {
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  overflow-y: auto;
-  width: 92%;
+  padding-bottom: 80px; /* Увеличили отступ для длинной формы */
   max-width: 500px;
-  margin: 10px 0;
-  max-height: calc(100% - 20px);
-  scrollbar-width: none;
+  margin: 0 auto;
 }
 
-.header-row h2 {
-  margin: 0;
-  font-size: 18px;
-  color: var(--tg-theme-text-color);
-  text-align: center;
-}
-
-.field-group {
+.icon-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
-label {
-  font-size: 12px;
-  color: var(--tg-theme-hint-color);
-  text-transform: uppercase;
-  margin-left: 4px;
-}
-
-.field-row {
+.icon-preview {
+  font-size: 44px;
+  width: 80px;
+  height: 80px;
+  background: var(--tg-theme-secondary-bg-color);
+  border-radius: 22px;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(128, 128, 128, 0.1);
+}
+
+.platform-name {
+  margin-top: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--tg-theme-text-color);
+}
+
+.input-group {
+  margin-bottom: 18px;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+
+.input-group label {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+}
+
+.generate-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tg-theme-button-color);
+  cursor: pointer;
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
   align-items: center;
 }
 
-.field-input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08); /* Фон инпутов */
+.main-input {
+  width: 100%;
+  background: var(--tg-theme-secondary-bg-color);
   border: 1px solid rgba(128, 128, 128, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
   color: var(--tg-theme-text-color);
-  font-size: 15px;
+  font-size: 16px;
+  box-sizing: border-box;
   outline: none;
 }
 
-.select-input {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 14px;
+.main-input:focus {
+  border-color: var(--tg-theme-button-color);
 }
 
-.password-text {
-  font-family: monospace;
+.pr-45 {
+  padding-right: 45px;
 }
 
-.view-btn {
-  flex: 0 0 44px;
-  height: 44px;
-  border-radius: 12px;
+.eye-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--tg-theme-text-color);
   font-size: 18px;
+  color: var(--tg-theme-hint-color);
+  cursor: pointer;
+  padding: 0;
 }
 
-.button-group {
+.actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 30px;
 }
 
-/* КНОПКА СОХРАНИТЬ */
-.save-btn {
+.btn {
   padding: 14px;
   border-radius: 12px;
   border: none;
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
   font-weight: 600;
   font-size: 16px;
+  cursor: pointer;
 }
 
-/* КНОПКА ОТМЕНА (как инпуты) */
-.cancel-btn {
-  padding: 14px;
-  border-radius: 12px;
+.primary {
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+}
+
+.secondary {
+  background: transparent;
+  color: var(--tg-theme-hint-color);
   border: 1px solid rgba(128, 128, 128, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--tg-theme-text-color);
-  font-size: 15px;
 }
 
-/* КНОПКА УДАЛИТЬ (бледно-красная) */
-.delete-btn {
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  background: rgba(255, 79, 79, 0.15); /* Бледно-красный фон */
-  color: #ff4f4f;
-  font-weight: 600;
-  font-size: 15px;
-  margin-top: 4px;
+.danger {
+  background: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
 }
 
-.delete-btn:active {
-  background: rgba(255, 79, 79, 0.25);
-}
-
-.dialog-overlay {
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 100;
 }
 
-.confirm-dialog {
+.modal {
   background: var(--tg-theme-bg-color);
   border-radius: 20px;
   padding: 24px;
-  width: 80%;
-  max-width: 300px;
+  width: 85%;
+  max-width: 320px;
   text-align: center;
 }
 
-.confirm-buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
+.modal h3 {
+  margin-bottom: 8px;
 }
 
-.dialog-btn {
-  flex: 1;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
+.modal p {
+  color: var(--tg-theme-hint-color);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 </style>
