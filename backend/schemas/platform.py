@@ -30,5 +30,4 @@ class PlatformRequestSchema(BaseModel):
     """Для создания платформы"""
     name: str = Field(description="Platform name")
     icon: str = Field(description="Platform icon/emoji")
-    order: int
     description: Optional[str] = Field(default=None, description="Description")

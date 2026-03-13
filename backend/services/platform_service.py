@@ -66,6 +66,7 @@ class PlatformService:
             icon=new_platform.icon,
             description=new_platform.description,
             accounts_count=0,
+            order=new_platform.order,
         )
 
     async def update_platform(self, platform_id: str, platform_data: PlatformRequestSchema) -> PlatformResponseSchema:
