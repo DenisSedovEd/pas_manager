@@ -108,15 +108,23 @@ onMounted(async () => {
 
   // --- ЗАВЕРШЕНИЕ СЕССИИ ---
   const handleLogout = () => {
-    fetch('/pas-manager/v1/main/auth/logout', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({init_data: initData}),
-      keepalive: true
-    })
+    const url = '/pas-manager/v1/main/auth/logout';
+    const data = JSON.stringify({ init_data: initData });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url, data);
+    } else {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: data,
+        keepalive: true
+      });
+    }
   }
   window.addEventListener('pagehide', handleLogout)
 })
+
 
 </script>
 
@@ -165,12 +173,17 @@ body {
 }
 
 input, textarea {
-  /* Принудительно разблокируем взаимодействие на десктопе */
   -webkit-user-select: text !important;
   user-select: text !important;
   pointer-events: auto !important;
   z-index: 10;
   position: relative;
+  caret-color: var(--tg-theme-button-color, #248bcf) !important;
+}
+
+input:focus, textarea:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 1px var(--tg-theme-button-color);
 }
 
 .app-container {
