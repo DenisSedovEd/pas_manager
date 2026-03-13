@@ -109,7 +109,7 @@ const copyToClipboard = (text, field) => {
       </div>
 
       <div class="footer-actions">
-        <button class="btn edit-btn" @click="emit('edit', fullAccount)">
+        <button class="edit-btn" @click="emit('edit', fullAccount)">
           Изменить данные
         </button>
       </div>
@@ -199,7 +199,7 @@ const copyToClipboard = (text, field) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'SF Mono', 'Roboto Mono', monospace; /* Моноширинный шрифт для данных */
+  font-family: 'SF Mono', 'Roboto Mono', monospace;
 }
 
 .card-actions {
@@ -247,20 +247,5 @@ const copyToClipboard = (text, field) => {
   display: flex;
   justify-content: center;
   padding: 50px;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--tg-theme-hint-color);
-  border-top-color: var(--tg-theme-button-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

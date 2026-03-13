@@ -105,7 +105,6 @@ const handleSave = async () => {
 
 <style scoped>
 .editor-container {
-  /* Убрали max-width и центрирование, теперь контейнер тянется на 100% */
   padding: 16px;
   width: 100%;
   box-sizing: border-box;
@@ -192,7 +191,6 @@ const handleSave = async () => {
 }
 
 .main-input {
-  /* Принудительно на всю ширину с учетом box-sizing */
   width: 100% !important;
   background: var(--tg-theme-secondary-bg-color);
   border: 1px solid rgba(128, 128, 128, 0.2);
@@ -215,7 +213,7 @@ textarea.main-input {
 }
 
 .btn {
-  width: 100%; /* Кнопка на всю ширину */
+  width: 100%;
   padding: 16px;
   border-radius: 12px;
   border: none;

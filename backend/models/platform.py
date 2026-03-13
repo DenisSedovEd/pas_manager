@@ -1,7 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text
+from sqlalchemy import String, Text, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.models.base import Base
@@ -31,6 +31,11 @@ class Platform(Base):
     icon: Mapped[str] = mapped_column(
         String,
         nullable=True,
+    )
+    order: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
     )
     accounts: Mapped[list["Account"]] = relationship(
         "Account",

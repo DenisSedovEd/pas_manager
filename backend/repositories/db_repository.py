@@ -1,6 +1,8 @@
 from sqlalchemy import desc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.models import Platform
+
 
 class DatabaseRepository:
     def __init__(self, session: AsyncSession):
@@ -28,6 +30,8 @@ class DatabaseRepository:
     async def get_list(self, model, limit: int = 100, filters=None, options=None):
         """Получить список объектов с поддержкой подгрузки связей"""
         query = select(model).limit(limit)
+        if hasattr(model, 'order'):
+            query = query.order_by(model.order.asc())
 
         if filters is not None:
             query = query.where(filters)
