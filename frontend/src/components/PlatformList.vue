@@ -83,8 +83,8 @@ onMounted(async () => {
           handle=".drag-handle"
           :disabled="!isEditMode"
           ghost-class="ghost-card"
+          :animation="200"
           :force-fallback="true"
-          fallback-class="sortable-fallback"
           @start="tg.HapticFeedback.impactOccurred('light')"
           @end="handleReorder"
       >
@@ -93,7 +93,6 @@ onMounted(async () => {
               class="platform-item"
               :class="{ 'editing': isEditMode }"
               @click="!isEditMode && selectPlatform(platform)"
-              @touchend.prevent="!isEditMode && selectPlatform(platform)"
               @contextmenu.prevent
           >
             <div class="icon-box">{{ platform.icon || '🌐' }}</div>
@@ -135,7 +134,7 @@ onMounted(async () => {
 .platform-list {
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Расстояние между карточками */
+  gap: 10px;
 }
 
 .platform-item {
@@ -143,12 +142,11 @@ onMounted(async () => {
   border-radius: 12px;
   display: flex;
   align-items: center;
-  padding: 10px; /* Равный отступ со всех сторон для иконки */
+  padding: 10px;
   gap: 12px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: pointer;
-  transition: transform 0.1s ease, opacity 0.1s ease;
-  touch-action: manipulation; /* главное для Telegram */
+  touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
   user-select: none;
   -webkit-user-select: none;
@@ -159,7 +157,6 @@ onMounted(async () => {
   opacity: 0.8;
 }
 
-/* Иконка */
 .icon-box {
   width: 42px;
   height: 42px;
@@ -170,15 +167,6 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-size: 24px;
-}
-
-/* Текстовая часть */
-.main-content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 
 .name {
@@ -197,7 +185,6 @@ onMounted(async () => {
   text-overflow: ellipsis;
 }
 
-/* Число и стрелка */
 .count-value {
   font-size: 14px;
   font-weight: 500;
@@ -211,48 +198,6 @@ onMounted(async () => {
   margin-left: -4px;
 }
 
-/* Стили кнопки добавления */
-.add-button {
-  border: 1px dashed var(--tg-theme-button-color);
-  background: transparent;
-  margin-top: 8px;
-}
-
-.add-icon {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-  font-weight: bold;
-}
-
-.add-button .name {
-  color: var(--tg-theme-button-color);
-}
-
-/* Вспомогательные состояния */
-.status-msg {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--tg-theme-hint-color);
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--tg-theme-hint-color);
-  border-top-color: var(--tg-theme-button-color);
-  border-radius: 50%;
-  margin: 0 auto 12px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
-/* Кнопка правки в заголовке */
 .header-actions {
   display: flex;
   justify-content: space-between;
@@ -280,19 +225,19 @@ onMounted(async () => {
   user-select: none;
 }
 
-/* Ручка для перетаскивания */
 .drag-handle {
   padding: 0 8px 0 4px;
   color: var(--tg-theme-hint-color);
   font-size: 20px;
   cursor: grab;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
 
 .platform-item.editing {
   cursor: default;
+  touch-action: none;
 }
 
 .platform-item:not(.editing) {
@@ -303,8 +248,4 @@ onMounted(async () => {
   transform: none;
 }
 
-.ghost-card {
-  opacity: 0.4;
-  background: var(--tg-theme-hint-color) !important;
-}
 </style>

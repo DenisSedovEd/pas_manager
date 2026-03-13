@@ -204,7 +204,6 @@ input:focus, textarea:focus {
   margin-top: 15px;
 }
 
-/* Остальные стили экрана блокировки */
 .lock-screen {
   height: 100vh;
   display: flex;
@@ -257,4 +256,89 @@ input:focus, textarea:focus {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ─── Shared utilities ─── */
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--tg-theme-hint-color);
+  border-top-color: var(--tg-theme-button-color);
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.status-msg,
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--tg-theme-hint-color);
+}
+
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.add-button {
+  border: 1px dashed var(--tg-theme-button-color);
+  background: transparent;
+  margin-top: 8px;
+}
+
+.add-icon {
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+  font-weight: bold;
+}
+
+.add-button .name {
+  color: var(--tg-theme-button-color);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.add-button .description {
+  font-size: 11px;
+  color: var(--tg-theme-hint-color);
+}
+
+.ghost-card {
+  background: var(--tg-theme-secondary-bg-color) !important;
+  color: var(--tg-theme-text-color) !important;
+  border-radius: 12px !important;
+  opacity: 0.95 !important;
+  transform: scale(1.03) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  padding: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border: 1px solid var(--tg-theme-hint-color) !important;
+}
+
+.sortable-fallback {
+  opacity: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 </style>
+

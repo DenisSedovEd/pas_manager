@@ -119,6 +119,9 @@ onMounted(async () => {
   border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: all 0.1s ease;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .account-item:active {
@@ -136,14 +139,6 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-size: 22px;
-}
-
-.main-content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
 }
 
 .label-text {
@@ -169,58 +164,6 @@ onMounted(async () => {
   color: var(--tg-theme-hint-color);
   font-size: 20px;
   opacity: 0.4;
-}
-
-/* Кнопка добавления */
-.add-button {
-  border: 1px dashed var(--tg-theme-button-color);
-  background: transparent;
-  margin-top: 8px;
-}
-
-.add-icon {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-  font-weight: bold;
-}
-
-.add-button .name {
-  color: var(--tg-theme-button-color);
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.add-button .description {
-  font-size: 11px;
-  color: var(--tg-theme-hint-color);
-}
-
-/* Вспомогательные стили */
-.status-msg, .empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--tg-theme-hint-color);
-}
-
-.empty-icon {
-  font-size: 40px;
-  margin-bottom: 12px;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--tg-theme-hint-color);
-  border-top-color: var(--tg-theme-button-color);
-  border-radius: 50%;
-  margin: 0 auto 12px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .platform-header {
@@ -270,7 +213,6 @@ onMounted(async () => {
   line-height: 1.3;
 }
 
-/* Кнопка редактирования платформы */
 .edit-platform-btn {
   background: var(--tg-theme-button-color);
   color: var(--tg-theme-button-text-color);
@@ -290,5 +232,4 @@ onMounted(async () => {
   opacity: 0.85;
   transform: scale(0.95);
 }
-
 </style>

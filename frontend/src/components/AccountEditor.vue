@@ -218,7 +218,7 @@ const generatePassword = () => {
 <style scoped>
 .editor-container {
   padding: 16px;
-  padding-bottom: 80px; /* Увеличили отступ для длинной формы */
+  padding-bottom: 80px;
   max-width: 500px;
   margin: 0 auto;
 }
@@ -316,7 +316,6 @@ const generatePassword = () => {
 }
 
 .eye-btn:active {
-  opacity: 1;
   transform: translateY(-50%) scale(0.95);
 }
 
@@ -399,5 +398,4 @@ const generatePassword = () => {
   padding-right: 40px !important;
   cursor: pointer;
 }
-
 </style>
