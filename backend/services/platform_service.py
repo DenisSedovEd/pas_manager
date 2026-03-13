@@ -93,6 +93,7 @@ class PlatformService:
             icon=platform_data.icon,
             description=platform_data.description,
             accounts_count=accounts_count,
+            order=platform.order,
         )
 
     async def reorder_platforms(self, order_list: list[str]):
