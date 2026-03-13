@@ -1,15 +1,19 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useTelegram } from '../composables/useTelegram';
-import { accountApi } from '../api/account.js';
+import {ref, onMounted} from 'vue';
+import {useTelegram} from '../composables/useTelegram';
+import {accountApi} from '../api/account.js';
 
-const props = defineProps(['platformId', 'platformIcon']); // Добавили иконку платформы в пропсы
 const emit = defineEmits(['select-account', 'add-account']);
-const { tg, initData } = useTelegram();
+const {tg, initData} = useTelegram();
 
 const accounts = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
+
+const props = defineProps({
+  platformId: String,
+  platform: Object
+});
 
 onMounted(async () => {
   try {
@@ -26,6 +30,26 @@ onMounted(async () => {
 
 <template>
   <div class="accounts-container">
+    <div class="platform-header">
+      <div class="platform-info">
+        <span class="platform-icon">{{ props.platform?.icon || '🌐' }}</span>
+        <div class="platform-text">
+          <h1>{{ props.platform?.name || 'Платформа' }}</h1>
+          <p v-if="props.platform?.description" class="platform-desc">
+            {{ props.platform.description }}
+          </p>
+        </div>
+      </div>
+
+      <button
+          v-if="props.platform?.name !== 'Other'"
+          class="edit-platform-btn"
+          @click="$emit('edit-platform', props.platform)"
+      >
+        ✏️
+      </button>
+    </div>
+
     <div v-if="isLoading" class="status-msg">
       <div class="spinner"></div>
       <p>Загрузка данных...</p>
@@ -44,10 +68,10 @@ onMounted(async () => {
         </div>
 
         <div
-          v-for="account in accounts"
-          :key="account.id"
-          class="account-item"
-          @click="emit('select-account', account)"
+            v-for="account in accounts"
+            :key="account.id"
+            class="account-item"
+            @click="emit('select-account', account)"
         >
           <div class="icon-box">{{ platformIcon || '👤' }}</div>
 
@@ -193,5 +217,79 @@ onMounted(async () => {
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.platform-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  //padding: 16px 16px 12px;
+  padding-bottom: 12px;
+  background: var(--tg-theme-bg-color);
+  border-bottom: 2px solid rgba(128, 128, 128, 0.2);
+  margin-bottom: 30px;
+}
+
+.platform-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.platform-icon {
+  font-size: 32px;
+  width: 52px;
+  height: 52px;
+  background: var(--tg-theme-secondary-bg-color);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.platform-text h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.platform-desc {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
+  line-height: 1.3;
+}
+
+/* Кнопка редактирования платформы */
+.edit-platform-btn {
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.edit-platform-btn:active {
+  opacity: 0.85;
+  transform: scale(0.95);
+}
+
 </style>
