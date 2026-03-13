@@ -114,7 +114,7 @@ const generatePassword = () => {
               :type="showPassword ? 'text' : 'password'"
               v-model="formData.password"
               placeholder="••••••••"
-              class="main-input pr-45"
+              class="main-input"
           />
           <button
               class="eye-btn"
@@ -239,7 +239,7 @@ const generatePassword = () => {
   background: var(--tg-theme-secondary-bg-color);
   border: 1px solid rgba(128, 128, 128, 0.2);
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 12px 50px 12px 16px;
   color: var(--tg-theme-text-color);
   font-size: 16px;
   box-sizing: border-box;
@@ -250,19 +250,29 @@ const generatePassword = () => {
   border-color: var(--tg-theme-button-color);
 }
 
-.pr-45 {
-  padding-right: 45px;
-}
-
 .eye-btn {
   position: absolute;
   right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 18px;
-  color: var(--tg-theme-hint-color);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 20px;
+  color: var(--tg-theme-text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 0;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.eye-btn:active {
+  opacity: 1;
+  transform: translateY(-50%) scale(0.95);
 }
 
 .actions {
