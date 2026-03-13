@@ -76,8 +76,8 @@ onMounted(async () => {
           <div class="icon-box">{{ platformIcon || '👤' }}</div>
 
           <div class="main-content">
-            <div class="login-text">{{ account.login }}</div>
             <div v-if="account.label" class="label-text">{{ account.label }}</div>
+            <div class="login-text">{{ account.login }}</div>
           </div>
 
           <div class="chevron">›</div>
@@ -146,7 +146,7 @@ onMounted(async () => {
   justify-content: center;
 }
 
-.login-text {
+.label-text {
   font-weight: 600;
   font-size: 15px;
   color: var(--tg-theme-text-color);
@@ -156,7 +156,7 @@ onMounted(async () => {
   text-overflow: ellipsis;
 }
 
-.label-text {
+.login-text {
   font-size: 11px;
   color: var(--tg-theme-hint-color);
   margin-top: 2px;
