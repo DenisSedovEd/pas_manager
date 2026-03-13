@@ -227,7 +227,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  //padding: 16px 16px 12px;
   padding-bottom: 12px;
   background: var(--tg-theme-bg-color);
   border-bottom: 2px solid rgba(128, 128, 128, 0.2);
