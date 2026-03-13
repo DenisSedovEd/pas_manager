@@ -73,7 +73,7 @@ onMounted(async () => {
 <style scoped>
 .platforms-container {
   width: 100%;
-  padding: 16px;
+  padding: 16px 16px 50px;
   box-sizing: border-box;
 }
 

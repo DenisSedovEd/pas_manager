@@ -1,17 +1,33 @@
 <script setup>
-import {ref, computed} from 'vue';
+import {ref, computed, onMounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
+import {platformApi} from '../api/platform.js';
 
 const props = defineProps(['account', 'currentPlatform']);
 const emit = defineEmits(['save', 'cancel']);
 const {tg, initData} = useTelegram();
 
 const showConfirmDialog = ref(false);
+const showSaveConfirmDialog = ref(false);
 const isLoading = ref(false);
 const showPassword = ref(false);
+const platforms = ref([]);
+
+onMounted(async () => {
+  try {
+    const response = await platformApi.getList(initData);
+    platforms.value = response.data || response;
+  } catch (e) {
+    console.error("Ошибка загрузки платформ", e);
+  }
+});
 
 const isEditing = computed(() => !!props.account?.id);
+
+const selectedPlatform = computed(() => {
+  return platforms.value.find(p => p.id === formData.value.platform_id) || props.currentPlatform;
+});
 
 const formData = ref({
   id: props.account?.id || null,
@@ -29,6 +45,15 @@ const handleSave = async () => {
     return;
   }
 
+  if (isEditing.value) {
+    showSaveConfirmDialog.value = true;
+  } else {
+    executeSave();
+  }
+};
+
+const executeSave = async () => {
+  showSaveConfirmDialog.value = false;
   isLoading.value = true;
   try {
     if (isEditing.value) {
@@ -82,6 +107,15 @@ const generatePassword = () => {
       <div class="icon-section">
         <div class="icon-preview">👤</div>
         <p class="platform-name">{{ currentPlatform?.name || 'Аккаунт' }}</p>
+      </div>
+
+      <div class="input-group">
+        <label>Платформа</label>
+        <select v-model="formData.platform_id" class="main-input select-input">
+          <option v-for="p in platforms" :key="p.id" :value="p.id">
+            {{ p.icon }} {{ p.name }}
+          </option>
+        </select>
       </div>
 
       <div class="input-group">
@@ -164,6 +198,17 @@ const generatePassword = () => {
         <div class="modal-buttons">
           <button class="btn danger" @click="handleDelete">Да, удалить</button>
           <button class="btn secondary" @click="showConfirmDialog = false">Отмена</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showSaveConfirmDialog" class="modal-overlay">
+      <div class="modal">
+        <h3>Сохранить изменения?</h3>
+        <p>Текущие данные аккаунта будут обновлены.</p>
+        <div class="modal-buttons">
+          <button class="btn primary" @click="executeSave">Сохранить</button>
+          <button class="btn secondary" @click="showSaveConfirmDialog = false">Отмена</button>
         </div>
       </div>
     </div>
@@ -344,4 +389,15 @@ const generatePassword = () => {
   flex-direction: column;
   gap: 10px;
 }
+
+.select-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(128, 128, 128, 0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px !important;
+  cursor: pointer;
+}
+
 </style>
