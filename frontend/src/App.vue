@@ -109,14 +109,14 @@ onMounted(async () => {
   // --- ЗАВЕРШЕНИЕ СЕССИИ ---
   const handleLogout = () => {
     const url = '/pas-manager/v1/main/auth/logout';
-    const data = JSON.stringify({ init_data: initData });
+    const data = JSON.stringify({init_data: initData});
 
     if (navigator.sendBeacon) {
       navigator.sendBeacon(url, data);
     } else {
       fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         body: data,
         keepalive: true
       });
@@ -147,9 +147,14 @@ onMounted(async () => {
     <div class="content-wrapper">
       <PlatformList v-if="currentScreen === 'menu'" @select-platform="(p) => pushScreen('accounts', { platform: p })"
                     @add-platform="pushScreen('platform_edit')"/>
-      <AccountList v-if="currentScreen === 'accounts'" :platformId="currentProps.platform?.id"
-                   @select-account="(acc) => pushScreen('account_detail', { account: acc, platform: currentProps.platform })"
-                   @add-account="pushScreen('account_edit', { currentPlatform: currentProps.platform })"/>
+      <AccountList
+          v-if="currentScreen === 'accounts'"
+          :platformId="currentProps.platform?.id"
+          :platform="currentProps.platform"
+          @select-account="(acc) => pushScreen('account_detail', { account: acc, platform: currentProps.platform })"
+          @add-account="pushScreen('account_edit', { currentPlatform: currentProps.platform })"
+          @edit-platform="(p) => pushScreen('platform_edit', { platform: p })"
+      />
       <AccountDetail v-if="currentScreen === 'account_detail'" :account="currentProps.account"
                      @edit="(fullAcc) => pushScreen('account_edit', { account: fullAcc, currentPlatform: currentProps.platform })"
                      @deleted="popScreen"/>
