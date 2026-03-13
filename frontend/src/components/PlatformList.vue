@@ -1,17 +1,44 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useTelegram } from '../composables/useTelegram';
-import { platformApi } from '../api/platform.js';
+import {ref, onMounted} from 'vue';
+import draggable from 'vuedraggable';
+import {useTelegram} from '../composables/useTelegram';
+import {platformApi} from '../api/platform.js';
 
 const emit = defineEmits(['select-platform', 'add-platform']);
-const { tg, initData } = useTelegram();
+const {tg, initData} = useTelegram();
 const platforms = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
+const isEditMode = ref(false);
+
+const fetchPlatforms = async () => {
+  try {
+    const response = await platformApi.getList(initData);
+    platforms.value = response.data || response;
+  } catch (e) {
+    tg.showAlert("Ошибка загрузки");
+  }
+};
+
+const handleReorder = async () => {
+  tg.HapticFeedback.impactOccurred('medium');
+  try {
+    const ids = platforms.value.map(p => String(p.id));
+    await platformApi.reorder(initData, ids);
+  } catch (e) {
+    tg.showAlert("Ошибка сохранения порядка");
+    await fetchPlatforms();
+  }
+};
+
+const selectPlatform = (platform) => {
+  if (isEditMode.value) return
+  emit('select-platform', platform)
+}
 
 onMounted(async () => {
   try {
-    // В некоторых версиях API возвращает { data: [...] }, в других сразу массив
+    await fetchPlatforms();
     const response = await platformApi.getList(initData);
     platforms.value = response.data || response;
   } catch (e) {
@@ -21,50 +48,78 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+
 </script>
 
 <template>
   <div class="platforms-container">
+    <div class="header-actions">
+      <h2 class="title">Категории</h2>
+      <button
+          class="edit-mode-btn"
+          @click="isEditMode = !isEditMode"
+          @touchend.prevent="isEditMode = !isEditMode"
+      >
+        {{ isEditMode ? 'Готово' : 'Правка' }}
+      </button>
+    </div>
+
     <div v-if="isLoading" class="status-msg">
       <div class="spinner"></div>
-      <p>Загрузка платформ...</p>
+      <p>Загрузка данных...</p>
     </div>
 
     <div v-else-if="error" class="status-msg error">
       <p>{{ error }}</p>
-      <button @click="window.location.reload()">Обновить</button>
+      <button @click="fetchPlatforms">Обновить</button>
     </div>
 
     <template v-else>
-      <div class="platform-list">
-
-        <div
-          v-for="platform in platforms"
-          :key="platform.id"
-          class="platform-item"
-          @click="emit('select-platform', platform)"
-        >
-          <div class="icon-box">{{ platform.icon || '🌐' }}</div>
-
-          <div class="main-content">
-            <div class="name">{{ platform.name }}</div>
-            <div v-if="platform.description" class="description">
-              {{ platform.description }}
+      <draggable
+          v-model="platforms"
+          item-key="id"
+          class="platform-list"
+          handle=".drag-handle"
+          :disabled="!isEditMode"
+          ghost-class="ghost-card"
+          :force-fallback="true"
+          fallback-class="sortable-fallback"
+          @start="tg.HapticFeedback.impactOccurred('light')"
+          @end="handleReorder"
+      >
+        <template #item="{ element: platform }">
+          <div
+              class="platform-item"
+              :class="{ 'editing': isEditMode }"
+              @click="!isEditMode && selectPlatform(platform)"
+              @touchend.prevent="!isEditMode && selectPlatform(platform)"
+              @contextmenu.prevent
+          >
+            <div class="icon-box">{{ platform.icon || '🌐' }}</div>
+            <div class="main-content">
+              <div class="name">{{ platform.name }}</div>
+              <div v-if="platform.description" class="description">
+                {{ platform.description }}
+              </div>
             </div>
+
+            <template v-if="!isEditMode">
+              <div class="count-value">{{ platform.accounts_count || 0 }}</div>
+              <div class="chevron">›</div>
+            </template>
+
+            <div v-if="isEditMode" class="drag-handle">☰</div>
           </div>
+        </template>
+      </draggable>
 
-          <div class="count-value">{{ platform.accounts_count || 0 }}</div>
-          <div class="chevron">›</div>
+      <div v-if="!isEditMode" class="platform-item add-button" @click="emit('add-platform')">
+        <div class="icon-box add-icon">+</div>
+        <div class="main-content">
+          <div class="name">Add New Platform</div>
+          <div class="description">Create a new category</div>
         </div>
-
-        <div class="platform-item add-button" @click="emit('add-platform')">
-          <div class="icon-box add-icon">+</div>
-          <div class="main-content">
-            <div class="name">Add New Platform</div>
-            <div class="description">Create a new category</div>
-          </div>
-        </div>
-
       </div>
     </template>
   </div>
@@ -93,6 +148,10 @@ onMounted(async () => {
   border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: transform 0.1s ease, opacity 0.1s ease;
+  touch-action: manipulation; /* главное для Telegram */
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .platform-item:active {
@@ -187,6 +246,65 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* Кнопка правки в заголовке */
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+}
+
+.edit-mode-btn {
+  background: none;
+  border: none;
+  color: var(--tg-theme-button-color);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Ручка для перетаскивания */
+.drag-handle {
+  padding: 0 8px 0 4px;
+  color: var(--tg-theme-hint-color);
+  font-size: 20px;
+  cursor: grab;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.platform-item.editing {
+  cursor: default;
+}
+
+.platform-item:not(.editing) {
+  cursor: pointer;
+}
+
+.platform-item.editing:active {
+  transform: none;
+}
+
+.ghost-card {
+  opacity: 0.4;
+  background: var(--tg-theme-hint-color) !important;
 }
 </style>

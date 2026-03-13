@@ -56,6 +56,16 @@ async def add_platform(
     return new_platform
 
 
+@router.put("/reorder")
+async def reorder_platforms(
+        payload: list[str],
+        authorization: str = Header(...),
+        service: PlatformService = Depends(get_platform_service),
+):
+    user = verify_telegram_data(authorization)
+    return await service.reorder_platforms(payload)
+
+
 @router.put("/{platform_id}")
 async def update_platform(
         platform_id: str,
@@ -75,10 +85,10 @@ async def update_platform(
 
 @router.delete("/{platform_id}")
 async def delete_platform(
-    platform_id: str,
-    transfer: bool = True, # Параметр из Query string
-    authorization: str = Header(...),
-    service: PlatformService = Depends(get_platform_service),
+        platform_id: str,
+        transfer: bool = True,  # Параметр из Query string
+        authorization: str = Header(...),
+        service: PlatformService = Depends(get_platform_service),
 ):
     verify_telegram_data(authorization)
     try:

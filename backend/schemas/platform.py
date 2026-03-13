@@ -9,7 +9,7 @@ class PlatformSchema(BaseModel):
     name: str = Field(alias="platform_name")
     icon: str = "🌐"
     accounts_count: int
-
+    order: int
     model_config = ConfigDict(
         from_attributes=True,
         populate_by_name=True,
@@ -18,10 +18,11 @@ class PlatformSchema(BaseModel):
 
 class PlatformResponseSchema(BaseModel):
     """Платформа с количеством аккаунтов"""
-    id: str  # ← Строка вместо UUID
+    id: str
     name: str = Field(description="Platform name")
     icon: Optional[str] = Field(description="Platform icon/emoji")
     description: Optional[str] = Field(default=None, description="Description")
+    order: int
     accounts_count: int = Field(description="Number of accounts")
 
 
@@ -29,4 +30,5 @@ class PlatformRequestSchema(BaseModel):
     """Для создания платформы"""
     name: str = Field(description="Platform name")
     icon: str = Field(description="Platform icon/emoji")
+    order: int
     description: Optional[str] = Field(default=None, description="Description")

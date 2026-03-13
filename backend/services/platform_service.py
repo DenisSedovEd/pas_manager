@@ -20,6 +20,7 @@ class PlatformService:
                 name=platform.platform_name,
                 icon=platform.icon,
                 description=platform.description,
+                order=platform.order,
                 accounts_count=accounts_count,
             )
             result.append(response)
@@ -39,6 +40,7 @@ class PlatformService:
             name=platform.platform_name,
             icon=platform.icon,
             description=platform.description,
+            order=platform.order,
             accounts_count=accounts_count,
         )
 
@@ -46,11 +48,15 @@ class PlatformService:
         """Добавить новую платформу"""
         new_id = str(uuid.uuid4())
 
+        existing_platforms = await self.db_repo.get_list(Platform)
+        new_order = len(existing_platforms)
+
         new_platform = Platform(
             id=new_id,
             platform_name=platform_data.name,
             icon=platform_data.icon,
             description=platform_data.description,
+            order=new_order,
         )
         await self.db_repo.add(new_platform)
 
@@ -87,6 +93,17 @@ class PlatformService:
             description=platform_data.description,
             accounts_count=accounts_count,
         )
+
+    async def reorder_platforms(self, order_list: list[str]):
+        """Пересортируем список платформ"""
+        for index, platform_id in enumerate(order_list):
+            await self.db_repo.update(
+                Platform,
+                filters={"id": str(platform_id)},
+                values={"order": int(index) },
+            )
+        return {'status': 'ok'}
+
 
     async def delete_platform(self, platform_id: str, transfer_accounts: bool = True):
         """Удалить платформу с выбором: перенос или удаление аккаунтов"""

@@ -172,13 +172,11 @@ body {
   background-color: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);
   overflow: hidden;
-  /* Разрешаем выделение текста для работы копирования/вставки */
-  -webkit-user-select: text !important;
-  user-select: text !important;
 }
 
 input, textarea {
   -webkit-user-select: text !important;
+  -webkit-touch-callout: default !important;
   user-select: text !important;
   pointer-events: auto !important;
   z-index: 10;
