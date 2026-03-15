@@ -24,12 +24,16 @@ const mouseSwipePlatform = ref(null);
 const swipeStart = (clientX, clientY, platform, target) => {
   if (!isEditMode.value) return;
   if (target.closest('.drag-handle')) return;
+  const wrapper = target.closest('.swipe-wrapper');
+  const maxSwipe = wrapper ? wrapper.offsetWidth * 0.2 : 80;
   swipeData.value[platform.id] = {
     startX: clientX,
     startY: clientY,
     currentX: 0,
     isSwiping: false,
-    decided: false
+    decided: false,
+    maxSwipe,
+    reachedLimit: false
   };
 };
 
@@ -52,7 +56,15 @@ const swipeMove = (clientX, clientY, platform, e) => {
   if (state.isSwiping) {
     e.preventDefault();
     e.stopPropagation();
-    state.currentX = Math.min(0, dx);
+    state.currentX = Math.max(-state.maxSwipe, Math.min(0, dx));
+
+    // Хаптик когда упёрлись в край
+    if (state.currentX <= -state.maxSwipe + 1 && !state.reachedLimit) {
+      state.reachedLimit = true;
+      tg.HapticFeedback.impactOccurred('medium');
+    } else if (state.currentX > -state.maxSwipe + 1) {
+      state.reachedLimit = false;
+    }
   }
 };
 
@@ -61,14 +73,14 @@ const swipeEnd = (platform) => {
   const state = swipeData.value[platform.id];
   if (!state) return;
 
-  if (state.isSwiping && state.currentX < -80) {
+  if (state.isSwiping && state.reachedLimit) {
     state.currentX = 0;
     state.isSwiping = false;
     tg.showConfirm(
-      `Удалить платформу «${platform.name}»?`,
-      async (confirmed) => {
-        if (confirmed) await deletePlatform(platform);
-      }
+        `Удалить платформу «${platform.icon} ${platform.name}»?`,
+        async (confirmed) => {
+          if (confirmed) await deletePlatform(platform);
+        }
     );
   } else {
     state.currentX = 0;
@@ -218,9 +230,11 @@ onMounted(async () => {
           <div class="swipe-wrapper">
 
             <!-- Красный фон — рендерится ТОЛЬКО когда карточка реально сдвинута -->
-            <div v-if="(swipeData[platform.id]?.currentX || 0) < -5" class="delete-bg">
+            <div v-if="(swipeData[platform.id]?.currentX || 0) < -5"
+                 class="delete-bg"
+                 :class="{ 'delete-ready': swipeData[platform.id]?.reachedLimit }">
               <span class="delete-icon">🗑</span>
-              <span class="delete-label">Удалить</span>
+<!--              <span class="delete-label">Удалить</span>-->
             </div>
 
             <div
@@ -288,16 +302,22 @@ onMounted(async () => {
 .delete-bg {
   position: absolute;
   inset: 0;
-  background: #ff3b30;
+  background: var(--tg-theme-bg-color);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding-right: 20px;
   gap: 6px;
-  color: #fff;
+  color: var(--tg-theme-hint-color);
   font-weight: 600;
   pointer-events: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.delete-bg.delete-ready {
+  background: #ff3b30;
+  color: #fff;
 }
 
 .delete-icon {
