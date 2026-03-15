@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Header, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
-from backend.core.security import verify_telegram_data
 from backend.core.session import session_manager
-from backend.dependencies import get_platform_service
+from backend.dependencies import get_platform_service, get_current_user
 from backend.schemas.platform import PlatformResponseSchema, PlatformRequestSchema
+from backend.schemas.response_schemas import MessageResponse, SuccessResponse
 from backend.services.platform_service import PlatformService
 
 router = APIRouter(prefix="/platform")
@@ -11,11 +11,10 @@ router = APIRouter(prefix="/platform")
 
 @router.get("/list")
 async def get_platforms(
-        authorization: str = Header(...),
+        user: dict = Depends(get_current_user),
         service: PlatformService = Depends(get_platform_service),
 ) -> list[PlatformResponseSchema]:
     """GET /pas-manager/v1/platform/list"""
-    user = verify_telegram_data(authorization)
 
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
@@ -27,11 +26,10 @@ async def get_platforms(
 @router.get("/{platform_id}")
 async def get_platform(
         platform_id: str,
-        authorization: str = Header(...),
+        user: dict = Depends(get_current_user),
         service: PlatformService = Depends(get_platform_service),
 ) -> PlatformResponseSchema:
     """GET /pas-manager/v1/platform/{platform_id}"""
-    user = verify_telegram_data(authorization)
 
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
@@ -43,11 +41,10 @@ async def get_platform(
 @router.post("")
 async def add_platform(
         payload: PlatformRequestSchema,
-        authorization: str = Header(...),
+        user: dict = Depends(get_current_user),
         service: PlatformService = Depends(get_platform_service),
 ) -> PlatformResponseSchema:
     """POST /pas-manager/v1/platform"""
-    user = verify_telegram_data(authorization)
 
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
@@ -59,22 +56,23 @@ async def add_platform(
 @router.put("/reorder")
 async def reorder_platforms(
         payload: list[str],
-        authorization: str = Header(...),
+        user: dict = Depends(get_current_user),
         service: PlatformService = Depends(get_platform_service),
 ):
-    user = verify_telegram_data(authorization)
-    return await service.reorder_platforms(payload)
+    if not session_manager.is_active(user["id"]):
+        raise HTTPException(status_code=401, detail="Locker is closed")
+    await service.reorder_platforms(payload)
+    return SuccessResponse()
 
 
 @router.put("/{platform_id}")
 async def update_platform(
         platform_id: str,
         payload: PlatformRequestSchema,
-        authorization: str = Header(...),
+        user: dict = Depends(get_current_user),
         service: PlatformService = Depends(get_platform_service),
 ) -> PlatformResponseSchema:
     """PUT /pas-manager/v1/platform/{platform_id}"""
-    user = verify_telegram_data(authorization)
 
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
@@ -86,13 +84,14 @@ async def update_platform(
 @router.delete("/{platform_id}")
 async def delete_platform(
         platform_id: str,
-        transfer: bool = True,  # Параметр из Query string
-        authorization: str = Header(...),
+        transfer: bool = True,
+        user: dict = Depends(get_current_user),
         service: PlatformService = Depends(get_platform_service),
 ):
-    verify_telegram_data(authorization)
+    if not session_manager.is_active(user["id"]):
+        raise HTTPException(status_code=401, detail="Locker is closed")
     try:
         await service.delete_platform(platform_id, transfer_accounts=transfer)
-        return {"status": "success"}
+        return MessageResponse(message='Platform deleted')
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

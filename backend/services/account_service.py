@@ -1,10 +1,8 @@
-import uuid
-from backend.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema, AccountResponseSchema
+from backend.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema
 from backend.models.account import Account
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from cryptography.exceptions import InvalidTag as CryptoInvalidTag
-# from src.schemas.crypto import InvalidTag
 
 
 class AccountService:
@@ -26,8 +24,8 @@ class AccountService:
         for account in accounts:
             item = AccountListItemSchema(
                 id=account.id,
-                label=account.tags or account.user_name,
-                login=account.user_name,
+                label=account.label or account.login,
+                login=account.login,
                 platform_id=account.platform_id,
                 order=account.order,
             )
@@ -58,11 +56,11 @@ class AccountService:
 
         return AccountDetailSchema(
             id=account.id,
-            login=account.user_name,
+            login=account.login,
             password=decrypted_password,
             email=account.email,
             phone=account.phone,
-            label=account.tags,
+            label=account.label,
             platform_id=account.platform_id,
         )
 
@@ -70,21 +68,20 @@ class AccountService:
             self,
             account: AccountRequestSchema,
             master_password: str,
-    ) -> AccountResponseSchema:
+    ) -> AccountDetailSchema:
         """Создать новый аккаунт"""
-        # Шифруем пароль
         enc_data = self.encrypt_repo.encrypt_data(
             account.password,
             master_password,
         )
 
         new_account = Account(
-            user_name=account.login,
+            login=account.login,
             email=account.email or None,
             phone=account.phone or None,
-            tags=account.label or account.login,
+            label=account.label or account.login,
             order=account.order,
-            platform_id=account.platform_id,  # ← Строка
+            platform_id=account.platform_id,
             encrypted_data=enc_data["encrypted_data"],
             salt=enc_data["salt"],
             nonce=enc_data["nonce"],
@@ -95,19 +92,15 @@ class AccountService:
 
         detail = AccountDetailSchema(
             id=new_account.id,
-            login=new_account.user_name,
+            login=new_account.login,
             password=account.password,
             email=new_account.email or "",
             phone=new_account.phone or "",
-            label=new_account.tags or new_account.user_name,
+            label=new_account.label or new_account.login,
             platform_id=new_account.platform_id,
         )
 
-        return AccountResponseSchema(
-            status="success",
-            message="Account created successfully",
-            data=detail
-        )
+        return detail
 
     async def reorder_accounts(self, order_list: list[str]):
         """Пересортируем список аккаунтов"""
@@ -117,14 +110,13 @@ class AccountService:
                 filters={"id": str(account_id)},
                 values={"order": int(index) },
             )
-        return {'status': 'ok'}
 
     async def update_account(
             self,
             account_id: int,
             account: AccountRequestSchema,
             master_password: str,
-    ) -> AccountResponseSchema:
+    ) -> AccountDetailSchema:
         """Обновить аккаунт"""
         existing = await self.db_repo.get(Account, filters={"id": account_id})
 
@@ -142,10 +134,10 @@ class AccountService:
             filters={"id": account_id},
             values={
                 "platform_id": account.platform_id,
-                "user_name": account.login,
+                "login": account.login,
                 "email": account.email or None,
                 "phone": account.phone or None,
-                "tags": account.label or account.login,
+                "label": account.label or account.login,
                 "encrypted_data": enc_data["encrypted_data"],
                 "salt": enc_data["salt"],
                 "nonce": enc_data["nonce"],
@@ -163,13 +155,9 @@ class AccountService:
             platform_id=account.platform_id,
         )
 
-        return AccountResponseSchema(
-            status="success",
-            message="Account updated successfully",
-            data=detail
-        )
+        return detail
 
-    async def delete_account(self, account_id: int) -> AccountResponseSchema:
+    async def delete_account(self, account_id: int) -> None:
         """Удалить аккаунт"""
         account = await self.db_repo.get(Account, filters={"id": account_id})
 
@@ -177,9 +165,3 @@ class AccountService:
             raise ValueError(f"Account with id {account_id} not found")
 
         await self.db_repo.delete(account)
-
-        return AccountResponseSchema(
-            status="success",
-            message="Account deleted successfully",
-            data=None
-        )

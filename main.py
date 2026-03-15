@@ -44,7 +44,12 @@ app = FastAPI(lifespan=lifespan)  # ← Добавь lifespan
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://sde-resume.online",
+        'https://bulkheaded-fleetly-alfreda.ngrok-free.dev',
+        "https://web.telegram.org",
+        "https://t.me",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,7 +76,6 @@ if STATIC_DIR.exists():
         return {"error": "Frontend build not found"}
 else:
     logger.warning(f"Static directory not found at {STATIC_DIR}")
-
 
 if __name__ == "__main__":
     asyncio.run(start())

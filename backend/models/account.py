@@ -22,7 +22,7 @@ class Account(Base):
         "Platform",
         back_populates="accounts",
     )
-    user_name: Mapped[str] = mapped_column(
+    login: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
@@ -39,7 +39,7 @@ class Account(Base):
         default=0,
         nullable=False,
     )
-    tags: Mapped[str | None] = mapped_column(
+    label: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
     )

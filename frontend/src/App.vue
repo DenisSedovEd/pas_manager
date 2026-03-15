@@ -98,7 +98,7 @@ const handleUnlock = async () => {
   isAuthLoading.value = true
   try {
     const res = await authApi.unlockWithPassword(initData, password.value)
-    if (res.status === 'success' || res.is_unlocked === true) {
+    if (res.ok === true) {
       isUnlocked.value = true
       tg.HapticFeedback.notificationOccurred('success')
 

@@ -31,10 +31,3 @@ class AccountRequestSchema(BaseModel):
     phone: Optional[str] = Field(default=None, description="Phone")
     label: Optional[str] = Field(default=None, description="Account label")
     order: Optional[int] = Field(default=0, description="Account order")
-
-
-class AccountResponseSchema(BaseModel):
-    """Ответ при создании/обновлении"""
-    status: str
-    message: str
-    data: Optional[AccountDetailSchema] = None
