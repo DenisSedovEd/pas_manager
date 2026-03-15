@@ -1,6 +1,7 @@
 from cryptography.exceptions import InvalidTag
 from fastapi import APIRouter, HTTPException, Depends
 
+from backend.core.logger import logger
 from backend.core.security import MasterPasswordService
 from backend.core.config import settings as app_settings
 from backend.core.session import session_manager
@@ -45,7 +46,7 @@ async def unlock(
         payload.master_password,
         settings.master_password_hash
     )
-
+    logger.info(is_valid)
     if is_valid:
         session_manager.create_session(user["id"], payload.master_password)
         return SuccessResponse()
