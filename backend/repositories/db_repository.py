@@ -30,11 +30,14 @@ class DatabaseRepository:
     async def get_list(self, model, limit: int = 100, filters=None, options=None):
         """Получить список объектов с поддержкой подгрузки связей"""
         query = select(model).limit(limit)
-        if hasattr(model, 'order'):
-            query = query.order_by(model.order.asc())
 
         if filters is not None:
             query = query.where(filters)
+
+        if hasattr(model, 'order'):
+            query = query.order_by(model.order.asc())
+
+
 
         if options is not None:
             # Это позволит нам добавить selectinload в сервисе

@@ -1,27 +1,193 @@
 <script setup>
-import {ref, onMounted} from 'vue';
+import {ref, watch, onMounted} from 'vue';
+import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 
-const emit = defineEmits(['select-account', 'add-account']);
+const emit = defineEmits(['select-account', 'add-account', 'edit-platform']);
 const {tg, initData} = useTelegram();
 
 const accounts = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
+const isEditMode = ref(false);
 
 const props = defineProps({
   platformId: String,
   platform: Object
 });
 
-onMounted(async () => {
+// ── Swipe-to-delete state ─────────────────────────────────────────────────────
+const swipeData = ref({});
+
+watch(isEditMode, (val) => {
+  if (!val) swipeData.value = {};
+});
+
+// ── Общая логика свайпа (touch + mouse) ─────────────────────────────────────
+const mouseSwipeAccount = ref(null);
+
+const swipeStart = (clientX, clientY, account, target) => {
+  if (!isEditMode.value) return;
+  if (target.closest('.drag-handle')) return;
+  const wrapper = target.closest('.swipe-wrapper');
+  const maxSwipe = wrapper ? wrapper.offsetWidth * 0.2 : 80;
+  swipeData.value[account.id] = {
+    startX: clientX,
+    startY: clientY,
+    currentX: 0,
+    isSwiping: false,
+    decided: false,
+    maxSwipe,
+    reachedLimit: false
+  };
+};
+
+const swipeMove = (clientX, clientY, account, e) => {
+  if (!isEditMode.value) return;
+  const state = swipeData.value[account.id];
+  if (!state) return;
+
+  const dx = clientX - state.startX;
+  const dy = clientY - state.startY;
+
+  if (!state.decided) {
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+      state.decided = true;
+      state.isSwiping = Math.abs(dx) > Math.abs(dy) && dx < 0;
+    }
+    return;
+  }
+
+  if (state.isSwiping) {
+    e.preventDefault();
+    e.stopPropagation();
+    state.currentX = Math.max(-state.maxSwipe, Math.min(0, dx));
+
+    // Хаптик когда упёрлись в край
+    if (state.currentX <= -state.maxSwipe + 1 && !state.reachedLimit) {
+      state.reachedLimit = true;
+      tg.HapticFeedback.impactOccurred('medium');
+    } else if (state.currentX > -state.maxSwipe + 1) {
+      state.reachedLimit = false;
+    }
+  }
+};
+
+const swipeEnd = (account) => {
+  if (!isEditMode.value) return;
+  const state = swipeData.value[account.id];
+  if (!state) return;
+
+  if (state.isSwiping && state.reachedLimit) {
+    state.currentX = 0;
+    state.isSwiping = false;
+    tg.showConfirm(
+        `Удалить аккаунт «${account.label || account.login}»?`,
+        async (confirmed) => {
+          if (confirmed) await deleteAccount(account);
+        }
+    );
+  } else {
+    state.currentX = 0;
+    state.isSwiping = false;
+  }
+};
+
+// ── Touch-обработчики ────────────────────────────────────────────────────────
+const onTouchStart = (e, account) => {
+  swipeStart(e.touches[0].clientX, e.touches[0].clientY, account, e.target);
+};
+
+const onTouchMove = (e, account) => {
+  swipeMove(e.touches[0].clientX, e.touches[0].clientY, account, e);
+};
+
+const onTouchEnd = (e, account) => {
+  swipeEnd(account);
+};
+
+// ── Mouse-обработчики (десктоп) ──────────────────────────────────────────────
+const onMouseDown = (e, account) => {
+  if (e.button !== 0) return;
+  swipeStart(e.clientX, e.clientY, account, e.target);
+  mouseSwipeAccount.value = account;
+
+  const onMMove = (ev) => {
+    swipeMove(ev.clientX, ev.clientY, account, ev);
+  };
+  const onMUp = () => {
+    swipeEnd(account);
+    mouseSwipeAccount.value = null;
+    document.removeEventListener('mousemove', onMMove);
+    document.removeEventListener('mouseup', onMUp);
+  };
+  document.addEventListener('mousemove', onMMove);
+  document.addEventListener('mouseup', onMUp);
+};
+
+const getItemStyle = (account) => {
+  if (!isEditMode.value) return {};
+  const state = swipeData.value[account.id];
+  const x = state?.currentX || 0;
+  return {
+    transform: `translateX(${x}px)`,
+    transition: state?.isSwiping ? 'none' : 'transform 0.3s ease'
+  };
+};
+
+// ── Drag start — сбрасываем все swipe-состояния ───────────────────────────────
+const onDragStart = () => {
+  tg.HapticFeedback.impactOccurred('light');
+  for (const id in swipeData.value) {
+    swipeData.value[id].currentX = 0;
+    swipeData.value[id].isSwiping = false;
+  }
+};
+
+// ── API ───────────────────────────────────────────────────────────────────────
+const fetchAccounts = async () => {
   try {
     const response = await accountApi.getList(initData, props.platformId);
     accounts.value = response.data || response;
   } catch (e) {
     console.error("Ошибка загрузки:", e);
     error.value = "Не удалось загрузить аккаунты";
+  }
+};
+
+const handleReorder = async () => {
+  tg.HapticFeedback.impactOccurred('medium');
+  try {
+    const ids = accounts.value.map(a => String(a.id));
+    await accountApi.reorder(initData, ids);
+  } catch (e) {
+    tg.showAlert('Ошибка сохранения порядка');
+    await fetchAccounts();
+  }
+};
+
+const deleteAccount = async (account) => {
+  try {
+    await accountApi.delete(initData, account.id);
+    accounts.value = accounts.value.filter(a => a.id !== account.id);
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch (e) {
+    tg.showAlert('Ошибка удаления');
+  }
+};
+
+const selectAccount = (account) => {
+  if (isEditMode.value) return;
+  emit('select-account', account);
+};
+
+onMounted(async () => {
+  try {
+    await fetchAccounts();
+  } catch (e) {
+    console.error('Ошибка загрузки аккаунтов:', e);
+    error.value = 'Не удалось загрузить данные';
   } finally {
     isLoading.value = false;
   }
@@ -31,7 +197,11 @@ onMounted(async () => {
 <template>
   <div class="accounts-container">
     <div class="platform-header">
-      <div class="platform-info">
+      <div
+          class="platform-info"
+          :class="{ 'platform-info--tappable': props.platform?.name !== 'Other' }"
+          @click="props.platform?.name !== 'Other' && $emit('edit-platform', props.platform)"
+      >
         <span class="platform-icon">{{ props.platform?.icon || '🌐' }}</span>
         <div class="platform-text">
           <h1>{{ props.platform?.name || 'Платформа' }}</h1>
@@ -39,14 +209,15 @@ onMounted(async () => {
             {{ props.platform.description }}
           </p>
         </div>
+        <span v-if="props.platform?.name !== 'Other'" class="header-chevron">›</span>
       </div>
 
       <button
-          v-if="props.platform?.name !== 'Other'"
-          class="edit-platform-btn"
-          @click="$emit('edit-platform', props.platform)"
+          class="edit-mode-btn"
+          @click="isEditMode = !isEditMode"
+          @touchend.prevent="isEditMode = !isEditMode"
       >
-        ✏️
+        {{ isEditMode ? 'Готово' : 'Правка' }}
       </button>
     </div>
 
@@ -60,37 +231,70 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <div class="accounts-list">
+      <div v-if="accounts.length === 0 && !isEditMode" class="empty-state">
+        <div class="empty-icon">📂</div>
+        <p>В этой категории пока нет аккаунтов</p>
+      </div>
 
-        <div v-if="accounts.length === 0" class="empty-state">
-          <div class="empty-icon">📂</div>
-          <p>В этой категории пока нет аккаунтов</p>
-        </div>
+      <draggable
+          v-model="accounts"
+          item-key="id"
+          class="accounts-list"
+          handle=".drag-handle"
+          :disabled="!isEditMode"
+          ghost-class="ghost-card"
+          :animation="200"
+          :force-fallback="true"
+          :delay="300"
+          :delay-on-touch-only="true"
+          @start="onDragStart"
+          @end="handleReorder"
+      >
+        <template #item="{ element: account }">
+          <div class="swipe-wrapper">
 
-        <div
-            v-for="account in accounts"
-            :key="account.id"
-            class="account-item"
-            @click="emit('select-account', account)"
-        >
-          <div class="icon-box">{{ platformIcon || '👤' }}</div>
+            <!-- Фон удаления — рендерится ТОЛЬКО когда карточка реально сдвинута -->
+            <div v-if="(swipeData[account.id]?.currentX || 0) < -5"
+                 class="delete-bg"
+                 :class="{ 'delete-ready': swipeData[account.id]?.reachedLimit }">
+              <span class="delete-icon">🗑</span>
+            </div>
 
-          <div class="main-content">
-            <div v-if="account.label" class="label-text">{{ account.label }}</div>
-            <div class="login-text">{{ account.login }}</div>
+            <div
+                class="card-item account-item"
+                :class="{ 'editing': isEditMode }"
+                :style="getItemStyle(account)"
+                @click="!isEditMode && selectAccount(account)"
+                @contextmenu.prevent
+                @touchstart="onTouchStart($event, account)"
+                @touchmove="onTouchMove($event, account)"
+                @touchend="onTouchEnd($event, account)"
+                @mousedown="onMouseDown($event, account)"
+            >
+              <div class="icon-box">{{ platformIcon || '👤' }}</div>
+
+              <div class="main-content">
+                <div v-if="account.label" class="label-text">{{ account.label }}</div>
+                <div class="login-text">{{ account.login }}</div>
+              </div>
+
+              <template v-if="!isEditMode">
+                <div class="chevron">›</div>
+              </template>
+
+              <div v-if="isEditMode" class="drag-handle">☰</div>
+            </div>
+
           </div>
+        </template>
+      </draggable>
 
-          <div class="chevron">›</div>
+      <div v-if="!isEditMode" class="card-item add-button" @click="emit('add-account')">
+        <div class="icon-box add-icon">+</div>
+        <div class="main-content">
+          <div class="label-text">Add New Account</div>
+          <div class="login-text">Save credentials for this platform</div>
         </div>
-
-        <div class="account-item add-button" @click="emit('add-account')">
-          <div class="icon-box add-icon">+</div>
-          <div class="main-content">
-            <div class="name">Add New Account</div>
-            <div class="description">Save credentials for this platform</div>
-          </div>
-        </div>
-
       </div>
     </template>
   </div>
@@ -109,25 +313,7 @@ onMounted(async () => {
   gap: 10px;
 }
 
-.account-item {
-  background: var(--tg-theme-secondary-bg-color);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  gap: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  transition: all 0.1s ease;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.account-item:active {
-  transform: scale(0.98);
-  opacity: 0.8;
-}
+/* ── Inner elements ─────────────────────────────────── */
 
 .icon-box {
   width: 42px;
@@ -166,6 +352,7 @@ onMounted(async () => {
   opacity: 0.4;
 }
 
+/* ── Header ─────────────────────────────────────────── */
 .platform-header {
   display: flex;
   align-items: center;
@@ -182,6 +369,27 @@ onMounted(async () => {
   gap: 14px;
   flex: 1;
   min-width: 0;
+}
+
+.platform-info--tappable {
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 4px 6px 4px 0;
+  margin: -4px 0 -4px 0;
+  transition: opacity 0.15s ease;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+}
+
+.platform-info--tappable:active {
+  opacity: 0.7;
+}
+
+.header-chevron {
+  color: var(--tg-theme-hint-color);
+  font-size: 22px;
+  opacity: 0.4;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .platform-icon {
@@ -211,25 +419,5 @@ onMounted(async () => {
   font-size: 13px;
   color: var(--tg-theme-hint-color);
   line-height: 1.3;
-}
-
-.edit-platform-btn {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-}
-
-.edit-platform-btn:active {
-  opacity: 0.85;
-  transform: scale(0.95);
 }
 </style>

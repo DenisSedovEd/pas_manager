@@ -34,6 +34,11 @@ class Account(Base):
         String,
         nullable=True,
     )
+    order: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
     tags: Mapped[str | None] = mapped_column(
         String,
         nullable=True,

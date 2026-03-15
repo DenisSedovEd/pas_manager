@@ -318,6 +318,105 @@ input:focus, textarea:focus {
   color: var(--tg-theme-hint-color);
 }
 
+/* ─── Shared card item (platform-item, account-item) ─── */
+
+.card-item {
+  position: relative;
+  background: var(--tg-theme-secondary-bg-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  gap: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.card-item:active {
+  transform: scale(0.98);
+  opacity: 0.8;
+}
+
+.card-item.editing {
+  cursor: default;
+  touch-action: pan-y;
+}
+
+.card-item.editing:active {
+  transform: none;
+  opacity: 1;
+}
+
+/* ─── Shared swipe-to-delete ─── */
+
+.swipe-wrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.delete-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--tg-theme-bg-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 20px;
+  gap: 6px;
+  color: var(--tg-theme-hint-color);
+  font-weight: 600;
+  pointer-events: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.delete-bg.delete-ready {
+  background: #ff3b30;
+  color: #fff;
+}
+
+.delete-icon {
+  font-size: 18px;
+}
+
+/* ─── Shared edit-mode & drag ─── */
+
+.edit-mode-btn {
+  background: none;
+  border: none;
+  color: var(--tg-theme-button-color);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.drag-handle {
+  padding: 0 8px 0 4px;
+  color: var(--tg-theme-hint-color);
+  font-size: 20px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Drag-and-drop (SortableJS) ─── */
+/* ВАЖНО: .ghost-card ПОСЛЕ .sortable-fallback — порядок критичен! */
+
+.sortable-fallback {
+  opacity: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .ghost-card {
   background: var(--tg-theme-secondary-bg-color) !important;
   color: var(--tg-theme-text-color) !important;
@@ -327,18 +426,7 @@ input:focus, textarea:focus {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
   z-index: 9999 !important;
   pointer-events: none !important;
-  padding: 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
   border: 1px solid var(--tg-theme-hint-color) !important;
 }
 
-.sortable-fallback {
-  opacity: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
 </style>
-

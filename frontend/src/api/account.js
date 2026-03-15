@@ -37,6 +37,24 @@ export const accountApi = {
     return response.json();
   },
 
+  async reorder(initData, orderList) {
+    const response = await fetch(`${BASE_URL}/account/reorder`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': initData,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderList)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update order');
+    }
+
+    return await response.json();
+  },
+
+
   async update(initData, accountId, account) {
     const response = await fetch(`${BASE_URL}/account/${accountId}`, {
       method: 'PUT',
