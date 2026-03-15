@@ -102,7 +102,6 @@ const handleUnlock = async () => {
       isUnlocked.value = true
       tg.HapticFeedback.notificationOccurred('success')
 
-      // Предложить привязку биометрии если поддерживается и ещё не включена
       if (isBioSupported.value) {
         const settings = await authApi.getBioSettings(initData)
         if (!settings.is_enabled) offerBiometricSetup()
