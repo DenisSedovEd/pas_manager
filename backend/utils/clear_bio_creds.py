@@ -8,7 +8,6 @@ from backend.repositories import DatabaseRepository
 
 async def clear_bio_creds():
     values = {
-        'master_password_hash': settings.app.pass_hash,
         'encrypted_master_password': None,
         'bio_enc_data': None,
 
