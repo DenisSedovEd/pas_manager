@@ -40,7 +40,18 @@ const password = ref('')
 const isBioSupported = ref(false)
 const isAuthLoading = ref(false)
 
-const authenticateWithBio = () => {
+const authenticateWithBio = async () => {
+  try {
+    const settings = await authApi.getBioSettings(initData)
+    if (!settings.is_enabled) {
+      tg.showAlert('Биометрия ещё не привязана. Войдите по паролю — после входа будет предложена привязка Face ID / Touch ID.')
+      return
+    }
+  } catch (e) {
+    console.error('Bio settings check error:', e)
+    return
+  }
+
   bio.authenticate({reason: 'Вход в Safe Manager'}, async (success, token) => {
     if (success) {
       try {
@@ -56,6 +67,32 @@ const authenticateWithBio = () => {
   })
 }
 
+const offerBiometricSetup = () => {
+  if (!isBioSupported.value) return
+
+  tg.showConfirm('Привязать Face ID / Touch ID для быстрого входа?', (agreed) => {
+    if (!agreed) return
+    bio.requestAccess({reason: 'Привязка биометрии'}, (granted) => {
+      if (!granted) return
+      // Генерируем токен и сохраняем в secure storage Telegram
+      const bioToken = crypto.randomUUID()
+      bio.updateBiometricToken(bioToken, async (updated) => {
+        if (!updated) return
+        try {
+          // Бэкенд шифрует master_password этим токеном
+          await authApi.enableBiometric(initData, {bio_token: bioToken})
+          tg.HapticFeedback.notificationOccurred('success')
+          tg.showAlert('Биометрия привязана!')
+        } catch (e) {
+          console.error('Bio enable error:', e)
+          // Откатываем токен из Telegram если бэкенд упал
+          bio.updateBiometricToken('')
+        }
+      })
+    })
+  })
+}
+
 const handleUnlock = async () => {
   if (!password.value || isAuthLoading.value) return
   isAuthLoading.value = true
@@ -64,6 +101,12 @@ const handleUnlock = async () => {
     if (res.status === 'success' || res.is_unlocked === true) {
       isUnlocked.value = true
       tg.HapticFeedback.notificationOccurred('success')
+
+      // Предложить привязку биометрии если поддерживается и ещё не включена
+      if (isBioSupported.value) {
+        const settings = await authApi.getBioSettings(initData)
+        if (!settings.is_enabled) offerBiometricSetup()
+      }
     } else {
       tg.showAlert("Неверный пароль")
     }
@@ -409,7 +452,7 @@ input:focus, textarea:focus {
 }
 
 /* ─── Drag-and-drop (SortableJS) ─── */
-/* ВАЖНО: .ghost-card ПОСЛЕ .sortable-fallback — порядок критичен! */
+/* ВАЖНО: .sortable-fallback ПОСЛЕ .ghost-card — порядок критичен! */
 
 .sortable-fallback {
   opacity: 0 !important;

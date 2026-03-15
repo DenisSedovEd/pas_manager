@@ -87,7 +87,7 @@ async def get_bio_settings(
     verify_telegram_data(authorization)
     settings = await db_repo.get(AppSettings, filters={'id': app_settings.app.admin_id})
 
-    if not settings:
+    if not settings.bio_enc_data:
         return {"is_enabled": False}
 
     return {
