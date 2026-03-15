@@ -1,7 +1,7 @@
 import asyncio
 
 from backend.core.config import settings
-from backend.core.db import async_session
+from backend.core.db import async_session, async_engine
 from backend.models.app_settings import AppSettings
 from backend.repositories import DatabaseRepository
 
@@ -17,7 +17,7 @@ async def clear_bio_creds():
     async with async_session() as session:
         repo = DatabaseRepository(session)
         await repo.update(AppSettings, filters=filters, values=values, )
-
+    await async_engine.dispose()
     print("Biometric credentials cleared.")
 
 
