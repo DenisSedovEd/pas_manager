@@ -52,6 +52,7 @@ class AppSettings(Base):
     delete_timeout_seconds: int = Field(...)
     session_ttl: int = Field(...)
     tunnel_token: str = Field(...)
+    admin_id: int = Field(...)
 
 
 class Settings(Base):

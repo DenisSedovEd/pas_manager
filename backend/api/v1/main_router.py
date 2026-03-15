@@ -3,6 +3,7 @@ from fastapi import APIRouter, Header, HTTPException, Depends
 from pydantic import BaseModel
 
 from backend.core.security import verify_telegram_data, MasterPasswordService
+from backend.core.config import settings as app_settings
 from backend.core.session import session_manager
 from backend.dependencies import get_db_repo, get_encrypt_repo
 from backend.models import AppSettings
@@ -10,7 +11,6 @@ from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 
 router = APIRouter(prefix="/main")
-
 
 class UnlockRequest(BaseModel):
     master_password: str
@@ -61,7 +61,7 @@ async def unlock(
     secure = MasterPasswordService()
     user = verify_telegram_data(authorization)
 
-    settings = await db_repo.get(AppSettings, filters={'id': 1})
+    settings = await db_repo.get(AppSettings, filters={'id': app_settings.app.admin_id})
 
     if not settings:
         raise HTTPException(status_code=500, detail="Application settings not initialized")
@@ -85,7 +85,7 @@ async def get_bio_settings(
 ):
     """Получение настроек биометрии"""
     verify_telegram_data(authorization)
-    settings = await db_repo.get(AppSettings, filters={'id': 1})
+    settings = await db_repo.get(AppSettings, filters={'id': app_settings.app.admin_id})
 
     if not settings:
         return {"is_enabled": False}
@@ -106,7 +106,7 @@ async def unlock_bio(
     """Разблокировка по FaceID: восстанавливаем мастер-пароль из зашифрованного хранилища"""
     user = verify_telegram_data(authorization)
 
-    settings = await db_repo.get(AppSettings, filters={'id': 1})
+    settings = await db_repo.get(AppSettings, filters={'id': app_settings.app.admin_id})
 
     if not settings or not settings.encrypted_master_password or not settings.bio_enc_data:
         raise HTTPException(
@@ -151,7 +151,7 @@ async def enable_biometric(
 
     await db_repo.update(
         AppSettings,
-        filters={'id': 1},
+        filters={'id': app_settings.app.admin_id},
         values={
             'encrypted_master_password': encryption_result["encrypted_data"],
             'bio_enc_data': {

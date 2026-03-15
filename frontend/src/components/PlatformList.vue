@@ -229,16 +229,15 @@ onMounted(async () => {
         <template #item="{ element: platform }">
           <div class="swipe-wrapper">
 
-            <!-- Красный фон — рендерится ТОЛЬКО когда карточка реально сдвинута -->
+            <!-- Фон удаления — рендерится ТОЛЬКО когда карточка реально сдвинута -->
             <div v-if="(swipeData[platform.id]?.currentX || 0) < -5"
                  class="delete-bg"
                  :class="{ 'delete-ready': swipeData[platform.id]?.reachedLimit }">
               <span class="delete-icon">🗑</span>
-<!--              <span class="delete-label">Удалить</span>-->
             </div>
 
             <div
-                class="platform-item"
+                class="card-item platform-item"
                 :class="{ 'editing': isEditMode }"
                 :style="getItemStyle(platform)"
                 @click="!isEditMode && selectPlatform(platform)"
@@ -268,7 +267,7 @@ onMounted(async () => {
         </template>
       </draggable>
 
-      <div v-if="!isEditMode" class="platform-item add-button" @click="emit('add-platform')">
+      <div v-if="!isEditMode" class="card-item add-button" @click="emit('add-platform')">
         <div class="icon-box add-icon">+</div>
         <div class="main-content">
           <div class="name">Add New Platform</div>
@@ -290,78 +289,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-/* ── Swipe wrapper ──────────────────────────────────── */
-.swipe-wrapper {
-  position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.delete-bg {
-  position: absolute;
-  inset: 0;
-  background: var(--tg-theme-bg-color);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 20px;
-  gap: 6px;
-  color: var(--tg-theme-hint-color);
-  font-weight: 600;
-  pointer-events: none;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.delete-bg.delete-ready {
-  background: #ff3b30;
-  color: #fff;
-}
-
-.delete-icon {
-  font-size: 18px;
-}
-
-.delete-label {
-  font-size: 14px;
-}
-
-/* ── Platform item ──────────────────────────────────── */
-.platform-item {
-  position: relative;
-  background: var(--tg-theme-secondary-bg-color);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  gap: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.platform-item:active {
-  transform: scale(0.98);
-  opacity: 0.8;
-}
-
-.platform-item.editing {
-  cursor: default;
-  touch-action: pan-y;
-}
-
-.platform-item.editing:active {
-  transform: none;
-  opacity: 1;
-}
-
-.platform-item:not(.editing) {
-  cursor: pointer;
 }
 
 /* ── Inner elements ─────────────────────────────────── */
@@ -421,27 +348,5 @@ onMounted(async () => {
   font-size: 18px;
   font-weight: 700;
   color: var(--tg-theme-text-color);
-}
-
-.edit-mode-btn {
-  background: none;
-  border: none;
-  color: var(--tg-theme-button-color);
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-.drag-handle {
-  padding: 0 8px 0 4px;
-  color: var(--tg-theme-hint-color);
-  font-size: 20px;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
 }
 </style>
