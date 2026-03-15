@@ -64,6 +64,14 @@ async def create_account(
     result = await service.create_account(account, master_password)
     return result
 
+@router.put("/reorder")
+async def reorder_accounts(
+        payload: list[str],
+        authorization: str = Header(...),
+        service: AccountService = Depends(get_account_service),
+):
+    user = verify_telegram_data(authorization)
+    return await service.reorder_accounts(payload)
 
 @router.put("/{account_id}")
 async def update_account(

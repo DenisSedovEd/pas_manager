@@ -29,6 +29,7 @@ class AccountService:
                 label=account.tags or account.user_name,
                 login=account.user_name,
                 platform_id=account.platform_id,
+                order=account.order,
             )
             result.append(item)
 
@@ -82,6 +83,7 @@ class AccountService:
             email=account.email or None,
             phone=account.phone or None,
             tags=account.label or account.login,
+            order=account.order,
             platform_id=account.platform_id,  # ← Строка
             encrypted_data=enc_data["encrypted_data"],
             salt=enc_data["salt"],
@@ -106,6 +108,16 @@ class AccountService:
             message="Account created successfully",
             data=detail
         )
+
+    async def reorder_accounts(self, order_list: list[str]):
+        """Пересортируем список аккаунтов"""
+        for index, account_id in enumerate(order_list):
+            await self.db_repo.update(
+                Account,
+                filters={"id": str(account_id)},
+                values={"order": int(index) },
+            )
+        return {'status': 'ok'}
 
     async def update_account(
             self,

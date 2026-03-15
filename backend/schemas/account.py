@@ -7,6 +7,7 @@ class AccountListItemSchema(BaseModel):
     id: int
     label: str = Field(description="Account label/display name")
     login: str = Field(description="Username")
+    order: int
     platform_id: str  # ← Строка вместо UUID
 
 
@@ -29,6 +30,7 @@ class AccountRequestSchema(BaseModel):
     email: Optional[str] = Field(default=None, description="Email")
     phone: Optional[str] = Field(default=None, description="Phone")
     label: Optional[str] = Field(default=None, description="Account label")
+    order: Optional[int] = Field(default=0, description="Account order")
 
 
 class AccountResponseSchema(BaseModel):
