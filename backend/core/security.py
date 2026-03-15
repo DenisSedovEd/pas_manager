@@ -20,10 +20,8 @@ def verify_telegram_data(init_data: str) -> dict:
 
     received_hash = parsed_data.pop("hash")[0]
 
-    # Сортируем ключи и собираем строку для проверки
     data_check_string = "\n".join(f"{k}={v[0]}" for k, v in sorted(parsed_data.items()))
 
-    # Вычисляем секретный ключ
     secret_key = hmac.new(
         b"WebAppData", settings.app.telegram_token.encode(), hashlib.sha256
     ).digest()
@@ -35,9 +33,6 @@ def verify_telegram_data(init_data: str) -> dict:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
     user_data = json.loads(parsed_data["user"][0])
-    # auth_date = int(parsed_data.get("auth_date", [0])[0])
-    # if abs(time.time() - auth_date) > settings.app.session_ttl:
-    #     raise HTTPException(status_code=401, detail="Init data expired")
     if str(user_data.get("id", "")) != str(settings.app.user_id):
         raise HTTPException(status_code=403, detail="Access denied")
     return user_data

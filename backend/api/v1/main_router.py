@@ -46,7 +46,6 @@ async def unlock(
         payload.master_password,
         settings.master_password_hash
     )
-    logger.info(is_valid)
     if is_valid:
         session_manager.create_session(user["id"], payload.master_password)
         return SuccessResponse()
