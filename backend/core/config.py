@@ -53,7 +53,6 @@ class AppSettings(Base):
     session_ttl: int = Field(...)
     tunnel_token: str = Field(...)
     admin_id: int = Field(...)
-    pass_hash: str = Field(...)
 
 
 class Settings(Base):
