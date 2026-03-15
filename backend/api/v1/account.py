@@ -62,7 +62,7 @@ async def create_account(
     return result
 
 
-@router.put("/reorder", response_model=AccountDetailSchema)
+@router.put("/reorder", response_model=SuccessResponse)
 async def reorder_accounts(
         payload: list[str],
         user: dict = Depends(get_current_user),
