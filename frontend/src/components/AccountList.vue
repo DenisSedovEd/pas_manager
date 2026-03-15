@@ -185,7 +185,11 @@ onMounted(async () => {
 <template>
   <div class="accounts-container">
     <div class="platform-header">
-      <div class="platform-info">
+      <div
+          class="platform-info"
+          :class="{ 'platform-info--tappable': props.platform?.name !== 'Other' }"
+          @click="props.platform?.name !== 'Other' && $emit('edit-platform', props.platform)"
+      >
         <span class="platform-icon">{{ props.platform?.icon || '🌐' }}</span>
         <div class="platform-text">
           <h1>{{ props.platform?.name || 'Платформа' }}</h1>
@@ -193,24 +197,16 @@ onMounted(async () => {
             {{ props.platform.description }}
           </p>
         </div>
+        <span v-if="props.platform?.name !== 'Other'" class="header-chevron">›</span>
       </div>
 
-      <div class="header-buttons">
-        <button
-            class="edit-mode-btn"
-            @click="isEditMode = !isEditMode"
-            @touchend.prevent="isEditMode = !isEditMode"
-        >
-          {{ isEditMode ? 'Готово' : 'Правка' }}
-        </button>
-        <button
-            v-if="props.platform?.name !== 'Other'"
-            class="edit-platform-btn"
-            @click="$emit('edit-platform', props.platform)"
-        >
-          ✏️
-        </button>
-      </div>
+      <button
+          class="edit-mode-btn"
+          @click="isEditMode = !isEditMode"
+          @touchend.prevent="isEditMode = !isEditMode"
+      >
+        {{ isEditMode ? 'Готово' : 'Правка' }}
+      </button>
     </div>
 
     <div v-if="isLoading" class="status-msg">
@@ -371,6 +367,7 @@ onMounted(async () => {
 }
 
 /* ── Inner elements ─────────────────────────────────── */
+
 .icon-box {
   width: 42px;
   height: 42px;
@@ -427,6 +424,27 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.platform-info--tappable {
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 4px 6px 4px 0;
+  margin: -4px 0 -4px 0;
+  transition: opacity 0.15s ease;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+}
+
+.platform-info--tappable:active {
+  opacity: 0.7;
+}
+
+.header-chevron {
+  color: var(--tg-theme-hint-color);
+  font-size: 22px;
+  opacity: 0.4;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .platform-icon {
   font-size: 32px;
   width: 52px;
@@ -456,13 +474,6 @@ onMounted(async () => {
   line-height: 1.3;
 }
 
-.header-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
 .edit-mode-btn {
   background: none;
   border: none;
@@ -475,25 +486,6 @@ onMounted(async () => {
   user-select: none;
 }
 
-.edit-platform-btn {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-}
-
-.edit-platform-btn:active {
-  opacity: 0.85;
-  transform: scale(0.95);
-}
 
 .drag-handle {
   padding: 0 8px 0 4px;

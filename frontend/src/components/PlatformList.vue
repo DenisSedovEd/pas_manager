@@ -345,6 +345,7 @@ onMounted(async () => {
 }
 
 /* ── Inner elements ─────────────────────────────────── */
+
 .icon-box {
   width: 42px;
   height: 42px;

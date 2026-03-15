@@ -327,10 +327,6 @@ input:focus, textarea:focus {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
   z-index: 9999 !important;
   pointer-events: none !important;
-  padding: 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
   border: 1px solid var(--tg-theme-hint-color) !important;
 }
 
