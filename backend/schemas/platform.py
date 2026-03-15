@@ -4,18 +4,6 @@ from typing import Optional
 from uuid import UUID
 
 
-class PlatformSchema(BaseModel):
-    id: UUID | str
-    name: str = Field(alias="platform_name")
-    icon: str = "🌐"
-    accounts_count: int
-    order: int
-    model_config = ConfigDict(
-        from_attributes=True,
-        populate_by_name=True,
-    )
-
-
 class PlatformResponseSchema(BaseModel):
     """Платформа с количеством аккаунтов"""
     id: str

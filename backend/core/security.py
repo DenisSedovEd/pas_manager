@@ -1,3 +1,4 @@
+import time
 import urllib.parse
 import hmac
 import hashlib
@@ -34,6 +35,11 @@ def verify_telegram_data(init_data: str) -> dict:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
     user_data = json.loads(parsed_data["user"][0])
+    auth_date = int(parsed_data.get("auth_date", [0])[0])
+    if abs(time.time() - auth_date) > settings.app.session_ttl:
+        raise HTTPException(status_code=401, detail="Init data expired")
+    if str(user_data.get("id", "")) != str(settings.app.user_id):
+        raise HTTPException(status_code=403, detail="Access denied")
     return user_data
 
 
@@ -51,14 +57,3 @@ class MasterPasswordService:
             return self.ph.verify(hashed, password)
         except Exception:
             return False
-
-
-class PasswordHelper:
-    def __init__(self):
-        self.pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-
-    def hash_password(self, password: str) -> str:
-        return self.pwd_context.hash(password)
-
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return self.pwd_context.verify(plain_password, hashed_password)

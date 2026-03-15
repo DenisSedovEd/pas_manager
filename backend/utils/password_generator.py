@@ -22,7 +22,3 @@ def generate_secure_password(length: int = 20) -> str:
 def escape_md(text: str) -> str:
     """Надежное экранирование всех спецсимволов для MarkdownV2"""
     return re.sub(r"([_*\[\]()~`>#+\-=|{}.!])", r"\\\1", text)
-
-
-print(generate_secure_password())
-
