@@ -1,6 +1,5 @@
 from cryptography.exceptions import InvalidTag
 from fastapi import APIRouter, Header, HTTPException, Depends
-from pydantic import BaseModel
 
 from backend.core.security import verify_telegram_data, MasterPasswordService
 from backend.core.config import settings as app_settings
@@ -9,34 +8,10 @@ from backend.dependencies import get_db_repo, get_encrypt_repo
 from backend.models import AppSettings
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
+from backend.schemas.main_router_schemas import StatusResponse, UnlockRequest, SuccessResponse, BiometricRequest, \
+    LogoutRequest
 
 router = APIRouter(prefix="/main")
-
-class UnlockRequest(BaseModel):
-    master_password: str
-
-
-class StatusResponse(BaseModel):
-    user_id: int
-    is_unlocked: bool
-
-
-class SuccessResponse(BaseModel):
-    status: str
-    ok: bool
-
-
-class BiometricRequest(BaseModel):
-    bio_token: str
-
-
-class EnableBiometricRequest(BaseModel):
-    encrypted_master_password: str
-    bio_enc_data: dict
-
-
-class LogoutRequest(BaseModel):
-    init_data: str
 
 
 @router.get("/auth/status")
