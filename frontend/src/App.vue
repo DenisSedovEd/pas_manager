@@ -4,6 +4,7 @@ import {initTelegramClipboard} from "./utils/clipboard"
 import {useTelegram} from './composables/useTelegram'
 import {authApi} from './api/auth.js'
 import {resourceApi} from './api/resource.js'
+import {accountApi} from './api/account.js'
 
 import CategoryList from './components/CategoryList.vue'
 import AccountList from './components/AccountList.vue'
@@ -14,6 +15,7 @@ import CategoryEditor from './components/CategoryEditor.vue'
 const {tg, bio, initApp, initData} = useTelegram()
 const resources = ref([])
 const defaultResourceId = ref(null)
+const suggestions = ref({email: [], phone: [], label: []})
 // ==================== НАВИГАЦИЯ ====================
 const screenStack = ref([{name: 'menu'}])
 const currentScreen = computed(() => screenStack.value[screenStack.value.length - 1].name)
@@ -23,6 +25,11 @@ const loadResources = async () => {
   resources.value = await resourceApi.getList(initData)
   const def = resources.value.find(r => r.resource_name === 'Без площадки')
   if (def) defaultResourceId.value = def.id
+  try {
+    suggestions.value = await accountApi.getSuggestions(initData)
+  } catch (e) {
+    console.error('Ошибка загрузки suggestions', e)
+  }
 }
 
 
@@ -213,7 +220,7 @@ onMounted(async () => {
                      @edit="(fullAcc) => pushScreen('account_edit', { account: fullAcc, currentCategory: currentProps.category })"
                      @deleted="popScreen"/>
       <AccountEditor v-if="currentScreen === 'account_edit'" :account="currentProps.account" :resources="resources"
-                     :defaultResourceId="defaultResourceId"
+                     :defaultResourceId="defaultResourceId" :suggestions="suggestions"
                      :currentCategory="currentProps.currentCategory" @save="popScreen" @cancel="popScreen"
                      @resource-created="resources.push($event)"/>
       <CategoryEditor v-if="currentScreen === 'category_edit'" :category="currentProps.category" @save="popScreen"

@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 class AccountListItemSchema(BaseModel):
     """Для списка аккаунтов (без пароля)"""
+
     id: int
     label: str = Field(description="Account label/display name")
     login: str = Field(description="Username")
@@ -14,6 +15,7 @@ class AccountListItemSchema(BaseModel):
 
 class AccountDetailSchema(BaseModel):
     """Для детального просмотра аккаунта (с расшифровкой)"""
+
     id: int
     login: str = Field(description="Username")
     password: str = Field(description="Password")
@@ -24,9 +26,9 @@ class AccountDetailSchema(BaseModel):
     resource_id: str = Field(description="Resource ID")
 
 
-
 class AccountRequestSchema(BaseModel):
     """Для создания/обновления аккаунта"""
+
     category_id: str = Field(description="Category ID")
     resource_id: str = Field(description="Resource ID")
     login: str = Field(description="Username")
@@ -35,3 +37,18 @@ class AccountRequestSchema(BaseModel):
     phone: Optional[str] = Field(default=None, description="Phone")
     label: Optional[str] = Field(default=None, description="Account label")
     order: Optional[int] = Field(default=0, description="Account order")
+
+
+class AccountSuggestionsSchema(BaseModel):
+    email: list[str] = Field(
+        default_factory=list,
+        description="Emails from accounts",
+    )
+    phone: list[str] = Field(
+        default_factory=list,
+        description="Phones from accounts",
+    )
+    label: list[str] = Field(
+        default_factory=list,
+        description="Labels from accounts",
+    )
