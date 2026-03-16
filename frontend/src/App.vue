@@ -128,6 +128,10 @@ onMounted(async () => {
   initTelegramClipboard()
   tg?.BackButton?.onClick(popScreen)
 
+  tg.SettingsButton.show();
+  // tg.offEvent('settingsButtonClicked', handleSettingsClick);
+  tg.onEvent('settingsButtonClicked', handleSettingsClick);
+
   const safeTop = tg?.safeAreaInset?.top || 0
   const finalPadding = safeTop > 0 ? safeTop + 20 : 20
 
@@ -335,29 +339,6 @@ input:focus, textarea:focus {
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-.add-button {
-  border: 1px dashed var(--tg-theme-button-color);
-  background: transparent;
-  margin-top: 8px;
-}
-
-.add-icon {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-  font-weight: bold;
-}
-
-.add-button .name {
-  color: var(--tg-theme-button-color);
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.add-button .description {
-  font-size: 11px;
-  color: var(--tg-theme-hint-color);
 }
 
 /* ─── Shared card item (platform-item, account-item) ─── */

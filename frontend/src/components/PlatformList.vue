@@ -1,352 +1,371 @@
 <script setup>
-import {ref, watch, onMounted} from 'vue';
-import draggable from 'vuedraggable';
-import {useTelegram} from '../composables/useTelegram';
-import {platformApi} from '../api/platform.js';
+    import {ref, watch, onMounted, onUnmounted} from 'vue';
+    import draggable from 'vuedraggable';
+    import {useTelegram} from '../composables/useTelegram';
+    import {platformApi} from '../api/platform.js';
 
-const emit = defineEmits(['select-platform', 'add-platform']);
-const {tg, initData} = useTelegram();
-const platforms = ref([]);
-const isLoading = ref(true);
-const error = ref(null);
-const isEditMode = ref(false);
+    const emit = defineEmits(['select-platform', 'add-platform']);
+    const {tg, initData} = useTelegram();
+    const platforms = ref([]);
+    const isLoading = ref(true);
+    const error = ref(null);
+    const isEditMode = ref(false);
 
-// ── Swipe-to-delete state ─────────────────────────────────────────────────────
-const swipeData = ref({});
+    // ── Swipe-to-delete state ─────────────────────────────────────────────────────
+    const swipeData = ref({});
 
-watch(isEditMode, (val) => {
-  if (!val) swipeData.value = {};
-});
+    // ── Кнопки ───────────────────────────────────────────────────────────────────
+    const onAddClick = () => emit('add-platform');
+    const onDoneClick = () => { isEditMode.value = false; };
+    const onSettingsClick = () => { isEditMode.value = true; };
 
-// ── Общая логика свайпа (touch + mouse) ─────────────────────────────────────
-const mouseSwipePlatform = ref(null);
+    const enterEditMode = () => {
+      tg.MainButton.offClick(onAddClick);
+      tg.MainButton.setText('Готово');
+      tg.MainButton.onClick(onDoneClick);
+      tg.MainButton.show();
+      tg.SettingsButton.offClick(onSettingsClick);
+      tg.SettingsButton.hide();
+    };
 
-const swipeStart = (clientX, clientY, platform, target) => {
-  if (!isEditMode.value) return;
-  if (target.closest('.drag-handle')) return;
-  const wrapper = target.closest('.swipe-wrapper');
-  const maxSwipe = wrapper ? wrapper.offsetWidth * 0.2 : 80;
-  swipeData.value[platform.id] = {
-    startX: clientX,
-    startY: clientY,
-    currentX: 0,
-    isSwiping: false,
-    decided: false,
-    maxSwipe,
-    reachedLimit: false
-  };
-};
+    const exitEditMode = () => {
+      swipeData.value = {};
+      tg.MainButton.offClick(onDoneClick);
+      tg.MainButton.setText('Добавить платформу');
+      tg.MainButton.onClick(onAddClick);
+      tg.MainButton.show();
+      tg.SettingsButton.onClick(onSettingsClick);
+      tg.SettingsButton.show();
+    };
 
-const swipeMove = (clientX, clientY, platform, e) => {
-  if (!isEditMode.value) return;
-  const state = swipeData.value[platform.id];
-  if (!state) return;
+    watch(isEditMode, (val) => {
+      if (val) enterEditMode();
+      else exitEditMode();
+    });
 
-  const dx = clientX - state.startX;
-  const dy = clientY - state.startY;
+    // ── Общая логика свайпа (touch + mouse) ─────────────────────────────────────
+    const mouseSwipePlatform = ref(null);
 
-  if (!state.decided) {
-    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-      state.decided = true;
-      state.isSwiping = Math.abs(dx) > Math.abs(dy) && dx < 0;
-    }
-    return;
-  }
+    const swipeStart = (clientX, clientY, platform, target) => {
+      if (!isEditMode.value) return;
+      if (target.closest('.drag-handle')) return;
+      const wrapper = target.closest('.swipe-wrapper');
+      const maxSwipe = wrapper ? wrapper.offsetWidth * 0.2 : 80;
+      swipeData.value[platform.id] = {
+        startX: clientX,
+        startY: clientY,
+        currentX: 0,
+        isSwiping: false,
+        decided: false,
+        maxSwipe,
+        reachedLimit: false
+      };
+    };
 
-  if (state.isSwiping) {
-    e.preventDefault();
-    e.stopPropagation();
-    state.currentX = Math.max(-state.maxSwipe, Math.min(0, dx));
+    const swipeMove = (clientX, clientY, platform, e) => {
+      if (!isEditMode.value) return;
+      const state = swipeData.value[platform.id];
+      if (!state) return;
 
-    // Хаптик когда упёрлись в край
-    if (state.currentX <= -state.maxSwipe + 1 && !state.reachedLimit) {
-      state.reachedLimit = true;
-      tg.HapticFeedback.impactOccurred('medium');
-    } else if (state.currentX > -state.maxSwipe + 1) {
-      state.reachedLimit = false;
-    }
-  }
-};
+      const dx = clientX - state.startX;
+      const dy = clientY - state.startY;
 
-const swipeEnd = (platform) => {
-  if (!isEditMode.value) return;
-  const state = swipeData.value[platform.id];
-  if (!state) return;
-
-  if (state.isSwiping && state.reachedLimit) {
-    state.currentX = 0;
-    state.isSwiping = false;
-    tg.showConfirm(
-        `Удалить платформу «${platform.icon} ${platform.name}»?`,
-        async (confirmed) => {
-          if (confirmed) await deletePlatform(platform);
+      if (!state.decided) {
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+          state.decided = true;
+          state.isSwiping = Math.abs(dx) > Math.abs(dy) && dx < 0;
         }
-    );
-  } else {
-    state.currentX = 0;
-    state.isSwiping = false;
-  }
-};
+        return;
+      }
 
-// ── Touch-обработчики ────────────────────────────────────────────────────────
-const onTouchStart = (e, platform) => {
-  swipeStart(e.touches[0].clientX, e.touches[0].clientY, platform, e.target);
-};
+      if (state.isSwiping) {
+        e.preventDefault();
+        e.stopPropagation();
+        state.currentX = Math.max(-state.maxSwipe, Math.min(0, dx));
 
-const onTouchMove = (e, platform) => {
-  swipeMove(e.touches[0].clientX, e.touches[0].clientY, platform, e);
-};
+        // Хаптик когда упёрлись в край
+        if (state.currentX <= -state.maxSwipe + 1 && !state.reachedLimit) {
+          state.reachedLimit = true;
+          tg.HapticFeedback.impactOccurred('medium');
+        } else if (state.currentX > -state.maxSwipe + 1) {
+          state.reachedLimit = false;
+        }
+      }
+    };
 
-const onTouchEnd = (e, platform) => {
-  swipeEnd(platform);
-};
+    const swipeEnd = (platform) => {
+      if (!isEditMode.value) return;
+      const state = swipeData.value[platform.id];
+      if (!state) return;
 
-// ── Mouse-обработчики (десктоп) ──────────────────────────────────────────────
-const onMouseDown = (e, platform) => {
-  if (e.button !== 0) return; // только ЛКМ
-  swipeStart(e.clientX, e.clientY, platform, e.target);
-  mouseSwipePlatform.value = platform;
+      if (state.isSwiping && state.reachedLimit) {
+        state.currentX = 0;
+        state.isSwiping = false;
+        tg.showConfirm(
+            `Удалить платформу «${platform.icon} ${platform.name}»?`,
+            async (confirmed) => {
+              if (confirmed) await deletePlatform(platform);
+            }
+        );
+      } else {
+        state.currentX = 0;
+        state.isSwiping = false;
+      }
+    };
 
-  const onMMove = (ev) => {
-    swipeMove(ev.clientX, ev.clientY, platform, ev);
-  };
-  const onMUp = () => {
-    swipeEnd(platform);
-    mouseSwipePlatform.value = null;
-    document.removeEventListener('mousemove', onMMove);
-    document.removeEventListener('mouseup', onMUp);
-  };
-  document.addEventListener('mousemove', onMMove);
-  document.addEventListener('mouseup', onMUp);
-};
+    // ── Touch-обработчики ────────────────────────────────────────────────────────
+    const onTouchStart = (e, platform) => {
+      swipeStart(e.touches[0].clientX, e.touches[0].clientY, platform, e.target);
+    };
 
-const getItemStyle = (platform) => {
-  if (!isEditMode.value) return {};
-  const state = swipeData.value[platform.id];
-  const x = state?.currentX || 0;
-  return {
-    transform: `translateX(${x}px)`,
-    transition: state?.isSwiping ? 'none' : 'transform 0.3s ease'
-  };
-};
+    const onTouchMove = (e, platform) => {
+      swipeMove(e.touches[0].clientX, e.touches[0].clientY, platform, e);
+    };
 
-// ── Drag start — сбрасываем все swipe-состояния ───────────────────────────────
-const onDragStart = () => {
-  tg.HapticFeedback.impactOccurred('light');
-  // Сбрасываем все свайпы чтобы delete-bg не рендерился в клоне
-  for (const id in swipeData.value) {
-    swipeData.value[id].currentX = 0;
-    swipeData.value[id].isSwiping = false;
-  }
-};
+    const onTouchEnd = (e, platform) => {
+      swipeEnd(platform);
+    };
 
-// ── API ───────────────────────────────────────────────────────────────────────
-const fetchPlatforms = async () => {
-  try {
-    const response = await platformApi.getList(initData);
-    platforms.value = response.data || response;
-  } catch (e) {
-    tg.showAlert('Ошибка загрузки');
-  }
-};
+    // ── Mouse-обработчики (десктоп) ──────────────────────────────────────────────
+    const onMouseDown = (e, platform) => {
+      if (e.button !== 0) return; // только ЛКМ
+      swipeStart(e.clientX, e.clientY, platform, e.target);
+      mouseSwipePlatform.value = platform;
 
-const handleReorder = async () => {
-  tg.HapticFeedback.impactOccurred('medium');
-  try {
-    const ids = platforms.value.map(p => String(p.id));
-    await platformApi.reorder(initData, ids);
-  } catch (e) {
-    tg.showAlert('Ошибка сохранения порядка');
-    await fetchPlatforms();
-  }
-};
+      const onMMove = (ev) => {
+        swipeMove(ev.clientX, ev.clientY, platform, ev);
+      };
+      const onMUp = () => {
+        swipeEnd(platform);
+        mouseSwipePlatform.value = null;
+        document.removeEventListener('mousemove', onMMove);
+        document.removeEventListener('mouseup', onMUp);
+      };
+      document.addEventListener('mousemove', onMMove);
+      document.addEventListener('mouseup', onMUp);
+    };
 
-const deletePlatform = async (platform) => {
-  try {
-    await platformApi.delete(initData, platform.id);
-    platforms.value = platforms.value.filter(p => p.id !== platform.id);
-    tg.HapticFeedback.notificationOccurred('success');
-  } catch (e) {
-    tg.showAlert('Ошибка удаления');
-  }
-};
+    const getItemStyle = (platform) => {
+      if (!isEditMode.value) return {};
+      const state = swipeData.value[platform.id];
+      const x = state?.currentX || 0;
+      return {
+        transform: `translateX(${x}px)`,
+        transition: state?.isSwiping ? 'none' : 'transform 0.3s ease'
+      };
+    };
 
-const selectPlatform = (platform) => {
-  if (isEditMode.value) return;
-  emit('select-platform', platform);
-};
+    // ── Drag start — сбрасываем все swipe-состояния ───────────────────────────────
+    const onDragStart = () => {
+      tg.HapticFeedback.impactOccurred('light');
+      // Сбрасываем все свайпы чтобы delete-bg не рендерился в клоне
+      for (const id in swipeData.value) {
+        swipeData.value[id].currentX = 0;
+        swipeData.value[id].isSwiping = false;
+      }
+    };
 
-onMounted(async () => {
-  try {
-    await fetchPlatforms();
-  } catch (e) {
-    console.error('Ошибка загрузки платформ:', e);
-    error.value = 'Не удалось загрузить данные';
-  } finally {
-    isLoading.value = false;
-  }
-});
-</script>
+    // ── API ───────────────────────────────────────────────────────────────────────
+    const fetchPlatforms = async () => {
+      try {
+        const response = await platformApi.getList(initData);
+        platforms.value = response.data || response;
+      } catch (e) {
+        tg.showAlert('Ошибка загрузки');
+      }
+    };
 
-<template>
-  <div class="platforms-container">
-    <div class="header-actions">
-      <h2 class="title">Категории</h2>
-      <button
-          class="edit-mode-btn"
-          @click="isEditMode = !isEditMode"
-          @touchend.prevent="isEditMode = !isEditMode"
-      >
-        {{ isEditMode ? 'Готово' : 'Правка' }}
-      </button>
-    </div>
+    const handleReorder = async () => {
+      tg.HapticFeedback.impactOccurred('medium');
+      try {
+        const ids = platforms.value.map(p => String(p.id));
+        await platformApi.reorder(initData, ids);
+      } catch (e) {
+        tg.showAlert('Ошибка сохранения порядка');
+        await fetchPlatforms();
+      }
+    };
 
-    <div v-if="isLoading" class="status-msg">
-      <div class="spinner"></div>
-      <p>Загрузка данных...</p>
-    </div>
+    const deletePlatform = async (platform) => {
+      try {
+        await platformApi.delete(initData, platform.id);
+        platforms.value = platforms.value.filter(p => p.id !== platform.id);
+        tg.HapticFeedback.notificationOccurred('success');
+      } catch (e) {
+        tg.showAlert('Ошибка удаления');
+      }
+    };
 
-    <div v-else-if="error" class="status-msg error">
-      <p>{{ error }}</p>
-      <button @click="fetchPlatforms">Обновить</button>
-    </div>
+    const selectPlatform = (platform) => {
+      if (isEditMode.value) return;
+      emit('select-platform', platform);
+    };
 
-    <template v-else>
-      <draggable
-          v-model="platforms"
-          item-key="id"
-          class="platform-list"
-          handle=".drag-handle"
-          :disabled="!isEditMode"
-          ghost-class="ghost-card"
-          :animation="200"
-          :force-fallback="true"
-          :delay="300"
-          :delay-on-touch-only="true"
-          @start="onDragStart"
-          @end="handleReorder"
-      >
-        <template #item="{ element: platform }">
-          <div class="swipe-wrapper">
+    onMounted(async () => {
+      try {
+        await fetchPlatforms();
+      } catch (e) {
+        console.error('Ошибка загрузки платформ:', e);
+        error.value = 'Не удалось загрузить данные';
+      } finally {
+        isLoading.value = false;
+        exitEditMode(); // устанавливает начальное состояние кнопок
+      }
+    });
 
-            <!-- Фон удаления — рендерится ТОЛЬКО когда карточка реально сдвинута -->
-            <div v-if="(swipeData[platform.id]?.currentX || 0) < -5"
-                 class="delete-bg"
-                 :class="{ 'delete-ready': swipeData[platform.id]?.reachedLimit }">
-              <span class="delete-icon">🗑</span>
-            </div>
+    onUnmounted(() => {
+      tg.MainButton.hide();
+      tg.MainButton.offClick(onAddClick);
+      tg.MainButton.offClick(onDoneClick);
+      tg.SettingsButton.hide();
+      tg.SettingsButton.offClick(onSettingsClick);
+    });
+  </script>
 
-            <div
-                class="card-item platform-item"
-                :class="{ 'editing': isEditMode }"
-                :style="getItemStyle(platform)"
-                @click="!isEditMode && selectPlatform(platform)"
-                @contextmenu.prevent
-                @touchstart="onTouchStart($event, platform)"
-                @touchmove="onTouchMove($event, platform)"
-                @touchend="onTouchEnd($event, platform)"
-                @mousedown="onMouseDown($event, platform)"
-            >
-              <div class="icon-box">{{ platform.icon || '🌐' }}</div>
-              <div class="main-content">
-                <div class="name">{{ platform.name }}</div>
-                <div v-if="platform.description" class="description">
-                  {{ platform.description }}
-                </div>
+  <template>
+    <div class="platforms-container">
+      <div class="header-actions">
+        <h2 class="title">Категории</h2>
+      </div>
+
+      <div v-if="isLoading" class="status-msg">
+        <div class="spinner"></div>
+        <p>Загрузка данных...</p>
+      </div>
+
+      <div v-else-if="error" class="status-msg error">
+        <p>{{ error }}</p>
+        <button @click="fetchPlatforms">Обновить</button>
+      </div>
+
+      <template v-else>
+        <draggable
+            v-model="platforms"
+            item-key="id"
+            class="platform-list"
+            handle=".drag-handle"
+            :disabled="!isEditMode"
+            ghost-class="ghost-card"
+            :animation="200"
+            :force-fallback="true"
+            :delay="300"
+            :delay-on-touch-only="true"
+            @start="onDragStart"
+            @end="handleReorder"
+        >
+          <template #item="{ element: platform }">
+            <div class="swipe-wrapper">
+
+              <!-- Фон удаления — рендерится ТОЛЬКО когда карточка реально сдвинута -->
+              <div v-if="(swipeData[platform.id]?.currentX || 0) < -5"
+                   class="delete-bg"
+                   :class="{ 'delete-ready': swipeData[platform.id]?.reachedLimit }">
+                <span class="delete-icon">🗑</span>
               </div>
 
-              <template v-if="!isEditMode">
-                <div class="count-value">{{ platform.accounts_count || 0 }}</div>
-                <div class="chevron">›</div>
-              </template>
+              <div
+                  class="card-item platform-item"
+                  :class="{ 'editing': isEditMode }"
+                  :style="getItemStyle(platform)"
+                  @click="!isEditMode && selectPlatform(platform)"
+                  @contextmenu.prevent
+                  @touchstart="onTouchStart($event, platform)"
+                  @touchmove="onTouchMove($event, platform)"
+                  @touchend="onTouchEnd($event, platform)"
+                  @mousedown="onMouseDown($event, platform)"
+              >
+                <div class="icon-box">{{ platform.icon || '🌐' }}</div>
+                <div class="main-content">
+                  <div class="name">{{ platform.name }}</div>
+                  <div v-if="platform.description" class="description">
+                    {{ platform.description }}
+                  </div>
+                </div>
 
-              <div v-if="isEditMode" class="drag-handle">☰</div>
+                <template v-if="!isEditMode">
+                  <div class="count-value">{{ platform.accounts_count || 0 }}</div>
+                  <div class="chevron">›</div>
+                </template>
+
+                <div v-if="isEditMode" class="drag-handle">☰</div>
+              </div>
+
             </div>
+          </template>
+        </draggable>
+      </template>
+    </div>
+  </template>
 
-          </div>
-        </template>
-      </draggable>
+  <style scoped>
+  .platforms-container {
+    width: 100%;
+    padding: 16px 16px 50px;
+    box-sizing: border-box;
+  }
 
-      <div v-if="!isEditMode" class="card-item add-button" @click="emit('add-platform')">
-        <div class="icon-box add-icon">+</div>
-        <div class="main-content">
-          <div class="name">Add New Platform</div>
-          <div class="description">Create a new category</div>
-        </div>
-      </div>
-    </template>
-  </div>
-</template>
+  .platform-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-<style scoped>
-.platforms-container {
-  width: 100%;
-  padding: 16px 16px 50px;
-  box-sizing: border-box;
-}
+  /* ── Inner elements ─────────────────────────────────── */
 
-.platform-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+  .icon-box {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    background: var(--tg-theme-bg-color);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
 
-/* ── Inner elements ─────────────────────────────────── */
+  .name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--tg-theme-text-color);
+    line-height: 1.2;
+  }
 
-.icon-box {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  background: var(--tg-theme-bg-color);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
+  .description {
+    font-size: 11px;
+    color: var(--tg-theme-hint-color);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-.name {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--tg-theme-text-color);
-  line-height: 1.2;
-}
+  .count-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--tg-theme-hint-color);
+  }
 
-.description {
-  font-size: 11px;
-  color: var(--tg-theme-hint-color);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  .chevron {
+    color: var(--tg-theme-hint-color);
+    font-size: 20px;
+    opacity: 0.4;
+    margin-left: -4px;
+  }
 
-.count-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--tg-theme-hint-color);
-}
+  /* ── Header ─────────────────────────────────────────── */
+  .header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 0 4px;
+  }
 
-.chevron {
-  color: var(--tg-theme-hint-color);
-  font-size: 20px;
-  opacity: 0.4;
-  margin-left: -4px;
-}
-
-/* ── Header ─────────────────────────────────────────── */
-.header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding: 0 4px;
-}
-
-.title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--tg-theme-text-color);
-}
-</style>
+  .title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--tg-theme-text-color);
+  }
+  </style>

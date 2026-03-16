@@ -1,5 +1,5 @@
 <script setup>
-import {ref, onMounted} from 'vue';
+import {ref, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 
@@ -10,23 +10,34 @@ const {tg, initData} = useTelegram();
 const fullAccount = ref(null);
 const isLoading = ref(true);
 const showPassword = ref(false);
-const copyStatus = ref({}); // Для индикации копирования отдельных полей
+const copyStatus = ref({});
 
 onMounted(async () => {
   try {
-    // Получаем детальные данные (с расшифрованным паролем и т.д.)
     fullAccount.value = await accountApi.getDetail(initData, props.account.id);
   } catch (error) {
     tg.showAlert("Не удалось загрузить данные");
   } finally {
     isLoading.value = false;
   }
+
+  tg.MainButton.setText('Изменить данные');
+  tg.MainButton.onClick(onEditClick);
+  tg.MainButton.show();
 });
+
+onUnmounted(() => {
+  tg.MainButton.hide();
+  tg.MainButton.offClick(onEditClick);
+});
+
+const onEditClick = () => {
+  if (fullAccount.value) emit('edit', fullAccount.value);
+};
 
 const copyToClipboard = (text, field) => {
   if (!text) return;
 
-  // Используем API Telegram или стандартный метод
   const el = document.createElement('textarea');
   el.value = text;
   document.body.appendChild(el);
@@ -34,7 +45,6 @@ const copyToClipboard = (text, field) => {
   document.execCommand('copy');
   document.body.removeChild(el);
 
-  // Визуальный отклик
   tg.HapticFeedback.notificationOccurred('success');
   copyStatus.value[field] = true;
   setTimeout(() => {
@@ -107,12 +117,6 @@ const copyToClipboard = (text, field) => {
         </div>
 
       </div>
-
-      <div class="footer-actions">
-        <button class="edit-btn" @click="emit('edit', fullAccount)">
-          Изменить данные
-        </button>
-      </div>
     </template>
   </div>
 </template>
@@ -120,7 +124,7 @@ const copyToClipboard = (text, field) => {
 <style scoped>
 .detail-container {
   padding: 16px;
-  padding-bottom: 40px;
+  padding-bottom: 20px;
 }
 
 .header-section {
@@ -225,22 +229,6 @@ const copyToClipboard = (text, field) => {
 .copy-icon.copied {
   opacity: 1;
   transform: scale(1.2);
-}
-
-.footer-actions {
-  margin-top: 32px;
-}
-
-.edit-btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
 }
 
 .loading-state {
