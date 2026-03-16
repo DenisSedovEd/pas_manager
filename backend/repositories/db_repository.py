@@ -1,7 +1,6 @@
-from sqlalchemy import desc, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models import Platform
 
 
 class DatabaseRepository:

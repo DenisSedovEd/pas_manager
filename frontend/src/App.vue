@@ -119,7 +119,6 @@ const handleUnlock = async () => {
 onMounted(async () => {
   initApp()
 
-
   // Telegram Mini App ready
   if (tg) {
     tg.ready()
@@ -128,18 +127,12 @@ onMounted(async () => {
   initTelegramClipboard()
   tg?.BackButton?.onClick(popScreen)
 
-  tg.SettingsButton.show();
-  // tg.offEvent('settingsButtonClicked', handleSettingsClick);
-  tg.onEvent('settingsButtonClicked', handleSettingsClick);
-
   const safeTop = tg?.safeAreaInset?.top || 0
   const finalPadding = safeTop > 0 ? safeTop + 20 : 20
 
   document.documentElement.style.setProperty('--safe-area-top', `${finalPadding}px`)
   if (tg?.setHeaderColor) tg.setHeaderColor('bg_color')
   if (tg?.setBackgroundColor) tg.setBackgroundColor('bg_color')
-
-  // Запуск clipboard модуля
 
   // Инициализация биометрии
   bio.init(async () => {

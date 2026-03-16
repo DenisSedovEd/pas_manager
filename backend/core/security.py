@@ -1,4 +1,3 @@
-import time
 import urllib.parse
 import hmac
 import hashlib
@@ -7,7 +6,6 @@ import json
 from argon2 import PasswordHasher
 from fastapi import HTTPException
 from backend.core.config import settings
-from passlib.context import CryptContext
 
 
 def verify_telegram_data(init_data: str) -> dict:
@@ -23,7 +21,7 @@ def verify_telegram_data(init_data: str) -> dict:
     data_check_string = "\n".join(f"{k}={v[0]}" for k, v in sorted(parsed_data.items()))
 
     secret_key = hmac.new(
-        b"WebAppData", settings.app.telegram_token.encode(), hashlib.sha256
+        b"WebAppData", settings.tg.telegram_token.encode(), hashlib.sha256
     ).digest()
     computed_hash = hmac.new(
         secret_key, data_check_string.encode(), hashlib.sha256
@@ -33,7 +31,7 @@ def verify_telegram_data(init_data: str) -> dict:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
     user_data = json.loads(parsed_data["user"][0])
-    if str(user_data.get("id", "")) != str(settings.app.user_id):
+    if str(user_data.get("id", "")) != str(settings.tg.user_id):
         raise HTTPException(status_code=403, detail="Access denied")
     return user_data
 

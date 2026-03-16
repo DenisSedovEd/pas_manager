@@ -1,7 +1,6 @@
 from cryptography.exceptions import InvalidTag
 from fastapi import APIRouter, HTTPException, Depends
 
-from backend.core.logger import logger
 from backend.core.security import MasterPasswordService
 from backend.core.config import settings as app_settings
 from backend.core.session import session_manager
