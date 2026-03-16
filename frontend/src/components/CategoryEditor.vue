@@ -28,7 +28,7 @@ const onSelectEmoji = (emoji) => {
 
 const handleSave = async () => {
   if (!formData.value.name.trim()) {
-    tg.showAlert("Введите название платформы");
+    tg.showAlert("Введите название категории");
     return;
   }
   isLoading.value = true;

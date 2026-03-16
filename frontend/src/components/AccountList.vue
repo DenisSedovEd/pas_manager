@@ -247,7 +247,7 @@ onUnmounted(() => {
       >
         <span class="category-icon">{{ props.category?.icon || '🌐' }}</span>
         <div class="category-text">
-          <h1>{{ props.category?.name || 'Платформа' }}</h1>
+          <h1>{{ props.category?.name || 'Категория' }}</h1>
           <p v-if="props.category?.description" class="category-desc">
             {{ props.category.description }}
           </p>
