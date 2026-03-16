@@ -26,14 +26,14 @@ class EncryptionRepository:
     def generate_salt(
         self,
     ) -> bytes:
-        return os.urandom(settings.app.salt_size)
+        return os.urandom(settings.crypto.salt_size)
 
     def derive_key(self, master_password: str, salt: bytes) -> bytes:
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
-            length=settings.app.key_length,
+            length=settings.crypto.key_length,
             salt=salt,
-            iterations=settings.app.iterations,
+            iterations=settings.crypto.iterations,
             backend=default_backend(),
         )
         return kdf.derive(master_password.encode("utf-8"))

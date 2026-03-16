@@ -1,4 +1,3 @@
-from backend.models import Account
 from backend.models.platform import Platform
 from backend.repositories import DatabaseRepository
 from backend.schemas.platform import PlatformResponseSchema, PlatformRequestSchema

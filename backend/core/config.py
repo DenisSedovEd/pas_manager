@@ -44,11 +44,6 @@ class AppSettings(Base):
     host: str = Field("localhost")
     port: int = Field(8080)
     debug: bool = Field(False)
-    user_id: int = Field(...)
-    telegram_token: str = Field(...)
-    key_length: int = Field(...)
-    salt_size: int = Field(...)
-    iterations: int = Field(...)
     delete_timeout_seconds: int = Field(...)
     session_ttl: int = Field(...)
     tunnel_token: str = Field(...)
@@ -61,13 +56,23 @@ class TgSettings(Base):
     user_id: int = Field(...)
     telegram_token: str = Field(...)
 
-
+class CryptoSettings(Base):
+    model_config = SettingsConfigDict(
+        env_prefix="CRYPTO",
+    )
+    key_length: int = Field(...)
+    salt_size: int = Field(...)
+    iterations: int = Field(...)
 
 class Settings(Base):
     # noinspection PyArgumentList
     db: DbSettings = Field(default_factory=DbSettings)
     # noinspection PyArgumentList
     app: AppSettings = Field(default_factory=AppSettings)
+    # noinspection PyArgumentList
+    tg: TgSettings = Field(default_factory=TgSettings)
+    # noinspection PyArgumentList
+    crypto: CryptoSettings = Field(default_factory=CryptoSettings)
 
 
 # noinspection PyArgumentList

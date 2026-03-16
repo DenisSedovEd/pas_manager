@@ -1,11 +1,9 @@
-from contextlib import asynccontextmanager
-
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.db import async_session, get_session
+from backend.core.db import get_session
 from backend.core.security import verify_telegram_data
-from backend.repositories import encryption_repository, DatabaseRepository
+from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from backend.services.account_service import AccountService
 from backend.services.platform_service import PlatformService
