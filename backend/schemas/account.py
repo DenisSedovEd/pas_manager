@@ -8,7 +8,7 @@ class AccountListItemSchema(BaseModel):
     label: str = Field(description="Account label/display name")
     login: str = Field(description="Username")
     order: int
-    platform_id: str  # ← Строка вместо UUID
+    category_id: str  # ← Строка вместо UUID
 
 
 class AccountDetailSchema(BaseModel):
@@ -19,12 +19,12 @@ class AccountDetailSchema(BaseModel):
     email: Optional[str] = Field(default=None, description="Email")
     phone: Optional[str] = Field(default=None, description="Phone")
     label: str = Field(description="Account label")
-    platform_id: str  # ← Строка вместо UUID
+    category_id: str  # ← Строка вместо UUID
 
 
 class AccountRequestSchema(BaseModel):
     """Для создания/обновления аккаунта"""
-    platform_id: str = Field(description="Platform ID")  # ← Строка
+    category_id: str = Field(description="Category ID")  # ← Строка
     login: str = Field(description="Username")
     password: str = Field(description="Password")
     email: Optional[str] = Field(default=None, description="Email")

@@ -6,7 +6,7 @@ from backend.core.security import verify_telegram_data
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from backend.services.account_service import AccountService
-from backend.services.platform_service import PlatformService
+from backend.services.category_service import CategoryService
 from backend.core.session import session_manager
 
 
@@ -18,11 +18,11 @@ def get_account_service(
     return AccountService(db_repo, encrypt_repo)
 
 
-def get_platform_service(
+def get_category_service(
         session: AsyncSession = Depends(get_session),
-) -> PlatformService:
+) -> CategoryService:
     db_repo = DatabaseRepository(session)
-    return PlatformService(db_repo)
+    return CategoryService(db_repo)
 
 
 def get_db_repo(

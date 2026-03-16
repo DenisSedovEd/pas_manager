@@ -4,11 +4,11 @@ import {initTelegramClipboard} from "./utils/clipboard"
 import {useTelegram} from './composables/useTelegram'
 import {authApi} from './api/auth.js'
 
-import PlatformList from './components/PlatformList.vue'
+import CategoryList from './components/CategoryList.vue'
 import AccountList from './components/AccountList.vue'
 import AccountDetail from './components/AccountDetail.vue'
 import AccountEditor from './components/AccountEditor.vue'
-import PlatformEditor from './components/PlatformEditor.vue'
+import CategoryEditor from './components/CategoryEditor.vue'
 
 const {tg, bio, initApp, initData} = useTelegram()
 
@@ -184,22 +184,22 @@ onMounted(async () => {
 
   <div v-else class="app-container">
     <div class="content-wrapper">
-      <PlatformList v-if="currentScreen === 'menu'" @select-platform="(p) => pushScreen('accounts', { platform: p })"
-                    @add-platform="pushScreen('platform_edit')"/>
+      <CategoryList v-if="currentScreen === 'menu'" @select-category="(p) => pushScreen('accounts', { category: p })"
+                    @add-category="pushScreen('category_edit')"/>
       <AccountList
           v-if="currentScreen === 'accounts'"
-          :platformId="currentProps.platform?.id"
-          :platform="currentProps.platform"
-          @select-account="(acc) => pushScreen('account_detail', { account: acc, platform: currentProps.platform })"
-          @add-account="pushScreen('account_edit', { currentPlatform: currentProps.platform })"
-          @edit-platform="(p) => pushScreen('platform_edit', { platform: p })"
+          :categoryId="currentProps.category?.id"
+          :category="currentProps.category"
+          @select-account="(acc) => pushScreen('account_detail', { account: acc, category: currentProps.category })"
+          @add-account="pushScreen('account_edit', { currentCategory: currentProps.category })"
+          @edit-category="(p) => pushScreen('category_edit', { category: p })"
       />
       <AccountDetail v-if="currentScreen === 'account_detail'" :account="currentProps.account"
-                     @edit="(fullAcc) => pushScreen('account_edit', { account: fullAcc, currentPlatform: currentProps.platform })"
+                     @edit="(fullAcc) => pushScreen('account_edit', { account: fullAcc, currentCategory: currentProps.category })"
                      @deleted="popScreen"/>
       <AccountEditor v-if="currentScreen === 'account_edit'" :account="currentProps.account"
-                     :currentPlatform="currentProps.currentPlatform" @save="popScreen" @cancel="popScreen"/>
-      <PlatformEditor v-if="currentScreen === 'platform_edit'" :platform="currentProps.platform" @save="popScreen"
+                     :currentCategory="currentProps.currentCategory" @save="popScreen" @cancel="popScreen"/>
+      <CategoryEditor v-if="currentScreen === 'category_edit'" :category="currentProps.category" @save="popScreen"
                       @cancel="popScreen"/>
     </div>
   </div>
@@ -334,7 +334,7 @@ input:focus, textarea:focus {
   justify-content: center;
 }
 
-/* ─── Shared card item (platform-item, account-item) ─── */
+/* ─── Shared card item (category-item, account-item) ─── */
 
 .card-item {
   position: relative;

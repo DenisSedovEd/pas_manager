@@ -4,7 +4,7 @@ import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 
-const emit = defineEmits(['select-account', 'add-account', 'edit-platform']);
+const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
 const {tg, initData} = useTelegram();
 
 const accounts = ref([]);
@@ -13,8 +13,8 @@ const error = ref(null);
 const isEditMode = ref(false);
 
 const props = defineProps({
-  platformId: String,
-  platform: Object
+  categoryId: String,
+  category: Object
 });
 
 // ── Swipe-to-delete state ─────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ const onDragStart = () => {
 // ── API ───────────────────────────────────────────────────────────────────────
 const fetchAccounts = async () => {
   try {
-    const response = await accountApi.getList(initData, props.platformId);
+    const response = await accountApi.getList(initData, props.categoryId);
     accounts.value = response.data || response;
   } catch (e) {
     console.error("Ошибка загрузки:", e);
@@ -234,20 +234,20 @@ onUnmounted(() => {
 
 <template>
   <div class="accounts-container">
-    <div class="platform-header">
+    <div class="category-header">
       <div
-          class="platform-info"
-          :class="{ 'platform-info--tappable': props.platform?.name !== 'Other' }"
-          @click="props.platform?.name !== 'Other' && $emit('edit-platform', props.platform)"
+          class="category-info"
+          :class="{ 'category-info--tappable': props.category?.name !== 'Other' }"
+          @click="props.category?.name !== 'Other' && $emit('edit-category', props.category)"
       >
-        <span class="platform-icon">{{ props.platform?.icon || '🌐' }}</span>
-        <div class="platform-text">
-          <h1>{{ props.platform?.name || 'Платформа' }}</h1>
-          <p v-if="props.platform?.description" class="platform-desc">
-            {{ props.platform.description }}
+        <span class="category-icon">{{ props.category?.icon || '🌐' }}</span>
+        <div class="category-text">
+          <h1>{{ props.category?.name || 'Платформа' }}</h1>
+          <p v-if="props.category?.description" class="category-desc">
+            {{ props.category.description }}
           </p>
         </div>
-        <span v-if="props.platform?.name !== 'Other'" class="header-chevron">›</span>
+        <span v-if="props.category?.name !== 'Other'" class="header-chevron">›</span>
       </div>
     </div>
 
@@ -301,7 +301,7 @@ onUnmounted(() => {
                 @touchend="onTouchEnd($event, account)"
                 @mousedown="onMouseDown($event, account)"
             >
-              <div class="icon-box">{{ platformIcon || '👤' }}</div>
+              <div class="icon-box">{{ categoryIcon || '👤' }}</div>
 
               <div class="main-content">
                 <div v-if="account.label" class="label-text">{{ account.label }}</div>
@@ -375,7 +375,7 @@ onUnmounted(() => {
 }
 
 /* ── Header ─────────────────────────────────────────── */
-.platform-header {
+.category-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -385,7 +385,7 @@ onUnmounted(() => {
   margin-bottom: 30px;
 }
 
-.platform-info {
+.category-info {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -393,7 +393,7 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-.platform-info--tappable {
+.category-info--tappable {
   cursor: pointer;
   border-radius: 12px;
   padding: 4px 6px 4px 0;
@@ -402,7 +402,7 @@ onUnmounted(() => {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
 }
 
-.platform-info--tappable:active {
+.category-info--tappable:active {
   opacity: 0.7;
 }
 
@@ -414,7 +414,7 @@ onUnmounted(() => {
   margin-left: auto;
 }
 
-.platform-icon {
+.category-icon {
   font-size: 32px;
   width: 52px;
   height: 52px;
@@ -426,7 +426,7 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.platform-text h1 {
+.category-text h1 {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
@@ -436,7 +436,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
-.platform-desc {
+.category-desc {
   margin: 4px 0 0 0;
   font-size: 13px;
   color: var(--tg-theme-hint-color);

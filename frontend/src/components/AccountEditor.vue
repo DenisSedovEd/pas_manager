@@ -2,7 +2,7 @@
 import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
-import {platformApi} from '../api/platform.js';
+import {categoryApi} from '../api/category.js';
 
 const props = defineProps(['account', 'currentPlatform']);
 const emit = defineEmits(['save', 'cancel']);
@@ -14,7 +14,7 @@ const platforms = ref([]);
 
 onMounted(async () => {
   try {
-    const response = await platformApi.getList(initData);
+    const response = await categoryApi.getList(initData);
     platforms.value = response.data || response;
   } catch (e) {
     console.error("Ошибка загрузки платформ", e);

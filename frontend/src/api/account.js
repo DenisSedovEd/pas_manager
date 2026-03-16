@@ -1,8 +1,8 @@
 const BASE_URL = '/pas-manager/v1';
 
 export const accountApi = {
-  async getList(initData, platformId) {
-    const response = await fetch(`${BASE_URL}/account/list/${platformId}`, {
+  async getList(initData, categoryId) {
+    const response = await fetch(`${BASE_URL}/account/list/${categoryId}`, {
       headers: { 'Authorization': initData }
     });
     if (!response.ok) throw new Error('Failed to fetch accounts');
@@ -25,7 +25,7 @@ export const accountApi = {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        platform_id: account.platform_id,  // ← UUID строка
+        category_id: account.category_id,  // ← UUID строка
         login: account.login,
         password: account.password,
         email: account.email || null,
@@ -63,7 +63,7 @@ export const accountApi = {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        platform_id: account.platform_id,  // ← UUID строка
+        category_id: account.category_id,  // ← UUID строка
         login: account.login,
         password: account.password,
         email: account.email || null,

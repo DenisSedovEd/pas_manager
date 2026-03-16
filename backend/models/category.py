@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from backend.models.account import Account
 
 
-class Platform(Base):
-    __tablename__ = "platforms"
+class CategoryTable(Base):
+    __tablename__ = "categories"
 
     id: Mapped[str] = mapped_column(
         Text,
@@ -19,7 +19,7 @@ class Platform(Base):
         default=lambda: str(uuid.uuid4()),
         nullable=False,
     )
-    platform_name: Mapped[str] = mapped_column(
+    category_name: Mapped[str] = mapped_column(
         String,
         unique=True,
         nullable=False,
@@ -39,10 +39,10 @@ class Platform(Base):
     )
     accounts: Mapped[list["Account"]] = relationship(
         "Account",
-        back_populates="platform",
+        back_populates="category",
         lazy="selectin",
         cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
-        return f"<Platform {self.platform_name}>"
+        return f"<Category {self.category_name}>"

@@ -1,11 +1,11 @@
 <script setup>
 import {ref, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import {platformApi} from '../api/platform.js';
+import {categoryApi} from '../api/category.js';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 
-const props = defineProps(['platform']);
+const props = defineProps(['category']);
 const emit = defineEmits(['save', 'cancel']);
 const {tg, initData} = useTelegram();
 
@@ -13,13 +13,13 @@ const showPicker = ref(false);
 const isLoading = ref(false);
 
 const formData = ref({
-  id: props.platform?.id || null,
-  name: props.platform?.name || '',
-  icon: props.platform?.icon || '🌐',
-  description: props.platform?.description || ''
+  id: props.category?.id || null,
+  name: props.category?.name || '',
+  icon: props.category?.icon || '🌐',
+  description: props.category?.description || ''
 });
 
-const isEditing = !!props.platform?.id;
+const isEditing = !!props.category?.id;
 
 const onSelectEmoji = (emoji) => {
   formData.value.icon = emoji.i;
@@ -36,9 +36,9 @@ const handleSave = async () => {
   tg.MainButton.disable();
   try {
     if (isEditing) {
-      await platformApi.update(initData, formData.value.id, formData.value);
+      await categoryApi.update(initData, formData.value.id, formData.value);
     } else {
-      await platformApi.create(initData, formData.value);
+      await categoryApi.create(initData, formData.value);
     }
     tg.HapticFeedback.notificationOccurred('success');
     emit('save');
@@ -52,7 +52,7 @@ const handleSave = async () => {
 };
 
 onMounted(() => {
-  tg.MainButton.setText(isEditing ? 'Обновить данные' : 'Создать платформу');
+  tg.MainButton.setText(isEditing ? 'Обновить данные' : 'Создать категорию');
   tg.MainButton.onClick(handleSave);
   tg.MainButton.show();
 });
@@ -88,7 +88,7 @@ onUnmounted(() => {
       </div>
 
       <div class="input-group">
-        <label>Название платформы</label>
+        <label>Название категории</label>
         <input
             v-model="formData.name"
             type="text"

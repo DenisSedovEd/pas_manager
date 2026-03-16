@@ -9,18 +9,18 @@ from backend.services.account_service import AccountService
 router = APIRouter(prefix="/account")
 
 
-@router.get("/list/{platform_id}")
-async def get_accounts_by_platform(
-        platform_id: str,
+@router.get("/list/{category_id}")
+async def get_accounts_by_category(
+        category_id: str,
         user: dict = Depends(get_current_user),
         service: AccountService = Depends(get_account_service),
 ) -> list[AccountListItemSchema]:
-    """GET /pas-manager/v1/account/list/{platform_id}"""
+    """GET /pas-manager/v1/account/list/{category_id}"""
 
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
-    accounts = await service.get_accounts_by_platform(platform_id)
+    accounts = await service.get_accounts_by_category(category_id)
     return accounts
 
 

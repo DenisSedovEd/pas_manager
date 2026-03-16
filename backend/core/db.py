@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import StaticPool
-from backend.models.platform import Platform
+from backend.models.category import CategoryTable
 
 from sqlalchemy import select
 from backend.core.config import settings
@@ -45,12 +45,12 @@ async def init_db():
     async with async_session() as session:
 
         result = await session.execute(
-            select(Platform).where(Platform.platform_name == "Other")
+            select(CategoryTable).where(CategoryTable.category_name == "Other")
         )
         if not result.scalar():
-            other_platform = Platform(
-                platform_name="Other",
+            other_category = CategoryTable(
+                category_name="Other",
                 description="📌"
             )
-            session.add(other_platform)
+            session.add(other_category)
             await session.commit()
