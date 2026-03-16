@@ -4,18 +4,18 @@ import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
 
-const props = defineProps(['account', 'currentPlatform']);
+const props = defineProps(['account', 'currentCategory']);
 const emit = defineEmits(['save', 'cancel']);
 const {tg, initData} = useTelegram();
 
 const isLoading = ref(false);
 const showPassword = ref(false);
-const platforms = ref([]);
+const categories = ref([]);
 
 onMounted(async () => {
   try {
     const response = await categoryApi.getList(initData);
-    platforms.value = response.data || response;
+    categories.value = response.data || response;
   } catch (e) {
     console.error("Ошибка загрузки платформ", e);
   }
@@ -50,7 +50,7 @@ const isEditing = computed(() => !!props.account?.id);
 
 const formData = ref({
   id: props.account?.id || null,
-  platform_id: props.currentPlatform?.id || props.account?.platform_id,
+ category_id: props.currentCategory?.id || props.account?.category_id,
   label: props.account?.label || '',
   login: props.account?.login || '',
   password: props.account?.password || '',
@@ -135,13 +135,13 @@ const generatePassword = () => {
 
       <div class="icon-section">
         <div class="icon-preview">👤</div>
-        <p class="platform-name">{{ currentPlatform?.name || 'Аккаунт' }}</p>
+        <p class="category-name">{{ currentCategory?.name || 'Аккаунт' }}</p>
       </div>
 
       <div class="input-group">
         <label>Платформа</label>
-        <select v-model="formData.platform_id" class="main-input select-input">
-          <option v-for="p in platforms" :key="p.id" :value="p.id">
+        <select v-model="formData.category_id" class="main-input select-input">
+          <option v-for="p in categories" :key="p.id" :value="p.id">
             {{ p.icon }} {{ p.name }}
           </option>
         </select>
@@ -240,7 +240,7 @@ const generatePassword = () => {
   border: 2px solid rgba(128, 128, 128, 0.1);
 }
 
-.platform-name {
+.category-name {
   margin-top: 12px;
   font-weight: 600;
   font-size: 16px;

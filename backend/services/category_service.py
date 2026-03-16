@@ -31,7 +31,7 @@ class CategoryService:
         category = await self.db_repo.get(CategoryTable, filters={"id": category_id})
 
         if not category:
-            raise ValueError(f"Platform with id {category_id} not found")
+            raise ValueError(f"Category with id {category_id} not found")
 
         accounts_count = len(category.accounts) if category.accounts else 0
         return CategoryResponseSchema(

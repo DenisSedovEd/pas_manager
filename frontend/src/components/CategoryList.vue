@@ -102,7 +102,7 @@
         state.currentX = 0;
         state.isSwiping = false;
         tg.showConfirm(
-            `Удалить платформу «${category.icon} ${category.name}»?`,
+            `Удалить категорию «${category.icon} ${category.name}»?`,
             async (confirmed) => {
               if (confirmed) await deletePCategory(category);
             }
@@ -205,7 +205,7 @@
       try {
         await fetchCategories();
       } catch (e) {
-        console.error('Ошибка загрузки платформ:', e);
+        console.error('Ошибка загрузки категорий:', e);
         error.value = 'Не удалось загрузить данные';
       } finally {
         isLoading.value = false;
