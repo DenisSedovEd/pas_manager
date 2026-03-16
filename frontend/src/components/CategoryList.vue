@@ -2,11 +2,11 @@
     import {ref, watch, onMounted, onUnmounted} from 'vue';
     import draggable from 'vuedraggable';
     import {useTelegram} from '../composables/useTelegram';
-    import {platformApi} from '../api/platform.js';
+    import {categoryApi} from '../api/category.js';
 
-    const emit = defineEmits(['select-platform', 'add-platform']);
+    const emit = defineEmits(['select-category', 'add-category']);
     const {tg, initData} = useTelegram();
-    const platforms = ref([]);
+    const categories = ref([]);
     const isLoading = ref(true);
     const error = ref(null);
     const isEditMode = ref(false);
@@ -15,7 +15,7 @@
     const swipeData = ref({});
 
     // ── Кнопки ───────────────────────────────────────────────────────────────────
-    const onAddClick = () => emit('add-platform');
+    const onAddClick = () => emit('add-category');
     const onDoneClick = () => { isEditMode.value = false; };
     const onSettingsClick = () => { isEditMode.value = true; };
 
@@ -31,7 +31,7 @@
     const exitEditMode = () => {
       swipeData.value = {};
       tg.MainButton.offClick(onDoneClick);
-      tg.MainButton.setText('Добавить платформу');
+      tg.MainButton.setText('Добавить категорию');
       tg.MainButton.onClick(onAddClick);
       tg.MainButton.show();
       tg.SettingsButton.onClick(onSettingsClick);
@@ -44,14 +44,14 @@
     });
 
     // ── Общая логика свайпа (touch + mouse) ─────────────────────────────────────
-    const mouseSwipePlatform = ref(null);
+    const mouseSwipeCategory = ref(null);
 
-    const swipeStart = (clientX, clientY, platform, target) => {
+    const swipeStart = (clientX, clientY, category, target) => {
       if (!isEditMode.value) return;
       if (target.closest('.drag-handle')) return;
       const wrapper = target.closest('.swipe-wrapper');
       const maxSwipe = wrapper ? wrapper.offsetWidth * 0.2 : 80;
-      swipeData.value[platform.id] = {
+      swipeData.value[category.id] = {
         startX: clientX,
         startY: clientY,
         currentX: 0,
@@ -62,9 +62,9 @@
       };
     };
 
-    const swipeMove = (clientX, clientY, platform, e) => {
+    const swipeMove = (clientX, clientY, category, e) => {
       if (!isEditMode.value) return;
-      const state = swipeData.value[platform.id];
+      const state = swipeData.value[category.id];
       if (!state) return;
 
       const dx = clientX - state.startX;
@@ -93,18 +93,18 @@
       }
     };
 
-    const swipeEnd = (platform) => {
+    const swipeEnd = (category) => {
       if (!isEditMode.value) return;
-      const state = swipeData.value[platform.id];
+      const state = swipeData.value[category.id];
       if (!state) return;
 
       if (state.isSwiping && state.reachedLimit) {
         state.currentX = 0;
         state.isSwiping = false;
         tg.showConfirm(
-            `Удалить платформу «${platform.icon} ${platform.name}»?`,
+            `Удалить категорию «${category.icon} ${category.name}»?`,
             async (confirmed) => {
-              if (confirmed) await deletePlatform(platform);
+              if (confirmed) await deletePCategory(category);
             }
         );
       } else {
@@ -114,30 +114,30 @@
     };
 
     // ── Touch-обработчики ────────────────────────────────────────────────────────
-    const onTouchStart = (e, platform) => {
-      swipeStart(e.touches[0].clientX, e.touches[0].clientY, platform, e.target);
+    const onTouchStart = (e, category) => {
+      swipeStart(e.touches[0].clientX, e.touches[0].clientY, category, e.target);
     };
 
-    const onTouchMove = (e, platform) => {
-      swipeMove(e.touches[0].clientX, e.touches[0].clientY, platform, e);
+    const onTouchMove = (e, category) => {
+      swipeMove(e.touches[0].clientX, e.touches[0].clientY, category, e);
     };
 
-    const onTouchEnd = (e, platform) => {
-      swipeEnd(platform);
+    const onTouchEnd = (e, category) => {
+      swipeEnd(category);
     };
 
     // ── Mouse-обработчики (десктоп) ──────────────────────────────────────────────
-    const onMouseDown = (e, platform) => {
+    const onMouseDown = (e, category) => {
       if (e.button !== 0) return; // только ЛКМ
-      swipeStart(e.clientX, e.clientY, platform, e.target);
-      mouseSwipePlatform.value = platform;
+      swipeStart(e.clientX, e.clientY, category, e.target);
+      mouseSwipeCategory.value = category;
 
       const onMMove = (ev) => {
-        swipeMove(ev.clientX, ev.clientY, platform, ev);
+        swipeMove(ev.clientX, ev.clientY, category, ev);
       };
       const onMUp = () => {
-        swipeEnd(platform);
-        mouseSwipePlatform.value = null;
+        swipeEnd(category);
+        mouseSwipeCategory.value = null;
         document.removeEventListener('mousemove', onMMove);
         document.removeEventListener('mouseup', onMUp);
       };
@@ -145,9 +145,9 @@
       document.addEventListener('mouseup', onMUp);
     };
 
-    const getItemStyle = (platform) => {
+    const getItemStyle = (category) => {
       if (!isEditMode.value) return {};
-      const state = swipeData.value[platform.id];
+      const state = swipeData.value[category.id];
       const x = state?.currentX || 0;
       return {
         transform: `translateX(${x}px)`,
@@ -166,10 +166,10 @@
     };
 
     // ── API ───────────────────────────────────────────────────────────────────────
-    const fetchPlatforms = async () => {
+    const fetchCategories = async () => {
       try {
-        const response = await platformApi.getList(initData);
-        platforms.value = response.data || response;
+        const response = await categoryApi.getList(initData);
+        categories.value = response.data || response;
       } catch (e) {
         tg.showAlert('Ошибка загрузки');
       }
@@ -178,34 +178,34 @@
     const handleReorder = async () => {
       tg.HapticFeedback.impactOccurred('medium');
       try {
-        const ids = platforms.value.map(p => String(p.id));
-        await platformApi.reorder(initData, ids);
+        const ids = categories.value.map(p => String(p.id));
+        await categoryApi.reorder(initData, ids);
       } catch (e) {
         tg.showAlert('Ошибка сохранения порядка');
-        await fetchPlatforms();
+        await fetchCategories();
       }
     };
 
-    const deletePlatform = async (platform) => {
+    const deletePCategory = async (category) => {
       try {
-        await platformApi.delete(initData, platform.id);
-        platforms.value = platforms.value.filter(p => p.id !== platform.id);
+        await categoryApi.delete(initData, category.id);
+        categories.value = categories.value.filter(p => p.id !== category.id);
         tg.HapticFeedback.notificationOccurred('success');
       } catch (e) {
         tg.showAlert('Ошибка удаления');
       }
     };
 
-    const selectPlatform = (platform) => {
+    const selectPCategory = (category) => {
       if (isEditMode.value) return;
-      emit('select-platform', platform);
+      emit('select-category', category);
     };
 
     onMounted(async () => {
       try {
-        await fetchPlatforms();
+        await fetchCategories();
       } catch (e) {
-        console.error('Ошибка загрузки платформ:', e);
+        console.error('Ошибка загрузки категорий:', e);
         error.value = 'Не удалось загрузить данные';
       } finally {
         isLoading.value = false;
@@ -223,7 +223,7 @@
   </script>
 
   <template>
-    <div class="platforms-container">
+    <div class="categories-container">
       <div class="header-actions">
         <h2 class="title">Категории</h2>
       </div>
@@ -235,14 +235,14 @@
 
       <div v-else-if="error" class="status-msg error">
         <p>{{ error }}</p>
-        <button @click="fetchPlatforms">Обновить</button>
+        <button @click="fetchCategories">Обновить</button>
       </div>
 
       <template v-else>
         <draggable
-            v-model="platforms"
+            v-model="categories"
             item-key="id"
-            class="platform-list"
+            class="category-list"
             handle=".drag-handle"
             :disabled="!isEditMode"
             ghost-class="ghost-card"
@@ -253,37 +253,37 @@
             @start="onDragStart"
             @end="handleReorder"
         >
-          <template #item="{ element: platform }">
+          <template #item="{ element: category }">
             <div class="swipe-wrapper">
 
               <!-- Фон удаления — рендерится ТОЛЬКО когда карточка реально сдвинута -->
-              <div v-if="(swipeData[platform.id]?.currentX || 0) < -5"
+              <div v-if="(swipeData[category.id]?.currentX || 0) < -5"
                    class="delete-bg"
-                   :class="{ 'delete-ready': swipeData[platform.id]?.reachedLimit }">
+                   :class="{ 'delete-ready': swipeData[category.id]?.reachedLimit }">
                 <span class="delete-icon">🗑</span>
               </div>
 
               <div
-                  class="card-item platform-item"
+                  class="card-item category-item"
                   :class="{ 'editing': isEditMode }"
-                  :style="getItemStyle(platform)"
-                  @click="!isEditMode && selectPlatform(platform)"
+                  :style="getItemStyle(category)"
+                  @click="!isEditMode && selectPCategory(category)"
                   @contextmenu.prevent
-                  @touchstart="onTouchStart($event, platform)"
-                  @touchmove="onTouchMove($event, platform)"
-                  @touchend="onTouchEnd($event, platform)"
-                  @mousedown="onMouseDown($event, platform)"
+                  @touchstart="onTouchStart($event, category)"
+                  @touchmove="onTouchMove($event, category)"
+                  @touchend="onTouchEnd($event, category)"
+                  @mousedown="onMouseDown($event, category)"
               >
-                <div class="icon-box">{{ platform.icon || '🌐' }}</div>
+                <div class="icon-box">{{ category.icon || '🌐' }}</div>
                 <div class="main-content">
-                  <div class="name">{{ platform.name }}</div>
-                  <div v-if="platform.description" class="description">
-                    {{ platform.description }}
+                  <div class="name">{{ category.name }}</div>
+                  <div v-if="category.description" class="description">
+                    {{ category.description }}
                   </div>
                 </div>
 
                 <template v-if="!isEditMode">
-                  <div class="count-value">{{ platform.accounts_count || 0 }}</div>
+                  <div class="count-value">{{ category.accounts_count || 0 }}</div>
                   <div class="chevron">›</div>
                 </template>
 
@@ -298,13 +298,13 @@
   </template>
 
   <style scoped>
-  .platforms-container {
+  .categories-container {
     width: 100%;
     padding: 16px 16px 50px;
     box-sizing: border-box;
   }
 
-  .platform-list {
+  .category-list {
     display: flex;
     flex-direction: column;
     gap: 10px;

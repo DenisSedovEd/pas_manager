@@ -1,7 +1,8 @@
 from sqlalchemy import Integer, String, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.models.platform import Platform
+from backend.models.category import CategoryTable
+from backend.models.resource import ResourceTable
 from backend.models.base import Base
 
 
@@ -13,13 +14,22 @@ class Account(Base):
         primary_key=True,
         autoincrement=True,
     )
-    platform_id: Mapped[str] = mapped_column(
+    category_id: Mapped[str] = mapped_column(
         Text,
-        ForeignKey("platforms.id"),
+        ForeignKey("categories.id"),
         nullable=False,
     )
-    platform: Mapped["Platform"] = relationship(
-        "Platform",
+    category: Mapped["CategoryTable"] = relationship(
+        "CategoryTable",
+        back_populates="accounts",
+    )
+    resource_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("resources.id"),
+        nullable=True,
+    )
+    resource: Mapped["ResourceTable"] = relationship(
+        "ResourceTable",
         back_populates="accounts",
     )
     login: Mapped[str] = mapped_column(
@@ -61,4 +71,4 @@ class Account(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Account {self.user_name}@{self.platform_id}>"
+        return f"<Account {self.login}@{self.category_id}>"

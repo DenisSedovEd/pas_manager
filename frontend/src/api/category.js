@@ -1,50 +1,50 @@
 const BASE_URL = '/pas-manager/v1';
 
-export const platformApi = {
+export const categoryApi = {
     async getList(initData) {
-        const response = await fetch(`${BASE_URL}/platform/list`, {
+        const response = await fetch(`${BASE_URL}/category/list`, {
             headers: {'Authorization': initData}
         });
-        if (!response.ok) throw new Error('Failed to fetch platforms');
+        if (!response.ok) throw new Error('Failed to fetch categories');
         return response.json();
     },
 
-    async getDetail(initData, platformId) {
-        const response = await fetch(`${BASE_URL}/platform/${platformId}`, {
+    async getDetail(initData, categoryId) {
+        const response = await fetch(`${BASE_URL}/category/${categoryId}`, {
             headers: {'Authorization': initData}
         });
-        if (!response.ok) throw new Error('Failed to fetch platform');
+        if (!response.ok) throw new Error('Failed to fetch category');
         return response.json();
     },
 
-    async create(initData, platform) {
-        const response = await fetch(`${BASE_URL}/platform`, {
+    async create(initData, category) {
+        const response = await fetch(`${BASE_URL}/category`, {
             method: 'POST',
             headers: {
                 'Authorization': initData,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(platform)
+            body: JSON.stringify(category)
         });
-        if (!response.ok) throw new Error('Failed to create platform');
+        if (!response.ok) throw new Error('Failed to create category');
         return response.json();
     },
 
-    async update(initData, platformId, platform) {
-        const response = await fetch(`${BASE_URL}/platform/${platformId}`, {
+    async update(initData, categoryId, category) {
+        const response = await fetch(`${BASE_URL}/category/${categoryId}`, {
             method: 'PUT',
             headers: {
                 'Authorization': initData,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(platform)
+            body: JSON.stringify(category)
         });
-        if (!response.ok) throw new Error('Failed to update platform');
+        if (!response.ok) throw new Error('Failed to update category');
         return response.json();
     },
 
     async reorder(initData, orderList) {
-        const response = await fetch(`${BASE_URL}/platform/reorder`, {
+        const response = await fetch(`${BASE_URL}/category/reorder`, {
             method: 'PUT',
             headers: {
                 'Authorization': initData,
@@ -61,12 +61,12 @@ export const platformApi = {
     },
 
 
-    async delete(initData, platformId, transfer = true) {
-        const response = await fetch(`${BASE_URL}/platform/${platformId}?transfer=${transfer}`, {
+    async delete(initData, categoryId, transfer = true) {
+        const response = await fetch(`${BASE_URL}/category/${categoryId}?transfer=${transfer}`, {
             method: 'DELETE',
             headers: {'Authorization': initData}
         });
-        if (!response.ok) throw new Error('Failed to delete platform');
+        if (!response.ok) throw new Error('Failed to delete category');
         return response.json();
     }
 };
