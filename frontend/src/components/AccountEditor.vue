@@ -1,5 +1,5 @@
 <script setup>
-import {ref, computed, onMounted} from 'vue';
+import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {platformApi} from '../api/platform.js';
@@ -8,8 +8,6 @@ const props = defineProps(['account', 'currentPlatform']);
 const emit = defineEmits(['save', 'cancel']);
 const {tg, initData} = useTelegram();
 
-const showConfirmDialog = ref(false);
-const showSaveConfirmDialog = ref(false);
 const isLoading = ref(false);
 const showPassword = ref(false);
 const platforms = ref([]);
@@ -21,13 +19,34 @@ onMounted(async () => {
   } catch (e) {
     console.error("Ошибка загрузки платформ", e);
   }
+
+  tg.MainButton.setText(isEditing.value ? 'Обновить данные' : 'Сохранить аккаунт');
+  tg.MainButton.onClick(handleSave);
+  tg.MainButton.show();
+
+  if (isEditing.value && tg.SecondaryButton) {
+    tg.SecondaryButton.setParams({
+      text: 'Удалить аккаунт',
+      color: '#ff3b30',
+      text_color: '#ffffff',
+      is_visible: true,
+      is_active: true,
+    });
+    tg.SecondaryButton.onClick(handleDelete);
+  }
+});
+
+onUnmounted(() => {
+  tg.MainButton.hide();
+  tg.MainButton.offClick(handleSave);
+
+  if (tg.SecondaryButton) {
+    tg.SecondaryButton.hide();
+    tg.SecondaryButton.offClick(handleDelete);
+  }
 });
 
 const isEditing = computed(() => !!props.account?.id);
-
-const selectedPlatform = computed(() => {
-  return platforms.value.find(p => p.id === formData.value.platform_id) || props.currentPlatform;
-});
 
 const formData = ref({
   id: props.account?.id || null,
@@ -46,15 +65,18 @@ const handleSave = async () => {
   }
 
   if (isEditing.value) {
-    showSaveConfirmDialog.value = true;
+    tg.showConfirm("Сохранить изменения?", (confirmed) => {
+      if (confirmed) executeSave();
+    });
   } else {
     executeSave();
   }
 };
 
 const executeSave = async () => {
-  showSaveConfirmDialog.value = false;
   isLoading.value = true;
+  tg.MainButton.showProgress(false);
+  tg.MainButton.disable();
   try {
     if (isEditing.value) {
       await accountApi.update(initData, formData.value.id, formData.value);
@@ -67,17 +89,25 @@ const executeSave = async () => {
     tg.showAlert("Ошибка при сохранении");
   } finally {
     isLoading.value = false;
+    tg.MainButton.hideProgress();
+    tg.MainButton.enable();
   }
 };
 
-const handleDelete = async () => {
-  try {
-    await accountApi.delete(initData, formData.value.id);
-    tg.HapticFeedback.notificationOccurred('success');
-    emit('save');
-  } catch (e) {
-    tg.showAlert("Ошибка при удалении");
-  }
+const handleDelete = () => {
+  tg.showConfirm(
+      "Удалить аккаунт? Вы потеряете доступ к сохраненным данным.",
+      async (confirmed) => {
+        if (!confirmed) return;
+        try {
+          await accountApi.delete(initData, formData.value.id);
+          tg.HapticFeedback.notificationOccurred('success');
+          emit('save');
+        } catch (e) {
+          tg.showAlert("Ошибка при удалении");
+        }
+      }
+  );
 };
 
 const generatePassword = () => {
@@ -97,7 +127,6 @@ const generatePassword = () => {
 
   tg.HapticFeedback.impactOccurred('medium');
 };
-
 </script>
 
 <template>
@@ -180,37 +209,6 @@ const generatePassword = () => {
         />
       </div>
 
-      <div class="actions">
-        <button class="btn primary" @click="handleSave" :disabled="isLoading">
-          {{ isLoading ? 'Сохранение...' : (isEditing ? 'Обновить данные' : 'Сохранить аккаунт') }}
-        </button>
-
-        <button v-if="isEditing" class="btn danger" @click="showConfirmDialog = true">
-          Удалить аккаунт
-        </button>
-      </div>
-    </div>
-
-    <div v-if="showConfirmDialog" class="modal-overlay">
-      <div class="modal">
-        <h3>Удалить аккаунт?</h3>
-        <p>Вы потеряете доступ к сохраненным данным этой учетной записи.</p>
-        <div class="modal-buttons">
-          <button class="btn danger" @click="handleDelete">Да, удалить</button>
-          <button class="btn secondary" @click="showConfirmDialog = false">Отмена</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showSaveConfirmDialog" class="modal-overlay">
-      <div class="modal">
-        <h3>Сохранить изменения?</h3>
-        <p>Текущие данные аккаунта будут обновлены.</p>
-        <div class="modal-buttons">
-          <button class="btn primary" @click="executeSave">Сохранить</button>
-          <button class="btn secondary" @click="showSaveConfirmDialog = false">Отмена</button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -218,7 +216,7 @@ const generatePassword = () => {
 <style scoped>
 .editor-container {
   padding: 16px;
-  padding-bottom: 80px;
+  padding-bottom: 20px;
   max-width: 500px;
   margin: 0 auto;
 }
@@ -317,76 +315,6 @@ const generatePassword = () => {
 
 .eye-btn:active {
   transform: translateY(-50%) scale(0.95);
-}
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 30px;
-}
-
-.btn {
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.primary {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-}
-
-.secondary {
-  background: transparent;
-  color: var(--tg-theme-hint-color);
-  border: 1px solid rgba(128, 128, 128, 0.2);
-}
-
-.danger {
-  background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.modal {
-  background: var(--tg-theme-bg-color);
-  border-radius: 20px;
-  padding: 24px;
-  width: 85%;
-  max-width: 320px;
-  text-align: center;
-}
-
-.modal h3 {
-  margin-bottom: 8px;
-}
-
-.modal p {
-  color: var(--tg-theme-hint-color);
-  font-size: 14px;
-  margin-bottom: 24px;
-}
-
-.modal-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .select-input {

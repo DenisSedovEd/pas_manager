@@ -1,8 +1,7 @@
 <script setup>
-import {ref} from 'vue';
+import {ref, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {platformApi} from '../api/platform.js';
-// Компоненты выбора эмодзи
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 
@@ -22,7 +21,6 @@ const formData = ref({
 
 const isEditing = !!props.platform?.id;
 
-// Функция обновления иконки через пикер
 const onSelectEmoji = (emoji) => {
   formData.value.icon = emoji.i;
   showPicker.value = false;
@@ -34,6 +32,8 @@ const handleSave = async () => {
     return;
   }
   isLoading.value = true;
+  tg.MainButton.showProgress(false);
+  tg.MainButton.disable();
   try {
     if (isEditing) {
       await platformApi.update(initData, formData.value.id, formData.value);
@@ -46,8 +46,21 @@ const handleSave = async () => {
     tg.showAlert("Ошибка при сохранении");
   } finally {
     isLoading.value = false;
+    tg.MainButton.hideProgress();
+    tg.MainButton.enable();
   }
 };
+
+onMounted(() => {
+  tg.MainButton.setText(isEditing ? 'Обновить данные' : 'Создать платформу');
+  tg.MainButton.onClick(handleSave);
+  tg.MainButton.show();
+});
+
+onUnmounted(() => {
+  tg.MainButton.hide();
+  tg.MainButton.offClick(handleSave);
+});
 </script>
 
 <template>
@@ -92,12 +105,6 @@ const handleSave = async () => {
             class="main-input"
             rows="3"
         ></textarea>
-      </div>
-
-      <div class="actions">
-        <button class="btn primary" @click="handleSave" :disabled="isLoading">
-          {{ isLoading ? 'Сохранение...' : (isEditing ? 'Обновить данные' : 'Создать платформу') }}
-        </button>
       </div>
     </div>
   </div>
@@ -205,30 +212,5 @@ const handleSave = async () => {
 
 textarea.main-input {
   resize: none;
-}
-
-.actions {
-  margin-top: 10px;
-  width: 100%;
-}
-
-.btn {
-  width: 100%;
-  padding: 16px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.btn:active {
-  opacity: 0.8;
-}
-
-.primary {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
 }
 </style>

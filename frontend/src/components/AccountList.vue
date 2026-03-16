@@ -1,5 +1,5 @@
 <script setup>
-import {ref, watch, onMounted} from 'vue';
+import {ref, watch, onMounted, onUnmounted} from 'vue';
 import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
@@ -20,8 +20,37 @@ const props = defineProps({
 // ── Swipe-to-delete state ─────────────────────────────────────────────────────
 const swipeData = ref({});
 
+// ── Кнопки ───────────────────────────────────────────────────────────────────
+const onAddClick = () => emit('add-account');
+const onDoneClick = () => {
+  isEditMode.value = false;
+};
+const onSettingsClick = () => {
+  isEditMode.value = true;
+};
+
+const enterEditMode = () => {
+  tg.MainButton.offClick(onAddClick);
+  tg.MainButton.setText('Готово');
+  tg.MainButton.onClick(onDoneClick);
+  tg.MainButton.show();
+  tg.SettingsButton.offClick(onSettingsClick);
+  tg.SettingsButton.hide();
+};
+
+const exitEditMode = () => {
+  swipeData.value = {};
+  tg.MainButton.offClick(onDoneClick);
+  tg.MainButton.setText('Добавить аккаунт');
+  tg.MainButton.onClick(onAddClick);
+  tg.MainButton.show();
+  tg.SettingsButton.onClick(onSettingsClick);
+  tg.SettingsButton.show();
+};
+
 watch(isEditMode, (val) => {
-  if (!val) swipeData.value = {};
+  if (val) enterEditMode();
+  else exitEditMode();
 });
 
 // ── Общая логика свайпа (touch + mouse) ─────────────────────────────────────
@@ -190,7 +219,16 @@ onMounted(async () => {
     error.value = 'Не удалось загрузить данные';
   } finally {
     isLoading.value = false;
+    exitEditMode(); // устанавливает начальное состояние кнопок
   }
+});
+
+onUnmounted(() => {
+  tg.MainButton.hide();
+  tg.MainButton.offClick(onAddClick);
+  tg.MainButton.offClick(onDoneClick);
+  tg.SettingsButton.hide();
+  tg.SettingsButton.offClick(onSettingsClick);
 });
 </script>
 
@@ -211,14 +249,6 @@ onMounted(async () => {
         </div>
         <span v-if="props.platform?.name !== 'Other'" class="header-chevron">›</span>
       </div>
-
-      <button
-          class="edit-mode-btn"
-          @click="isEditMode = !isEditMode"
-          @touchend.prevent="isEditMode = !isEditMode"
-      >
-        {{ isEditMode ? 'Готово' : 'Правка' }}
-      </button>
     </div>
 
     <div v-if="isLoading" class="status-msg">
@@ -288,14 +318,6 @@ onMounted(async () => {
           </div>
         </template>
       </draggable>
-
-      <div v-if="!isEditMode" class="card-item add-button" @click="emit('add-account')">
-        <div class="icon-box add-icon">+</div>
-        <div class="main-content">
-          <div class="label-text">Add New Account</div>
-          <div class="login-text">Save credentials for this platform</div>
-        </div>
-      </div>
     </template>
   </div>
 </template>
