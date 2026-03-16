@@ -1,5 +1,5 @@
 <script setup>
-import {ref, watch, onMounted, onUnmounted} from 'vue';
+import {ref, watch, onMounted, onUnmounted, computed} from 'vue';
 import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
@@ -14,7 +14,8 @@ const isEditMode = ref(false);
 
 const props = defineProps({
   categoryId: String,
-  category: Object
+  category: Object,
+  resources: {type: Array, default: () => []}
 });
 
 // ── Swipe-to-delete state ─────────────────────────────────────────────────────
@@ -28,6 +29,10 @@ const onDoneClick = () => {
 const onSettingsClick = () => {
   isEditMode.value = true;
 };
+
+const resourceMap = computed(() =>
+    Object.fromEntries(props.resources.map(r => [r.id, r]))
+);
 
 const enterEditMode = () => {
   tg.MainButton.offClick(onAddClick);
@@ -304,7 +309,12 @@ onUnmounted(() => {
               <div class="icon-box">{{ categoryIcon || '👤' }}</div>
 
               <div class="main-content">
-                <div v-if="account.label" class="label-text">{{ account.label }}</div>
+                <div class="top-row">
+                  <span class="resource-text">
+                    {{ resourceMap[account.resource_id]?.resource_name || '' }}
+                  </span>
+                  <span v-if="account.label" class="label-text">{{ account.label }}</span>
+                </div>
                 <div class="login-text">{{ account.login }}</div>
               </div>
 
@@ -350,13 +360,28 @@ onUnmounted(() => {
 }
 
 .label-text {
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 400;
+  font-size: 12px;
   color: var(--tg-theme-text-color);
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.top-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.resource-text {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--tg-theme-text-color);
+  flex-shrink: 0;
 }
 
 .login-text {

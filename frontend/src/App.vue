@@ -3,6 +3,7 @@ import {ref, computed, onMounted} from 'vue'
 import {initTelegramClipboard} from "./utils/clipboard"
 import {useTelegram} from './composables/useTelegram'
 import {authApi} from './api/auth.js'
+import {resourceApi} from './api/resource.js'
 
 import CategoryList from './components/CategoryList.vue'
 import AccountList from './components/AccountList.vue'
@@ -11,11 +12,19 @@ import AccountEditor from './components/AccountEditor.vue'
 import CategoryEditor from './components/CategoryEditor.vue'
 
 const {tg, bio, initApp, initData} = useTelegram()
-
+const resources = ref([])
+const defaultResourceId = ref(null)
 // ==================== НАВИГАЦИЯ ====================
 const screenStack = ref([{name: 'menu'}])
 const currentScreen = computed(() => screenStack.value[screenStack.value.length - 1].name)
 const currentProps = computed(() => screenStack.value[screenStack.value.length - 1].props || {})
+
+const loadResources = async () => {
+  resources.value = await resourceApi.getList(initData)
+  const def = resources.value.find(r => r.resource_name === 'Без площадки')
+  if (def) defaultResourceId.value = def.id
+}
+
 
 const pushScreen = (name, props = {}) => {
   screenStack.value.push({name, props})
@@ -58,6 +67,7 @@ const authenticateWithBio = async () => {
         const res = await authApi.unlockWithBiometric(initData, token)
         if (res.ok || res.status === 'success') {
           isUnlocked.value = true
+          await loadResources()
           tg.HapticFeedback.notificationOccurred('success')
         }
       } catch (e) {
@@ -101,6 +111,7 @@ const handleUnlock = async () => {
     if (res.ok === true) {
       isUnlocked.value = true
       tg.HapticFeedback.notificationOccurred('success')
+      await loadResources()
 
       if (isBioSupported.value) {
         const settings = await authApi.getBioSettings(initData)
@@ -139,6 +150,7 @@ onMounted(async () => {
     isBioSupported.value = bio.isInited && bio.isBiometricAvailable
     const status = await authApi.getStatus(initData)
     isUnlocked.value = status.is_unlocked
+    if (isUnlocked.value) await loadResources()
     if (!isUnlocked.value && isBioSupported.value) {
       const settings = await authApi.getBioSettings(initData)
       if (settings.is_enabled) authenticateWithBio()
@@ -190,15 +202,20 @@ onMounted(async () => {
           v-if="currentScreen === 'accounts'"
           :categoryId="currentProps.category?.id"
           :category="currentProps.category"
+          :resources="resources"
           @select-account="(acc) => pushScreen('account_detail', { account: acc, category: currentProps.category })"
           @add-account="pushScreen('account_edit', { currentCategory: currentProps.category })"
           @edit-category="(p) => pushScreen('category_edit', { category: p })"
       />
       <AccountDetail v-if="currentScreen === 'account_detail'" :account="currentProps.account"
+                     :resources="resources"
+                     :category="currentProps.category"
                      @edit="(fullAcc) => pushScreen('account_edit', { account: fullAcc, currentCategory: currentProps.category })"
                      @deleted="popScreen"/>
-      <AccountEditor v-if="currentScreen === 'account_edit'" :account="currentProps.account"
-                     :currentCategory="currentProps.currentCategory" @save="popScreen" @cancel="popScreen"/>
+      <AccountEditor v-if="currentScreen === 'account_edit'" :account="currentProps.account" :resources="resources"
+                     :defaultResourceId="defaultResourceId"
+                     :currentCategory="currentProps.currentCategory" @save="popScreen" @cancel="popScreen"
+                     @resource-created="resources.push($event)"/>
       <CategoryEditor v-if="currentScreen === 'category_edit'" :category="currentProps.category" @save="popScreen"
                       @cancel="popScreen"/>
     </div>

@@ -43,7 +43,9 @@ class CategoryService:
             accounts_count=accounts_count,
         )
 
-    async def add_category(self, category_data: CategoryRequestSchema) -> CategoryResponseSchema:
+    async def add_category(
+        self, category_data: CategoryRequestSchema
+    ) -> CategoryResponseSchema:
         """Добавить новую платформу"""
         new_id = str(uuid.uuid4())
 
@@ -68,7 +70,9 @@ class CategoryService:
             order=new_category.order,
         )
 
-    async def update_category(self, category_id: str, category_data: CategoryRequestSchema) -> CategoryResponseSchema:
+    async def update_category(
+        self, category_id: str, category_data: CategoryRequestSchema
+    ) -> CategoryResponseSchema:
         """Обновить платформу"""
         category = await self.db_repo.get(CategoryTable, filters={"id": category_id})
 
@@ -80,9 +84,9 @@ class CategoryService:
             filters={"id": category_id},
             values={
                 "category_name": category_data.name,
-                'icon': category_data.icon,
+                "icon": category_data.icon,
                 "description": category_data.description,
-            }
+            },
         )
 
         accounts_count = len(category.accounts) if category.accounts else 0
@@ -101,10 +105,8 @@ class CategoryService:
             await self.db_repo.update(
                 CategoryTable,
                 filters={"id": str(category_id)},
-                values={"order": int(index) },
+                values={"order": int(index)},
             )
-
-
 
     async def delete_category(self, category_id: str, transfer_accounts: bool = True):
         """Удалить платформу с выбором: перенос или удаление аккаунтов"""
@@ -116,19 +118,19 @@ class CategoryService:
             raise ValueError("Нельзя удалить системную категорию 'Other'")
 
         if transfer_accounts:
-            other_category = await self.db_repo.get(CategoryTable, filters={"category_name": "Other"})
+            other_category = await self.db_repo.get(
+                CategoryTable, filters={"category_name": "Other"}
+            )
             if not other_category:
-                other_category = CategoryTable(
-                    category_name="Other",
-                    description="🌐"
-                )
+                other_category = CategoryTable(category_name="Other", description="🌐")
                 await self.db_repo.add(other_category)
 
             from backend.models.account import Account
+
             await self.db_repo.update(
                 Account,
                 filters={"category_id": category_id},
-                values={"category_id": str(other_category.id)}
+                values={"category_id": str(other_category.id)},
             )
 
         await self.db_repo.delete(category)

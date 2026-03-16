@@ -2,8 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.core.session import session_manager
 from backend.dependencies import get_account_service, get_current_user
-from backend.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema
-from backend.schemas.response_schemas import MessageResponse, SuccessResponse
+from backend.schemas.account_schema import (
+    AccountRequestSchema,
+    AccountListItemSchema,
+    AccountDetailSchema,
+)
+from backend.schemas.response_schema import MessageResponse, SuccessResponse
 from backend.services.account_service import AccountService
 
 router = APIRouter(prefix="/account")
@@ -11,9 +15,9 @@ router = APIRouter(prefix="/account")
 
 @router.get("/list/{category_id}")
 async def get_accounts_by_category(
-        category_id: str,
-        user: dict = Depends(get_current_user),
-        service: AccountService = Depends(get_account_service),
+    category_id: str,
+    user: dict = Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
 ) -> list[AccountListItemSchema]:
     """GET /pas-manager/v1/account/list/{category_id}"""
 
@@ -26,9 +30,9 @@ async def get_accounts_by_category(
 
 @router.get("/{account_id}")
 async def get_account(
-        account_id: int,
-        user: dict = Depends(get_current_user),
-        service: AccountService = Depends(get_account_service),
+    account_id: int,
+    user: dict = Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
 ) -> AccountDetailSchema:
     """GET /pas-manager/v1/account/{account_id}"""
 
@@ -45,9 +49,9 @@ async def get_account(
 
 @router.post("", response_model=AccountDetailSchema)
 async def create_account(
-        account: AccountRequestSchema,
-        user: dict = Depends(get_current_user),
-        service: AccountService = Depends(get_account_service),
+    account: AccountRequestSchema,
+    user: dict = Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
 ):
     """POST /pas-manager/v1/account"""
 
@@ -64,9 +68,9 @@ async def create_account(
 
 @router.put("/reorder", response_model=SuccessResponse)
 async def reorder_accounts(
-        payload: list[str],
-        user: dict = Depends(get_current_user),
-        service: AccountService = Depends(get_account_service),
+    payload: list[str],
+    user: dict = Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
 ):
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
@@ -76,10 +80,10 @@ async def reorder_accounts(
 
 @router.put("/{account_id}")
 async def update_account(
-        account_id: int,
-        account: AccountRequestSchema,
-        user: dict = Depends(get_current_user),
-        service: AccountService = Depends(get_account_service),
+    account_id: int,
+    account: AccountRequestSchema,
+    user: dict = Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
 ):
     """PUT /pas-manager/v1/account/{account_id}"""
 
@@ -96,13 +100,13 @@ async def update_account(
 
 @router.delete("/{account_id}")
 async def delete_account(
-        account_id: int,
-        user: dict = Depends(get_current_user),
-        service: AccountService = Depends(get_account_service),
+    account_id: int,
+    user: dict = Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
 ):
     """DELETE /pas-manager/v1/account/{account_id}"""
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
     await service.delete_account(account_id)
-    return MessageResponse(message='Account deleted')
+    return MessageResponse(message="Account deleted")

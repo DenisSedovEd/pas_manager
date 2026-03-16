@@ -3,21 +3,63 @@ import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
+import ResourceEditor from './ResourceEditor.vue';
 
-const props = defineProps(['account', 'currentCategory']);
-const emit = defineEmits(['save', 'cancel']);
+const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId']);
+const emit = defineEmits(['save', 'cancel', 'resource-created']);
 const {tg, initData} = useTelegram();
 
 const isLoading = ref(false);
 const showPassword = ref(false);
 const categories = ref([]);
+const showResourceModal = ref(false);
+
+// Локальная копия ресурсов — чтобы добавлять новые без перезагрузки
+const localResources = ref([...(props.resources || [])]);
+
+const isEditing = computed(() => !!props.account?.id);
+
+const formData = ref({
+  id: props.account?.id || null,
+  category_id: props.currentCategory?.id || props.account?.category_id,
+  resource_id: props.account?.resource_id || props.defaultResourceId || '',
+  label: props.account?.label || '',
+  login: props.account?.login || '',
+  password: props.account?.password || '',
+  email: props.account?.email || '',
+  phone: props.account?.phone || ''
+});
+
+// Предыдущее значение resource_id — для восстановления если выбрали "добавить"
+const prevResourceId = ref(formData.value.resource_id);
+
+const handleResourceChange = (e) => {
+  if (e.target.value === '__add_new__') {
+    // Возвращаем предыдущее значение, открываем модал
+    formData.value.resource_id = prevResourceId.value;
+    showResourceModal.value = true;
+  } else {
+    formData.value.resource_id = e.target.value;
+    prevResourceId.value = e.target.value;
+  }
+};
+
+const onResourceCreated = (newResource) => {
+  // Добавляем в локальный список и сразу выбираем
+  localResources.value.push(newResource);
+  formData.value.resource_id = newResource.id;
+  prevResourceId.value = newResource.id;
+  showResourceModal.value = false;
+  // Уведомляем родителя обновить свой список ресурсов
+  emit('resource-created', newResource);
+};
 
 onMounted(async () => {
   try {
     const response = await categoryApi.getList(initData);
     categories.value = response.data || response;
   } catch (e) {
-    console.error("Ошибка загрузки платформ", e);
+    console.error('Ошибка загрузки категорий', e);
   }
 
   tg.MainButton.setText(isEditing.value ? 'Обновить данные' : 'Сохранить аккаунт');
@@ -46,26 +88,19 @@ onUnmounted(() => {
   }
 });
 
-const isEditing = computed(() => !!props.account?.id);
-
-const formData = ref({
-  id: props.account?.id || null,
- category_id: props.currentCategory?.id || props.account?.category_id,
-  label: props.account?.label || '',
-  login: props.account?.login || '',
-  password: props.account?.password || '',
-  email: props.account?.email || '',
-  phone: props.account?.phone || ''
-});
-
 const handleSave = async () => {
   if (!formData.value.login.trim() || !formData.value.password.trim()) {
-    tg.showAlert("Логин и пароль обязательны");
+    tg.showAlert('Логин и пароль обязательны');
+    return;
+  }
+
+  if (!formData.value.resource_id) {
+    tg.showAlert('Выберите площадку');
     return;
   }
 
   if (isEditing.value) {
-    tg.showConfirm("Сохранить изменения?", (confirmed) => {
+    tg.showConfirm('Сохранить изменения?', (confirmed) => {
       if (confirmed) executeSave();
     });
   } else {
@@ -86,7 +121,7 @@ const executeSave = async () => {
     tg.HapticFeedback.notificationOccurred('success');
     emit('save');
   } catch (e) {
-    tg.showAlert("Ошибка при сохранении");
+    tg.showAlert('Ошибка при сохранении');
   } finally {
     isLoading.value = false;
     tg.MainButton.hideProgress();
@@ -96,7 +131,7 @@ const executeSave = async () => {
 
 const handleDelete = () => {
   tg.showConfirm(
-      "Удалить аккаунт? Вы потеряете доступ к сохраненным данным.",
+      'Удалить аккаунт? Вы потеряете доступ к сохраненным данным.',
       async (confirmed) => {
         if (!confirmed) return;
         try {
@@ -104,20 +139,20 @@ const handleDelete = () => {
           tg.HapticFeedback.notificationOccurred('success');
           emit('save');
         } catch (e) {
-          tg.showAlert("Ошибка при удалении");
+          tg.showAlert('Ошибка при удалении');
         }
       }
   );
 };
 
 const generatePassword = () => {
-  const charset = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*";
+  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*';
   const length = 16;
 
   const array = new Uint32Array(length);
   window.crypto.getRandomValues(array);
 
-  let pass = "";
+  let pass = '';
   for (let i = 0; i < length; i++) {
     pass += charset[array[i] % charset.length];
   }
@@ -138,25 +173,7 @@ const generatePassword = () => {
         <p class="category-name">{{ currentCategory?.name || 'Аккаунт' }}</p>
       </div>
 
-      <div class="input-group">
-        <label>Платформа</label>
-        <select v-model="formData.category_id" class="main-input select-input">
-          <option v-for="p in categories" :key="p.id" :value="p.id">
-            {{ p.icon }} {{ p.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="input-group">
-        <label>Название / Метка</label>
-        <input
-            v-model="formData.label"
-            type="text"
-            placeholder="Например: Основной"
-            class="main-input"
-        />
-      </div>
-
+      <!-- 1. Логин -->
       <div class="input-group">
         <label>Логин / Имя пользователя</label>
         <input
@@ -167,6 +184,7 @@ const generatePassword = () => {
         />
       </div>
 
+      <!-- 2. Пароль -->
       <div class="input-group">
         <div class="label-row">
           <label>Пароль</label>
@@ -189,6 +207,40 @@ const generatePassword = () => {
         </div>
       </div>
 
+      <!-- 3. Площадка -->
+      <div class="input-group">
+        <label>Площадка</label>
+        <select
+            :value="formData.resource_id"
+            @change="handleResourceChange"
+            class="main-input select-input"
+        >
+          <option value="" disabled>Выберите площадку</option>
+          <option
+              v-for="r in localResources"
+              :key="r.id"
+              :value="r.id"
+          >
+            {{ r.resource_name }}
+          </option>
+          <option value="__add_new__" class="add-new-option">
+            + Добавить площадку
+          </option>
+        </select>
+      </div>
+
+      <!-- 4. Метка -->
+      <div class="input-group">
+        <label>Название / Метка</label>
+        <input
+            v-model="formData.label"
+            type="text"
+            placeholder="Например: Основной"
+            class="main-input"
+        />
+      </div>
+
+      <!-- 5. E-mail -->
       <div class="input-group">
         <label>E-mail</label>
         <input
@@ -199,6 +251,7 @@ const generatePassword = () => {
         />
       </div>
 
+      <!-- 6. Телефон -->
       <div class="input-group">
         <label>Телефон</label>
         <input
@@ -209,8 +262,25 @@ const generatePassword = () => {
         />
       </div>
 
+      <!-- 7. Категория -->
+      <div class="input-group">
+        <label>Категория</label>
+        <select v-model="formData.category_id" class="main-input select-input">
+          <option v-for="p in categories" :key="p.id" :value="p.id">
+            {{ p.icon }} {{ p.name }}
+          </option>
+        </select>
+      </div>
+
     </div>
   </div>
+
+  <!-- Модальное окно добавления площадки -->
+  <ResourceEditor
+      v-if="showResourceModal"
+      @save="onResourceCreated"
+      @cancel="showResourceModal = false"
+  />
 </template>
 
 <style scoped>
@@ -325,5 +395,10 @@ const generatePassword = () => {
   background-size: 16px;
   padding-right: 40px !important;
   cursor: pointer;
+}
+
+.add-new-option {
+  color: var(--tg-theme-button-color);
+  font-weight: 500;
 }
 </style>

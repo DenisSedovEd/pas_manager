@@ -1,4 +1,8 @@
-from backend.schemas.account import AccountRequestSchema, AccountListItemSchema, AccountDetailSchema
+from backend.schemas.account_schema import (
+    AccountRequestSchema,
+    AccountListItemSchema,
+    AccountDetailSchema,
+)
 from backend.models.account import Account
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
@@ -7,14 +11,16 @@ from cryptography.exceptions import InvalidTag as CryptoInvalidTag
 
 class AccountService:
     def __init__(
-            self,
-            db_repo: DatabaseRepository,
-            encrypt_repo: EncryptionRepository,
+        self,
+        db_repo: DatabaseRepository,
+        encrypt_repo: EncryptionRepository,
     ):
         self.db_repo = db_repo
         self.encrypt_repo = encrypt_repo
 
-    async def get_accounts_by_category(self, category_id: str) -> list[AccountListItemSchema]:
+    async def get_accounts_by_category(
+        self, category_id: str
+    ) -> list[AccountListItemSchema]:
         """Получить все аккаунты платформы (без расшифровки паролей)"""
         accounts = await self.db_repo.get_list(
             Account, filters=Account.category_id == category_id
@@ -27,6 +33,7 @@ class AccountService:
                 label=account.label or account.login,
                 login=account.login,
                 category_id=account.category_id,
+                resource_id=account.resource_id,
                 order=account.order,
             )
             result.append(item)
@@ -34,9 +41,7 @@ class AccountService:
         return result
 
     async def get_account_decrypted(
-            self,
-            account_id: int,
-            master_password: str
+        self, account_id: int, master_password: str
     ) -> AccountDetailSchema:
         """Получить расшифрованные данные аккаунта"""
         account = await self.db_repo.get(Account, filters={"id": account_id})
@@ -52,7 +57,9 @@ class AccountService:
                 master_password,
             )
         except CryptoInvalidTag:
-            raise ValueError("Ключ не подходит. Проверьте мастер-пароль или настройки итераций.")
+            raise ValueError(
+                "Ключ не подходит. Проверьте мастер-пароль или настройки итераций."
+            )
 
         return AccountDetailSchema(
             id=account.id,
@@ -62,12 +69,13 @@ class AccountService:
             phone=account.phone,
             label=account.label,
             category_id=account.category_id,
+            resource_id=account.resource_id,
         )
 
     async def create_account(
-            self,
-            account: AccountRequestSchema,
-            master_password: str,
+        self,
+        account: AccountRequestSchema,
+        master_password: str,
     ) -> AccountDetailSchema:
         """Создать новый аккаунт"""
         enc_data = self.encrypt_repo.encrypt_data(
@@ -82,6 +90,7 @@ class AccountService:
             label=account.label or account.login,
             order=account.order,
             category_id=account.category_id,
+            resource_id=account.resource_id,
             encrypted_data=enc_data["encrypted_data"],
             salt=enc_data["salt"],
             nonce=enc_data["nonce"],
@@ -98,6 +107,7 @@ class AccountService:
             phone=new_account.phone or "",
             label=new_account.label or new_account.login,
             category_id=new_account.category_id,
+            resource_id=new_account.resource_id,
         )
 
         return detail
@@ -108,14 +118,14 @@ class AccountService:
             await self.db_repo.update(
                 Account,
                 filters={"id": str(account_id)},
-                values={"order": int(index) },
+                values={"order": int(index)},
             )
 
     async def update_account(
-            self,
-            account_id: int,
-            account: AccountRequestSchema,
-            master_password: str,
+        self,
+        account_id: int,
+        account: AccountRequestSchema,
+        master_password: str,
     ) -> AccountDetailSchema:
         """Обновить аккаунт"""
         existing = await self.db_repo.get(Account, filters={"id": account_id})
@@ -134,6 +144,7 @@ class AccountService:
             filters={"id": account_id},
             values={
                 "category_id": account.category_id,
+                "resource_id": account.resource_id,
                 "login": account.login,
                 "email": account.email or None,
                 "phone": account.phone or None,
@@ -142,7 +153,7 @@ class AccountService:
                 "salt": enc_data["salt"],
                 "nonce": enc_data["nonce"],
                 "tag": enc_data["tag"],
-            }
+            },
         )
 
         detail = AccountDetailSchema(
@@ -153,6 +164,7 @@ class AccountService:
             phone=account.phone or "",
             label=account.label or account.login,
             category_id=account.category_id,
+            resource_id=account.resource_id,
         )
 
         return detail

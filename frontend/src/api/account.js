@@ -25,7 +25,8 @@ export const accountApi = {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        category_id: account.category_id,  // ← UUID строка
+        category_id: account.category_id,
+        resource_id: account.resource_id,
         login: account.login,
         password: account.password,
         email: account.email || null,
@@ -63,7 +64,8 @@ export const accountApi = {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        category_id: account.category_id,  // ← UUID строка
+        category_id: account.category_id,
+        resource_id: account.resource_id,
         login: account.login,
         password: account.password,
         email: account.email || null,

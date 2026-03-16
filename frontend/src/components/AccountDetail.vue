@@ -1,13 +1,24 @@
 <script setup>
-import {ref, onMounted, onUnmounted} from 'vue';
+import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 
-const props = defineProps(['account']);
+const props = defineProps(['account', 'resources', 'category']);
 const emit = defineEmits(['edit', 'deleted']);
+
 const {tg, initData} = useTelegram();
 
 const fullAccount = ref(null);
+
+const resourceName = computed(() => {
+  const resourceId = fullAccount.value?.resource_id || props.account?.resource_id;
+  if (!props.resources?.length || !resourceId) return 'Без площадки';
+  return props.resources.find(r => r.id === resourceId)?.resource_name || 'Без площадки';
+});
+
+const categoryName = computed(() => {
+  return props.category?.name || props.category?.category_name || '';
+});
 const isLoading = ref(true);
 const showPassword = ref(false);
 const copyStatus = ref({});
@@ -62,8 +73,8 @@ const copyToClipboard = (text, field) => {
     <template v-else-if="fullAccount">
       <div class="header-section">
         <div class="account-avatar">👤</div>
-        <h2 class="account-title">{{ fullAccount.label || fullAccount.login }}</h2>
-        <p class="account-subtitle">Детали аккаунта</p>
+        <h2 class="account-title">{{ resourceName }}<span v-if="categoryName" class="category-tag"> ({{ categoryName }})</span></h2>
+        <p class="account-subtitle">{{ fullAccount.label || fullAccount.login }}</p>
       </div>
 
       <div class="info-cards">
@@ -152,6 +163,12 @@ const copyToClipboard = (text, field) => {
   font-weight: 700;
   margin: 0;
   color: var(--tg-theme-text-color);
+}
+
+.category-tag {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--tg-theme-hint-color);
 }
 
 .account-subtitle {
