@@ -259,10 +259,12 @@ const generatePassword = () => {
         <label>Название / Метка</label>
         <input v-model="formData.label" type="text" placeholder="Например: Основной"
                class="main-input"
-               @click="activeSuggestion = 'label'">
+               @click="activeSuggestion = activeSuggestion === 'label' ? null : 'label'">
         <div v-if="activeSuggestion === 'label' && filteredSuggestions('label').length" class="suggestions-list">
           <div v-for="s in filteredSuggestions('label')" :key="s"
-               class="suggestion-item" @mousedown.prevent="selectSuggestion('label', s)">{{ s }}
+               class="suggestion-item"
+               @mousedown.prevent="selectSuggestion('label', s)"
+               @touchend.prevent="selectSuggestion('label', s)">{{ s }}
           </div>
         </div>
       </div>
@@ -272,10 +274,12 @@ const generatePassword = () => {
         <label>E-mail</label>
         <input v-model="formData.email" type="text" placeholder="example@mail.com"
                class="main-input"
-               @click="activeSuggestion = 'email'">
+               @click="activeSuggestion = activeSuggestion === 'email' ? null : 'email'">
         <div v-if="activeSuggestion === 'email' && filteredSuggestions('email').length" class="suggestions-list">
           <div v-for="s in filteredSuggestions('email')" :key="s"
-               class="suggestion-item" @mousedown.prevent="selectSuggestion('email', s)">{{ s }}
+               class="suggestion-item"
+               @mousedown.prevent="selectSuggestion('email', s)"
+               @touchend.prevent="selectSuggestion('email', s)">{{ s }}
           </div>
         </div>
       </div>
@@ -285,10 +289,12 @@ const generatePassword = () => {
         <label>Телефон</label>
         <input v-model="formData.phone" type="text" placeholder="+7 (___) ___-__-__"
                class="main-input"
-               @click="activeSuggestion = 'phone'">
+               @click="activeSuggestion = activeSuggestion === 'phone' ? null : 'phone'">
         <div v-if="activeSuggestion === 'phone' && filteredSuggestions('phone').length" class="suggestions-list">
           <div v-for="s in filteredSuggestions('phone')" :key="s"
-               class="suggestion-item" @mousedown.prevent="selectSuggestion('phone', s)">{{ s }}
+               class="suggestion-item"
+               @mousedown.prevent="selectSuggestion('phone', s)"
+               @touchend.prevent="selectSuggestion('phone', s)">{{ s }}
           </div>
         </div>
       </div>
