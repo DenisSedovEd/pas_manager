@@ -116,6 +116,10 @@ const handleUnlock = async () => {
   }
 }
 
+const handleSettingsClick = () => {
+  tg.showAlert('Мы в настройках! Тут скоро будет управление FaceID.');
+};
+
 onMounted(async () => {
   initApp()
 
@@ -127,6 +131,10 @@ onMounted(async () => {
   }
   initTelegramClipboard()
   tg?.BackButton?.onClick(popScreen)
+
+  tg.SettingsButton.show();
+  // tg.offEvent('settingsButtonClicked', handleSettingsClick);
+  tg.onEvent('settingsButtonClicked', handleSettingsClick);
 
   const safeTop = tg?.safeAreaInset?.top || 0
   const finalPadding = safeTop > 0 ? safeTop + 20 : 20
