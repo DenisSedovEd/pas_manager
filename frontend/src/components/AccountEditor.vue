@@ -5,7 +5,7 @@ import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
 import ResourceEditor from './ResourceEditor.vue';
 
-const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId']);
+const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions']);
 const emit = defineEmits(['save', 'cancel', 'resource-created']);
 const {tg, initData} = useTelegram();
 
@@ -32,6 +32,27 @@ const formData = ref({
 
 // Предыдущее значение resource_id — для восстановления если выбрали "добавить"
 const prevResourceId = ref(formData.value.resource_id);
+const activeSuggestion = ref(null)
+
+
+const filteredSuggestions = (field) => {
+  const value = formData.value[field]?.toLowerCase() || ''
+  return (props.suggestions?.[field] || []).filter(
+      s => s && s.toLowerCase().includes(value) && s !== formData.value[field]
+  )
+}
+
+const selectSuggestion = (field, value) => {
+  formData.value[field] = value
+  activeSuggestion.value = null
+}
+
+const handleOutsideTouch = (e) => {
+  if (!e.target.closest('.autocomplete-group')) {
+    activeSuggestion.value = null
+  }
+}
+
 
 const handleResourceChange = (e) => {
   if (e.target.value === '__add_new__') {
@@ -76,6 +97,8 @@ onMounted(async () => {
     });
     tg.SecondaryButton.onClick(handleDelete);
   }
+  document.addEventListener('touchstart', handleOutsideTouch)
+  document.addEventListener('mousedown', handleOutsideTouch)
 });
 
 onUnmounted(() => {
@@ -86,6 +109,8 @@ onUnmounted(() => {
     tg.SecondaryButton.hide();
     tg.SecondaryButton.offClick(handleDelete);
   }
+  document.removeEventListener('touchstart', handleOutsideTouch)
+  document.removeEventListener('mousedown', handleOutsideTouch)
 });
 
 const handleSave = async () => {
@@ -230,36 +255,42 @@ const generatePassword = () => {
       </div>
 
       <!-- 4. Метка -->
-      <div class="input-group">
+      <div class="input-group autocomplete-group">
         <label>Название / Метка</label>
-        <input
-            v-model="formData.label"
-            type="text"
-            placeholder="Например: Основной"
-            class="main-input"
-        />
+        <input v-model="formData.label" type="text" placeholder="Например: Основной"
+               class="main-input"
+               @click="activeSuggestion = 'label'">
+        <div v-if="activeSuggestion === 'label' && filteredSuggestions('label').length" class="suggestions-list">
+          <div v-for="s in filteredSuggestions('label')" :key="s"
+               class="suggestion-item" @mousedown.prevent="selectSuggestion('label', s)">{{ s }}
+          </div>
+        </div>
       </div>
 
       <!-- 5. E-mail -->
-      <div class="input-group">
+      <div class="input-group autocomplete-group">
         <label>E-mail</label>
-        <input
-            v-model="formData.email"
-            type="email"
-            placeholder="example@mail.com"
-            class="main-input"
-        />
+        <input v-model="formData.email" type="text" placeholder="example@mail.com"
+               class="main-input"
+               @click="activeSuggestion = 'email'">
+        <div v-if="activeSuggestion === 'email' && filteredSuggestions('email').length" class="suggestions-list">
+          <div v-for="s in filteredSuggestions('email')" :key="s"
+               class="suggestion-item" @mousedown.prevent="selectSuggestion('email', s)">{{ s }}
+          </div>
+        </div>
       </div>
 
       <!-- 6. Телефон -->
-      <div class="input-group">
+      <div class="input-group autocomplete-group">
         <label>Телефон</label>
-        <input
-            v-model="formData.phone"
-            type="tel"
-            placeholder="+7 (___) ___-__-__"
-            class="main-input"
-        />
+        <input v-model="formData.phone" type="text" placeholder="+7 (___) ___-__-__"
+               class="main-input"
+               @click="activeSuggestion = 'phone'">
+        <div v-if="activeSuggestion === 'phone' && filteredSuggestions('phone').length" class="suggestions-list">
+          <div v-for="s in filteredSuggestions('phone')" :key="s"
+               class="suggestion-item" @mousedown.prevent="selectSuggestion('phone', s)">{{ s }}
+          </div>
+        </div>
       </div>
 
       <!-- 7. Категория -->
@@ -400,5 +431,39 @@ const generatePassword = () => {
 .add-new-option {
   color: var(--tg-theme-button-color);
   font-weight: 500;
+}
+
+.autocomplete-group {
+  position: relative;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--tg-theme-secondary-bg-color);
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  border-radius: 12px;
+  margin-top: 4px;
+  z-index: 100;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-item {
+  padding: 12px 16px;
+  font-size: 15px;
+  color: var(--tg-theme-text-color);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:active {
+  background: rgba(128, 128, 128, 0.1);
 }
 </style>

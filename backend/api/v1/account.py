@@ -5,7 +5,7 @@ from backend.dependencies import get_account_service, get_current_user
 from backend.schemas.account_schema import (
     AccountRequestSchema,
     AccountListItemSchema,
-    AccountDetailSchema,
+    AccountDetailSchema, AccountSuggestionsSchema,
 )
 from backend.schemas.response_schema import MessageResponse, SuccessResponse
 from backend.services.account_service import AccountService
@@ -27,6 +27,18 @@ async def get_accounts_by_category(
     accounts = await service.get_accounts_by_category(category_id)
     return accounts
 
+
+@router.get('/suggestions')
+async def get_suggestions(
+        user: dict = Depends(get_current_user),
+        service: AccountService = Depends(get_account_service),
+) -> AccountSuggestionsSchema:
+    if not session_manager.is_active(user["id"]):
+        raise HTTPException(status_code=401, detail="Locker is closed")
+
+    suggestions = await service.get_suggestions()
+
+    return suggestions
 
 @router.get("/{account_id}")
 async def get_account(

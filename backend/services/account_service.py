@@ -2,6 +2,7 @@ from backend.schemas.account_schema import (
     AccountRequestSchema,
     AccountListItemSchema,
     AccountDetailSchema,
+    AccountSuggestionsSchema,
 )
 from backend.models.account import Account
 from backend.repositories import DatabaseRepository
@@ -30,7 +31,7 @@ class AccountService:
         for account in accounts:
             item = AccountListItemSchema(
                 id=account.id,
-                label=account.label or account.login,
+                label=account.label or "",
                 login=account.login,
                 category_id=account.category_id,
                 resource_id=account.resource_id,
@@ -39,6 +40,25 @@ class AccountService:
             result.append(item)
 
         return result
+
+    async def get_suggestions(self) -> AccountSuggestionsSchema:
+        suggestions = await self.db_repo.get_list(Account)
+        emails_set = set()
+        phones_set = set()
+        labels_set = set()
+        for s in suggestions:
+            if s.email:
+                emails_set.add(s.email)
+            if s.phone:
+                phones_set.add(s.phone)
+            if s.label:
+                labels_set.add(s.label)
+
+        return AccountSuggestionsSchema(
+            email=list(emails_set),
+            phone=list(phones_set),
+            label=list(labels_set),
+        )
 
     async def get_account_decrypted(
         self, account_id: int, master_password: str
@@ -87,7 +107,7 @@ class AccountService:
             login=account.login,
             email=account.email or None,
             phone=account.phone or None,
-            label=account.label or account.login,
+            label=account.label or "",
             order=account.order,
             category_id=account.category_id,
             resource_id=account.resource_id,
@@ -103,9 +123,9 @@ class AccountService:
             id=new_account.id,
             login=new_account.login,
             password=account.password,
-            email=new_account.email or "",
-            phone=new_account.phone or "",
-            label=new_account.label or new_account.login,
+            email=new_account.email or None,
+            phone=new_account.phone or None,
+            label=new_account.label or "",
             category_id=new_account.category_id,
             resource_id=new_account.resource_id,
         )
@@ -148,7 +168,7 @@ class AccountService:
                 "login": account.login,
                 "email": account.email or None,
                 "phone": account.phone or None,
-                "label": account.label or account.login,
+                "label": account.label or "",
                 "encrypted_data": enc_data["encrypted_data"],
                 "salt": enc_data["salt"],
                 "nonce": enc_data["nonce"],
@@ -160,9 +180,9 @@ class AccountService:
             id=account_id,
             login=account.login,
             password=account.password,
-            email=account.email or "",
-            phone=account.phone or "",
-            label=account.label or account.login,
+            email=account.email or None,
+            phone=account.phone or None,
+            label=account.label or "",
             category_id=account.category_id,
             resource_id=account.resource_id,
         )
