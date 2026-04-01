@@ -8,8 +8,9 @@ Create Date: 2026-03-16 11:41:29.342736
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "cb52c5a3a720"
@@ -55,7 +56,9 @@ def upgrade() -> None:
         batch_op.alter_column("category_id", nullable=False)
 
         # Удаляем старый FK и создаем новый
-        batch_op.drop_constraint("fk_accounts_platform_id_platforms", type_="foreignkey")
+        batch_op.drop_constraint(
+            "fk_accounts_platform_id_platforms", type_="foreignkey"
+        )
         batch_op.create_foreign_key(
             batch_op.f("fk_accounts_category_id_categories"),
             "categories",
@@ -100,7 +103,9 @@ def downgrade() -> None:
 
     with op.batch_alter_table("accounts", schema=None) as batch_op:
         batch_op.alter_column("platform_id", nullable=False)
-        batch_op.drop_constraint(batch_op.f("fk_accounts_category_id_categories"), type_="foreignkey")
+        batch_op.drop_constraint(
+            batch_op.f("fk_accounts_category_id_categories"), type_="foreignkey"
+        )
         batch_op.create_foreign_key(
             batch_op.f("fk_accounts_platform_id_platforms"),
             "platforms",

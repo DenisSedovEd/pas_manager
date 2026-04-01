@@ -8,9 +8,9 @@ Create Date: 2026-03-11 08:51:36.509629
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "9d7ca29decf1"
@@ -36,9 +36,7 @@ def upgrade() -> None:
         sa.Column("platform_name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_platforms")),
-        sa.UniqueConstraint(
-            "platform_name", name=op.f("uq_platforms_platform_name")
-        ),
+        sa.UniqueConstraint("platform_name", name=op.f("uq_platforms_platform_name")),
     )
     op.create_table(
         "accounts",
@@ -81,9 +79,7 @@ def downgrade() -> None:
         sa.Column("nonce", sa.VARCHAR(), nullable=False),
         sa.Column("tag", sa.VARCHAR(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_account")),
-        sa.UniqueConstraint(
-            "service_name", name=op.f("uq_account_service_name")
-        ),
+        sa.UniqueConstraint("service_name", name=op.f("uq_account_service_name")),
     )
     op.drop_table("accounts")
     op.drop_table("platforms")
