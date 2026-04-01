@@ -1,0 +1,56 @@
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.pool import StaticPool
+from backend.models.category import CategoryTable
+
+from sqlalchemy import select
+from backend.core.config import settings
+
+async_engine: AsyncEngine = create_async_engine(
+    settings.db.url,
+    echo=settings.db.echo,
+    future=settings.db.future,
+    poolclass=StaticPool,
+    connect_args={
+        "timeout": 30,
+        "check_same_thread": False,
+    },
+)
+
+async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
+    bind=async_engine,
+    expire_on_commit=False,
+    class_=AsyncSession,
+)
+
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session() as session:
+        yield session
+
+
+async def init_db():
+    """Инициализировать БД и создать дефолтные данные"""
+    # async with async_engine.begin() as conn:
+    #     from src.models.base import Base
+    #     await conn.run_sync(Base.metadata.create_all)
+
+    # Создаём дефолтную платформу
+    async with async_session() as session:
+
+        result = await session.execute(
+            select(CategoryTable).where(CategoryTable.category_name == "Other")
+        )
+        if not result.scalar():
+            other_category = CategoryTable(
+                category_name="Other",
+                description="📌"
+            )
+            session.add(other_category)
+            await session.commit()

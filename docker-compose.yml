@@ -1,6 +1,7 @@
 services:
 
   api:
+    build: .
     image: denissedoved/pas_manager:latest
     env_file:
       - .env
@@ -9,4 +10,11 @@ services:
       - ./data:/app/data
 
     ports:
-      - "8000:8000"
+      - "5173:8080"
+
+  tunel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${APP__TUNNEL_TOKEN}
+    env_file:
+      - .env
