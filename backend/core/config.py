@@ -48,7 +48,9 @@ class AppSettings(Base):
     session_ttl: int = Field(...)
     tunnel_token: str = Field(...)
     admin_id: int = Field(...)
-    cors_origins: list[str] = Field(default=["https://web.telegram.org", "https://t.me"])
+    cors_origins: list[str] = Field(
+        default=["https://web.telegram.org", "https://t.me"]
+    )
 
 
 class TgSettings(Base):

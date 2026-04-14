@@ -21,8 +21,8 @@ FROM docker.io/python:3.13-slim AS builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential \
-        libsqlite3-dev \
+    build-essential \
+    libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv
