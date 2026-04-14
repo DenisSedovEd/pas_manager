@@ -49,12 +49,14 @@ class AppSettings(Base):
     tunnel_token: str = Field(...)
     admin_id: int = Field(...)
 
+
 class TgSettings(Base):
     model_config = SettingsConfigDict(
         env_prefix="TG",
     )
     user_id: int = Field(...)
     telegram_token: str = Field(...)
+
 
 class CryptoSettings(Base):
     model_config = SettingsConfigDict(
@@ -63,6 +65,7 @@ class CryptoSettings(Base):
     key_length: int = Field(...)
     salt_size: int = Field(...)
     iterations: int = Field(...)
+
 
 class Settings(Base):
     # noinspection PyArgumentList

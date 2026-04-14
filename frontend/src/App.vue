@@ -169,16 +169,17 @@ onMounted(async () => {
     const url = '/pas-manager/v1/main/auth/logout';
     const data = JSON.stringify({init_data: initData});
 
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(url, data);
-    } else {
-      fetch(url, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: data,
-        keepalive: true
-      });
-    }
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': initData,
+        'Content-Type': 'application/json'
+      },
+      body: data,
+      keepalive: true,
+    }).catch(() => {
+      // ignore failure during unload
+    });
   }
   window.addEventListener('pagehide', handleLogout)
 })

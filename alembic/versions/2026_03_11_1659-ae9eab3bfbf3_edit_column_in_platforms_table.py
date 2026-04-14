@@ -8,9 +8,9 @@ Create Date: 2026-03-11 16:59:27.930502
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "ae9eab3bfbf3"
@@ -27,7 +27,7 @@ def upgrade() -> None:
             "icon",
             existing_type=sa.VARCHAR(),
             nullable=True,
-            existing_server_default=sa.text("'🌐'"),
+            existing_server_default="'🌐'",
         )
 
     # ### end Alembic commands ###
@@ -41,7 +41,7 @@ def downgrade() -> None:
             "icon",
             existing_type=sa.VARCHAR(),
             nullable=False,
-            existing_server_default=sa.text("'🌐'"),
+            existing_server_default="'🌐'",
         )
 
     # ### end Alembic commands ###

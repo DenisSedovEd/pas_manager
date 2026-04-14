@@ -8,9 +8,9 @@ Create Date: 2026-03-15 08:39:27.337371
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "ac215dab4ae6"
@@ -29,9 +29,7 @@ def upgrade() -> None:
     # 3. Делаем колонку обязательной
     # Используем batch_alter_table здесь, так как это изменение существующей колонки
     with op.batch_alter_table("accounts", schema=None) as batch_op:
-        batch_op.alter_column('order',
-                              existing_type=sa.Integer(),
-                              nullable=False)
+        batch_op.alter_column("order", existing_type=sa.Integer(), nullable=False)
 
     # ### end Alembic commands ###
 
