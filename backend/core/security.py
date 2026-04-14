@@ -1,11 +1,13 @@
-import urllib.parse
-import hmac
 import hashlib
+import hmac
 import json
+import urllib.parse
 
 from argon2 import PasswordHasher
 from fastapi import HTTPException
+
 from backend.core.config import settings
+from backend.core.session import session_manager
 
 
 def verify_telegram_data(init_data: str) -> dict:
@@ -34,6 +36,14 @@ def verify_telegram_data(init_data: str) -> dict:
     if str(user_data.get("id", "")) != str(settings.tg.user_id):
         raise HTTPException(status_code=403, detail="Access denied")
     return user_data
+
+
+def verify_browser_token(token: str) -> dict:
+    """Проверяет UUID-токен браузерной сессии, возвращает {"id": user_id}."""
+    user_id = session_manager.verify_browser_token(token)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return {"id": user_id}
 
 
 class MasterPasswordService:

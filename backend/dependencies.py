@@ -2,12 +2,12 @@ from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.db import get_session
-from backend.core.security import verify_telegram_data
+from backend.core.security import verify_browser_token, verify_telegram_data
+from backend.core.session import session_manager
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from backend.services.account_service import AccountService
 from backend.services.category_service import CategoryService
-from backend.core.session import session_manager
 from backend.services.resource_service import ResourceService
 
 
@@ -46,6 +46,9 @@ def get_encrypt_repo() -> EncryptionRepository:
 def get_current_user(
     authorization: str = Header(...),
 ) -> dict:
+    if authorization.startswith("Bearer "):
+        token = authorization.removeprefix("Bearer ")
+        return verify_browser_token(token)
     return verify_telegram_data(authorization)
 
 

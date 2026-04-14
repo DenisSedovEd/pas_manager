@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
+  base: '/tg/',
   server: {
     port: 5173,
     // Разрешаем любые хосты для разработки через туннели
