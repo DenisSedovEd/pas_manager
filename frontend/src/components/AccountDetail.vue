@@ -46,15 +46,48 @@ const onEditClick = () => {
   if (fullAccount.value) emit('edit', fullAccount.value);
 };
 
-const copyToClipboard = (text, field) => {
+const copyToClipboard = async (text, field) => {
   if (!text) return;
 
-  const el = document.createElement('textarea');
-  el.value = text;
-  document.body.appendChild(el);
-  el.select();
-  document.execCommand('copy');
-  document.body.removeChild(el);
+  const writeText = async (value) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        return true;
+      }
+    } catch {}
+
+    try {
+      if (tg?.writeTextToClipboard) {
+        await tg.writeTextToClipboard(value);
+        return true;
+      }
+    } catch {}
+
+    const el = document.createElement('textarea');
+    el.value = value;
+    el.setAttribute('readonly', '');
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+
+    let success = false;
+    try {
+      success = document.execCommand('copy');
+    } catch {}
+
+    document.body.removeChild(el);
+    return success;
+  };
+
+  const copied = await writeText(text);
+  if (!copied) {
+    tg?.showAlert?.('Не удалось скопировать в буфер обмена');
+    return;
+  }
 
   tg.HapticFeedback.notificationOccurred('success');
   copyStatus.value[field] = true;

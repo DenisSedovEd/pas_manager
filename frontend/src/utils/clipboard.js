@@ -64,7 +64,7 @@ export function initTelegramClipboard() {
         const text = await navigator.clipboard.readText()
         if (text) return text
       }
-    } catch {}
+    } catch { }
 
     return new Promise((resolve) => {
 
@@ -83,18 +83,39 @@ export function initTelegramClipboard() {
 
   const writeClipboard = async (text) => {
 
-    if (!text) return
+    if (!text) return false
 
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text)
-        return
+        return true
       }
-    } catch {}
+    } catch { }
 
-    if (tg?.writeTextToClipboard) {
-      tg.writeTextToClipboard(text)
-    }
+    try {
+      if (tg?.writeTextToClipboard) {
+        await tg.writeTextToClipboard(text)
+        return true
+      }
+    } catch { }
+
+    const el = document.createElement('textarea')
+    el.value = text
+    el.setAttribute('readonly', '')
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    el.style.left = '-9999px'
+    document.body.appendChild(el)
+    el.focus()
+    el.select()
+
+    let success = false
+    try {
+      success = document.execCommand('copy')
+    } catch { }
+
+    document.body.removeChild(el)
+    return success
   }
 
   // remember focused element
@@ -178,7 +199,7 @@ export function initTelegramClipboard() {
   // unlock clipboard API
   document.addEventListener("click", () => {
 
-    navigator.clipboard?.readText?.().catch(() => {})
+    navigator.clipboard?.readText?.().catch(() => { })
 
   }, { once: true })
 

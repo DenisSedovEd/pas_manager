@@ -306,7 +306,7 @@ onUnmounted(() => {
                 @touchend="onTouchEnd($event, account)"
                 @mousedown="onMouseDown($event, account)"
             >
-              <div class="icon-box">{{ categoryIcon || '👤' }}</div>
+              <div class="icon-box">{{ props.category?.icon || '👤' }}</div>
 
               <div class="main-content">
                 <div class="top-row">
