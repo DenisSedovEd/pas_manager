@@ -1,11 +1,18 @@
-# --- СТАДИЯ 1: СБОРКА ФРОНТЕНДА (NODE) ---
-FROM node:20-slim AS frontend-builder
-WORKDIR /app/frontend
-# Копируем файлы зависимостей фронта
-COPY frontend/package*.json ./
+# --- СТАДИЯ 1: СБОРКА TG MINI APP (NODE) ---
+FROM node:20-slim AS tg-builder
+WORKDIR /app
+COPY representations/tg_mini_app/package*.json ./
 RUN npm install
-# Копируем весь код фронта и билдим его
-COPY frontend/ ./
+COPY representations/tg_mini_app/ ./
+RUN npm run build
+
+
+# --- СТАДИЯ 2: СБОРКА WEB SPA (NODE) ---
+FROM node:20-slim AS web-builder
+WORKDIR /app
+COPY representations/web/package*.json ./
+RUN npm install
+COPY representations/web/ ./
 RUN npm run build
 
 
@@ -37,7 +44,8 @@ RUN mkdir -p /app/data
 COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
-COPY --from=frontend-builder /app/frontend/dist /app/static
+COPY --from=tg-builder /app/dist /app/static/tg
+COPY --from=web-builder /app/dist /app/static/web
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
