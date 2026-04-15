@@ -40,14 +40,20 @@ onMounted(async () => {
 <template>
   <div class="screen">
     <div class="screen-header">
-      <h2>{{ resourceName }}</h2>
       <button v-if="fullAccount" class="icon-btn primary" @click="$emit('edit', fullAccount)">Изменить</button>
     </div>
 
     <div v-if="isLoading" class="loading">Загрузка...</div>
 
     <template v-else-if="fullAccount">
-      <p class="account-subtitle">{{ fullAccount.label || fullAccount.login }}</p>
+      <div class="header-section">
+        <div class="account-avatar">{{ props.category?.icon || '👤' }}</div>
+        <h2 class="account-title">
+          {{ resourceName }}
+          <span v-if="props.category?.name" class="category-tag"> ({{ props.category.name }})</span>
+        </h2>
+        <p class="account-subtitle">{{ fullAccount.label || fullAccount.login }}</p>
+      </div>
 
       <div class="info-cards">
         <div class="info-card" @click="copyToClipboard(fullAccount.login, 'login')">
@@ -118,7 +124,32 @@ onMounted(async () => {
   cursor: pointer;
   font-size: 0.9rem;
 }
-.account-subtitle { padding: 0.25rem 1rem 0; color: #666; margin: 0; font-size: 0.95rem; }
+.header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1rem 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+.account-avatar {
+  font-size: 44px;
+  width: 80px;
+  height: 80px;
+  background: #f0f0f5;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.account-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  text-align: center;
+}
+.category-tag { font-weight: 400; color: #888; font-size: 0.95rem; }
+.account-subtitle { color: #666; margin: 0; font-size: 0.95rem; text-align: center; }
 .loading { padding: 2rem; text-align: center; color: #999; }
 .info-cards { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
 .info-card {

@@ -81,10 +81,13 @@ onMounted(fetchAccounts)
       <template #item="{ element: acc }">
         <div class="list-item" @click="!isEditMode && $emit('select-account', acc)">
           <span v-if="isEditMode" class="drag-handle">☰</span>
-          <span class="item-icon">🔑</span>
+          <div class="item-icon-box">{{ category?.icon || '👤' }}</div>
           <div class="item-info">
-            <span class="item-name">{{ acc.label || acc.login }}</span>
-            <span class="item-sub">{{ getResourceName(acc) }}</span>
+            <div class="item-top-row">
+              <span class="item-resource">{{ getResourceName(acc) }}</span>
+              <span v-if="acc.label" class="item-label">{{ acc.label }}</span>
+            </div>
+            <span class="item-login">{{ acc.login }}</span>
           </div>
           <button v-if="isEditMode" class="delete-btn" @click.stop="deleteAccount(acc)">🗑️</button>
           <span v-else class="chevron">›</span>
@@ -128,10 +131,23 @@ onMounted(fetchAccounts)
 }
 .list-item:hover { background: #fafafa; }
 .drag-handle { cursor: grab; color: #bbb; font-size: 1.1rem; }
-.item-icon { font-size: 1.4rem; flex-shrink: 0; }
-.item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.item-name { font-size: 1rem; font-weight: 500; }
-.item-sub { font-size: 0.8rem; color: #888; }
+.item-icon-box {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  background: #f0f0f5;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.item-top-row { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; overflow: hidden; }
+.item-resource { font-size: 15px; font-weight: 600; color: #1c1c1e; flex-shrink: 0; }
+.item-label { font-size: 12px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-login { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chevron { color: #bbb; font-size: 1.2rem; }
 .delete-btn {
   background: none;
