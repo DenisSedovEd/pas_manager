@@ -58,8 +58,10 @@ onMounted(fetchAccounts)
 <template>
   <div class="screen">
     <div class="screen-header">
-      <button class="sub-back-btn" @click="$emit('go-back')">←</button>
-      <h2>{{ category?.icon || '📁' }} {{ category?.name }}</h2>
+      <div class="title-row">
+        <button class="sub-back-btn" @click="$emit('go-back')">←</button>
+        <h2>{{ category?.icon || '📁' }} {{ category?.name }}</h2>
+      </div>
       <div class="header-actions">
         <button v-if="!isEditMode" class="icon-btn" @click="$emit('edit-category', category)" title="Редактировать категорию">⚙️</button>
         <button v-if="isEditMode" class="icon-btn" @click="isEditMode = false">✅</button>
@@ -82,7 +84,7 @@ onMounted(fetchAccounts)
       <template #item="{ element: acc }">
         <div class="list-item" @click="!isEditMode && $emit('select-account', acc)">
           <span v-if="isEditMode" class="drag-handle">☰</span>
-          <div class="item-icon-box">{{ category?.icon || '👤' }}</div>
+          <div class="item-icon-box">{{ '👤' }}</div>
           <div class="item-info">
             <div class="item-top-row">
               <span class="item-resource">{{ getResourceName(acc) }}</span>
@@ -103,10 +105,14 @@ onMounted(fetchAccounts)
 .screen-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  justify-content: space-between;
   padding: 1rem 1rem 0.5rem;
   border-bottom: 1px solid #2c313c;
+}
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 .screen-header h2 {
   margin: 0;
@@ -114,8 +120,6 @@ onMounted(fetchAccounts)
   color: #abb2bf;
 }
 .sub-back-btn {
-  position: absolute;
-  left: 1rem;
   border: none;
   background: none;
   color: #61afef;
@@ -123,8 +127,6 @@ onMounted(fetchAccounts)
   cursor: pointer;
 }
 .header-actions {
-  position: absolute;
-  right: 1rem;
   display: flex;
   gap: 0.5rem;
 }

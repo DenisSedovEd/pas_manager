@@ -113,8 +113,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 1rem 1rem 0.5rem;
-  border-bottom: 1px solid #2c313c;
+  padding: 1rem 1rem 0.75rem;
 }
 .sub-back-btn {
   position: absolute;
