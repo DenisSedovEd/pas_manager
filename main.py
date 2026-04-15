@@ -60,6 +60,13 @@ if TG_STATIC_DIR.exists():
         "/tg/assets", StaticFiles(directory=TG_STATIC_DIR / "assets"), name="tg-assets"
     )
 
+    @app.get("/tg")
+    async def serve_tg_root():
+        index_path = TG_STATIC_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        return {"error": "TG Mini App build not found"}
+
     @app.get("/tg/{full_path:path}")
     async def serve_tg_frontend(full_path: str):
         index_path = TG_STATIC_DIR / "index.html"
@@ -72,15 +79,28 @@ else:
 
 if WEB_STATIC_DIR.exists():
     app.mount(
-        "/assets", StaticFiles(directory=WEB_STATIC_DIR / "assets"), name="web-assets"
+        "/web/assets",
+        StaticFiles(directory=WEB_STATIC_DIR / "assets"),
+        name="web-assets",
     )
 
-    @app.get("/{full_path:path}")
+    @app.get("/web")
+    async def serve_web_root():
+        index_path = WEB_STATIC_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        return {"error": "Web SPA build not found"}
+
+    @app.get("/web/{full_path:path}")
     async def serve_web_frontend(full_path: str):
         index_path = WEB_STATIC_DIR / "index.html"
         if index_path.exists():
             return FileResponse(index_path)
         return {"error": "Web SPA build not found"}
+
+    @app.get("/")
+    async def redirect_to_web():
+        return FileResponse(WEB_STATIC_DIR / "index.html")
 
 else:
     logger.warning(f"Web SPA static directory not found at {WEB_STATIC_DIR}")
