@@ -41,7 +41,7 @@ onMounted(async () => {
   <div class="screen">
     <div class="screen-header">
       <button class="sub-back-btn" @click="$emit('go-back')">←</button>
-      <button v-if="fullAccount" class="icon-btn primary" @click="$emit('edit', fullAccount)">Изменить</button>
+      <button v-if="fullAccount" class="icon-btn" title="Редактировать" @click="$emit('edit', fullAccount)">✏️</button>
     </div>
 
     <div v-if="isLoading" class="loading">Загрузка...</div>
@@ -125,16 +125,23 @@ onMounted(async () => {
   cursor: pointer;
 }
 .screen-header h2 { margin: 0; font-size: 1.25rem; }
-.icon-btn.primary {
+.icon-btn {
   position: absolute;
   right: 1rem;
-  background: #61afef;
-  color: #1e2127;
-  border: none;
-  border-radius: 8px;
-  padding: 0.4rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: none;
+  border: 1.5px solid #3e4451;
+  border-radius: 10px;
+  color: #abb2bf;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
+}
+.icon-btn:hover {
+  background: #2c313c;
 }
 .header-section {
   display: flex;

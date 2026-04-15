@@ -17,6 +17,7 @@ const resources = ref([])
 const defaultResourceId = ref(null)
 const suggestions = ref({ email: [], phone: [], label: [] })
 const isAppReady = ref(false)
+const loadError = ref('')
 
 const screenStack = ref([{ name: 'categories' }])
 const currentScreen = computed(() => screenStack.value[screenStack.value.length - 1].name)
@@ -45,13 +46,21 @@ const loadResources = async () => {
 
 const handleAuthenticated = async () => {
   isAppReady.value = false
-  await loadResources()
-  isAppReady.value = true
+  loadError.value = ''
+  try {
+    await loadResources()
+  } catch (error) {
+    console.error('Ошибка загрузки ресурсов после входа:', error)
+    loadError.value = 'Не удалось загрузить данные. Попробуйте обновить страницу.'
+  } finally {
+    isAppReady.value = true
+  }
 }
 
 const handleLogout = async () => {
   await logout()
   isAppReady.value = false
+  loadError.value = ''
   resources.value = []
   defaultResourceId.value = null
   suggestions.value = { email: [], phone: [], label: [] }
@@ -65,8 +74,14 @@ onMounted(async () => {
     return
   }
 
-  await loadResources()
-  isAppReady.value = true
+  try {
+    await loadResources()
+  } catch (error) {
+    console.error('Ошибка загрузки ресурсов при старте:', error)
+    loadError.value = 'Не удалось загрузить данные. Обновите страницу.'
+  } finally {
+    isAppReady.value = true
+  }
 })
 </script>
 
@@ -77,7 +92,7 @@ onMounted(async () => {
     <div v-else-if="!isAppReady" class="app-loading">
       <div class="app-loading-card">
         <div class="app-loading-spinner"></div>
-        <p>Загрузка данных...</p>
+        <p>{{ loadError || 'Загрузка данных...' }}</p>
       </div>
     </div>
 
