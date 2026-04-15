@@ -10,12 +10,14 @@ const emit = defineEmits(['save', 'cancel', 'resource-created'])
 const isLoading = ref(false)
 const showPassword = ref(false)
 const categories = ref([])
-const localResources = ref([...(props.resources || [])])
-watch(() => props.resources, (newVal) => {
-  if (newVal && newVal.length > 0 && localResources.value.length === 0) {
-    localResources.value = [...newVal]
-  }
-})
+const localResources = ref([])
+watch(
+  () => props.resources,
+  (newVal) => {
+    localResources.value = [...(newVal || [])]
+  },
+  { immediate: true }
+)
 const isEditing = computed(() => !!props.account?.id)
 const prevResourceId = ref(props.account?.resource_id || props.defaultResourceId || '')
 

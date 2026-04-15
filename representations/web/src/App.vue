@@ -16,12 +16,11 @@ const { isAuthenticated, logout, checkStatus } = useWebAuth()
 const resources = ref([])
 const defaultResourceId = ref(null)
 const suggestions = ref({ email: [], phone: [], label: [] })
+const isAppReady = ref(false)
 
 const screenStack = ref([{ name: 'categories' }])
 const currentScreen = computed(() => screenStack.value[screenStack.value.length - 1].name)
 const currentProps = computed(() => screenStack.value[screenStack.value.length - 1].props || {})
-const canGoBack = computed(() => screenStack.value.length > 1)
-
 const pushScreen = (name, props = {}) => {
   screenStack.value.push({ name, props })
   window.scrollTo(0, 0)
@@ -31,39 +30,56 @@ const popScreen = () => {
   if (screenStack.value.length > 1) screenStack.value.pop()
 }
 
-const loadResources = async (attempt = 0) => {
-  try {
-    resources.value = await resourceApi.getList()
-    const def = resources.value.find(r => r.resource_name === 'Без площадки')
-    if (def) defaultResourceId.value = def.id
-    suggestions.value = await accountApi.getSuggestions()
-  } catch (error) {
-    if (attempt < 2) {
-      await new Promise((resolve) => setTimeout(resolve, 250))
-      return loadResources(attempt + 1)
-    }
-    console.error('Ошибка загрузки ресурсов', error)
-  }
+const loadResources = async () => {
+  const [loadedResources, loadedSuggestions] = await Promise.all([
+    resourceApi.getList(),
+    accountApi.getSuggestions(),
+  ])
+
+  resources.value = loadedResources
+  suggestions.value = loadedSuggestions
+
+  const def = loadedResources.find(r => r.resource_name === 'Без площадки')
+  defaultResourceId.value = def?.id || null
 }
 
 const handleAuthenticated = async () => {
+  isAppReady.value = false
   await loadResources()
+  isAppReady.value = true
 }
 
 const handleLogout = async () => {
   await logout()
+  isAppReady.value = false
+  resources.value = []
+  defaultResourceId.value = null
+  suggestions.value = { email: [], phone: [], label: [] }
   screenStack.value = [{ name: 'categories' }]
 }
 
 onMounted(async () => {
   const active = await checkStatus()
-  if (active) await loadResources()
+  if (!active) {
+    isAppReady.value = false
+    return
+  }
+
+  await loadResources()
+  isAppReady.value = true
 })
 </script>
 
 <template>
   <div class="app-shell">
     <Login v-if="!isAuthenticated" @authenticated="handleAuthenticated" />
+
+    <div v-else-if="!isAppReady" class="app-loading">
+      <div class="app-loading-card">
+        <div class="app-loading-spinner"></div>
+        <p>Загрузка данных...</p>
+      </div>
+    </div>
 
     <template v-else>
       <header class="app-header">
@@ -171,6 +187,41 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
   overflow: hidden;
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
   flex: 1;
+}
+
+.app-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.app-loading-card {
+  width: 100%;
+  max-width: 320px;
+  padding: 1.5rem;
+  border: 1px solid #181a1f;
+  border-radius: 16px;
+  background: #21252b;
+  color: #abb2bf;
+  text-align: center;
+}
+
+.app-loading-spinner {
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 0.75rem;
+  border: 3px solid #3e4451;
+  border-top-color: #61afef;
+  border-radius: 50%;
+  animation: app-spin 0.8s linear infinite;
+}
+
+@keyframes app-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 720px) {
