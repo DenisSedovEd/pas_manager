@@ -111,34 +111,32 @@ onMounted(async () => {
 .screen-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
-  padding: 1rem 1rem 0.75rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem 0.75rem;
 }
 .sub-back-btn {
-  position: absolute;
-  left: 1rem;
   border: none;
   background: none;
   color: #61afef;
   font-size: 1.25rem;
   cursor: pointer;
+  line-height: 1;
+  padding: 0.25rem;
 }
-.screen-header h2 { margin: 0; font-size: 1.25rem; }
 .icon-btn {
-  position: absolute;
-  right: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   background: none;
   border: 1.5px solid #3e4451;
   border-radius: 10px;
   color: #abb2bf;
   cursor: pointer;
   font-size: 1.1rem;
+  flex-shrink: 0;
 }
 .icon-btn:hover {
   background: #2c313c;

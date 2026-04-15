@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useWebAuth } from './composables/useWebAuth.js'
 import { resourceApi } from './api/resource.js'
 import { accountApi } from './api/account.js'
@@ -22,6 +22,8 @@ const loadError = ref('')
 const screenStack = ref([{ name: 'categories' }])
 const currentScreen = computed(() => screenStack.value[screenStack.value.length - 1].name)
 const currentProps = computed(() => screenStack.value[screenStack.value.length - 1].props || {})
+
+let initRequestId = 0
 const pushScreen = (name, props = {}) => {
   screenStack.value.push({ name, props })
   window.scrollTo(0, 0)
@@ -44,15 +46,18 @@ const loadResources = async () => {
   defaultResourceId.value = def?.id || null
 }
 
-const handleAuthenticated = async () => {
+const initializeApp = async () => {
+  const requestId = ++initRequestId
   isAppReady.value = false
   loadError.value = ''
   try {
     await loadResources()
   } catch (error) {
+    if (requestId !== initRequestId) return
     console.error('Ошибка загрузки ресурсов после входа:', error)
     loadError.value = 'Не удалось загрузить данные. Попробуйте обновить страницу.'
   } finally {
+    if (requestId !== initRequestId) return
     isAppReady.value = true
   }
 }
@@ -74,20 +79,22 @@ onMounted(async () => {
     return
   }
 
-  try {
-    await loadResources()
-  } catch (error) {
-    console.error('Ошибка загрузки ресурсов при старте:', error)
-    loadError.value = 'Не удалось загрузить данные. Обновите страницу.'
-  } finally {
-    isAppReady.value = true
-  }
+  await initializeApp()
 })
+
+watch(
+  isAuthenticated,
+  async (authenticated, wasAuthenticated) => {
+    if (!authenticated) return
+    if (wasAuthenticated === authenticated && isAppReady.value) return
+    await initializeApp()
+  }
+)
 </script>
 
 <template>
   <div class="app-shell">
-    <Login v-if="!isAuthenticated" @authenticated="handleAuthenticated" />
+    <Login v-if="!isAuthenticated" />
 
     <div v-else-if="!isAppReady" class="app-loading">
       <div class="app-loading-card">
