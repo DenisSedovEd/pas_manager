@@ -40,7 +40,7 @@ onMounted(async () => {
 <template>
   <div class="screen">
     <div class="screen-header">
-      <button class="sub-back-btn" @click="$emit('go-back')">←</button>
+      <button class="sub-back-btn" @click="$emit('go-back')">⬅️</button>
       <button v-if="fullAccount" class="icon-btn" title="Редактировать" @click="$emit('edit', fullAccount)">✏️</button>
     </div>
 

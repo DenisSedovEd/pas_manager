@@ -59,7 +59,7 @@ onMounted(fetchAccounts)
   <div class="screen">
     <div class="screen-header">
       <div class="title-row">
-        <button class="sub-back-btn" @click="$emit('go-back')">←</button>
+        <button class="sub-back-btn" @click="$emit('go-back')">⬅️</button>
         <h2>{{ category?.icon || '📁' }} {{ category?.name }}</h2>
       </div>
       <div class="header-actions">
