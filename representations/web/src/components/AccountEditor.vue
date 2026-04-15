@@ -159,61 +159,16 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.screen { padding: 0; }
-.screen-header {
-  padding: 1rem 1rem 0.5rem;
-  border-bottom: 1px solid #eee;
-}
-.screen-header h2 { margin: 0; font-size: 1.25rem; }
-.form { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-.form-group { display: flex; flex-direction: column; gap: 0.3rem; }
-label { font-size: 0.8rem; color: #888; text-transform: uppercase; font-weight: 500; }
-input, select {
-  padding: 0.7rem 0.9rem;
-  border: 1.5px solid #ddd;
-  border-radius: 10px;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-input:focus, select:focus { border-color: #5856d6; }
 .password-input-wrap { display: flex; gap: 0.5rem; }
 .password-input-wrap input { flex: 1; }
+
 .toggle-btn {
-  background: none;
-  border: 1.5px solid #ddd;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
   border-radius: 10px;
   padding: 0 0.75rem;
   font-size: 1.1rem;
   cursor: pointer;
-}
-.form-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; }
-.btn-primary {
-  padding: 0.75rem;
-  background: #5856d6;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.btn-primary:disabled { opacity: 0.5; }
-.btn-danger {
-  padding: 0.75rem;
-  background: #ff3b30;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.btn-secondary {
-  padding: 0.75rem;
-  background: none;
-  color: #666;
-  border: 1.5px solid #ddd;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
+  color: var(--color-text);
 }
 </style>

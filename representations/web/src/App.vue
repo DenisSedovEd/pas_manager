@@ -162,49 +162,47 @@ watch(
 
 <style>
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #282c34; color: #abb2bf; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--color-bg); color: var(--color-text); }
 
-.app-shell { min-height: 100vh; background: #282c34; }
+.app-shell { min-height: 100vh; background: var(--color-bg); }
 
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.85rem 1rem;
-  background: #21252b;
-  border-bottom: 1px solid #181a1f;
-  color: #abb2bf;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-deep);
+  color: var(--color-text);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
 .app-title {
-  color: #61afef;
+  color: var(--color-accent);
   font-weight: 600;
   font-size: 1rem;
 }
 
 .logout-btn {
   background: none;
-  border: 1.5px solid #3e4451;
+  border: 1.5px solid var(--color-border);
   border-radius: 10px;
   padding: 0.4rem 0.9rem;
   font-size: 0.9rem;
   cursor: pointer;
-  color: #abb2bf;
+  color: var(--color-text);
 }
 
-.logout-btn:hover {
-  background: #2c313c;
-}
+.logout-btn:hover { background: var(--color-hover); }
 
 .app-content {
-  background: #21252b;
+  background: var(--color-surface);
   max-width: 420px;
   width: 100%;
   margin: 1rem auto;
-  border: 1px solid #181a1f;
+  border: 1px solid var(--color-border-deep);
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
@@ -223,10 +221,10 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
   width: 100%;
   max-width: 320px;
   padding: 1.5rem;
-  border: 1px solid #181a1f;
+  border: 1px solid var(--color-border-deep);
   border-radius: 16px;
-  background: #21252b;
-  color: #abb2bf;
+  background: var(--color-surface);
+  color: var(--color-text);
   text-align: center;
 }
 
@@ -234,16 +232,14 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
   width: 28px;
   height: 28px;
   margin: 0 auto 0.75rem;
-  border: 3px solid #3e4451;
-  border-top-color: #61afef;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: app-spin 0.8s linear infinite;
 }
 
 @keyframes app-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 720px) {

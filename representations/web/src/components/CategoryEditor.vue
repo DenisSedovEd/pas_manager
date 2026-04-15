@@ -80,70 +80,32 @@ const handleSave = async () => {
 </template>
 
 <style scoped>
-.screen { padding: 0; }
-.screen-header {
-  padding: 1rem 1rem 0.5rem;
-  border-bottom: 1px solid #eee;
-}
-.screen-header h2 { margin: 0; font-size: 1.25rem; }
-.form { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
 .icon-section { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
-.icon-wrapper {
-  position: relative;
-  cursor: pointer;
-  display: inline-block;
-}
+.icon-wrapper { position: relative; cursor: pointer; display: inline-block; }
+
 .icon-preview {
   font-size: 3.5rem;
   line-height: 1;
   padding: 0.5rem;
   border-radius: 16px;
-  background: #f4f4f8;
-  border: 2px dashed #ddd;
+  background: var(--color-hover);
+  border: 2px dashed var(--color-border);
   transition: border-color 0.2s;
 }
-.icon-wrapper:hover .icon-preview { border-color: #5856d6; }
+
+.icon-wrapper:hover .icon-preview { border-color: var(--color-accent); }
+
 .edit-badge {
   position: absolute;
   bottom: 4px;
   right: 4px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 50%;
   font-size: 0.9rem;
   line-height: 1;
   padding: 2px;
 }
-.hint { font-size: 0.8rem; color: #999; margin: 0; }
+
+.hint { font-size: 0.8rem; color: var(--color-hint); margin: 0; }
 .picker-container { max-height: 300px; overflow: auto; }
-.form-group { display: flex; flex-direction: column; gap: 0.3rem; }
-label { font-size: 0.8rem; color: #888; text-transform: uppercase; font-weight: 500; }
-input {
-  padding: 0.7rem 0.9rem;
-  border: 1.5px solid #ddd;
-  border-radius: 10px;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-input:focus { border-color: #5856d6; }
-.form-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; }
-.btn-primary {
-  padding: 0.75rem;
-  background: #5856d6;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.btn-primary:disabled { opacity: 0.5; }
-.btn-secondary {
-  padding: 0.75rem;
-  background: none;
-  color: #666;
-  border: 1.5px solid #ddd;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-}
 </style>

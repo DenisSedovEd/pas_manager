@@ -55,40 +55,54 @@ const handleSubmit = async () => {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #f4f4f8;
+  background: var(--color-bg);
 }
+
 .login-card {
-  background: white;
+  background: var(--color-surface);
   border-radius: 16px;
   padding: 2.5rem 2rem;
   width: 100%;
   max-width: 360px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   text-align: center;
+  border: 1px solid var(--color-border-deep);
 }
+
 .login-icon { font-size: 3rem; margin-bottom: 0.5rem; }
-h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
-.subtitle { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+h1 { margin: 0 0 0.25rem; font-size: 1.5rem; color: var(--color-text); }
+
+.subtitle { color: var(--color-hint); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
 .login-form { display: flex; flex-direction: column; gap: 0.75rem; }
+
 input {
   padding: 0.75rem 1rem;
-  border: 1.5px solid #ddd;
+  border: 1.5px solid var(--color-border);
   border-radius: 10px;
   font-size: 1rem;
   outline: none;
   transition: border-color 0.2s;
+  background: var(--color-hover);
+  color: var(--color-text);
 }
-input:focus { border-color: #5856d6; }
+
+input:focus { border-color: var(--color-accent); }
+input::placeholder { color: var(--color-hint); }
+
 button {
   padding: 0.75rem;
-  background: #5856d6;
-  color: white;
+  background: var(--color-accent);
+  color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 1rem;
   cursor: pointer;
   transition: opacity 0.2s;
 }
+
 button:disabled { opacity: 0.5; cursor: default; }
-.error-msg { color: #ff3b30; font-size: 0.85rem; margin: 0; }
+
+.error-msg { color: var(--color-danger); font-size: 0.85rem; margin: 0; }
 </style>

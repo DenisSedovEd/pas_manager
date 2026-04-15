@@ -107,94 +107,78 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.screen { padding: 0; }
+/* Убираем border-bottom глобального screen-header — тут его нет */
 .screen-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
   padding: 0.875rem 1rem 0.75rem;
+  border-bottom: none;
+  gap: 0.75rem;
 }
-.sub-back-btn {
-  border: none;
-  background: none;
-  color: #61afef;
-  font-size: 1.25rem;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0.25rem;
-}
+
+/* Квадратная иконка-кнопка (переопределяет глобальный .icon-btn) */
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 34px;
   height: 34px;
-  background: none;
-  border: 1.5px solid #3e4451;
-  border-radius: 10px;
-  color: #abb2bf;
-  cursor: pointer;
+  padding: 0;
   font-size: 1.1rem;
   flex-shrink: 0;
+  border-radius: 10px;
 }
-.icon-btn:hover {
-  background: #2c313c;
-}
+
 .header-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 1.25rem 1rem 0.75rem;
-  border-bottom: 1px solid #2c313c;
+  border-bottom: 1px solid var(--color-separator);
 }
+
 .account-avatar {
   font-size: 44px;
   width: 80px;
   height: 80px;
-  background: #2c313c;
+  background: var(--color-hover);
   border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #abb2bf;
+  color: var(--color-text);
   margin-bottom: 12px;
 }
+
 .account-title {
   font-size: 1.2rem;
   font-weight: 700;
   margin: 0 0 4px;
   text-align: center;
-  color: #e6c07b;
+  color: var(--color-title);
 }
-.category-tag { font-weight: 400; color: #8fbcbb; font-size: 0.95rem; }
-.account-subtitle { color: #8f919d; margin: 0; font-size: 0.95rem; text-align: center; }
-.loading { padding: 2rem; text-align: center; color: #8f919d; }
+
+.category-tag { font-weight: 400; color: var(--color-teal); font-size: 0.95rem; }
+.account-subtitle { color: var(--color-hint); margin: 0; font-size: 0.95rem; text-align: center; }
+
 .info-cards { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
 .info-card {
   display: flex;
   align-items: center;
-  background: #2c313c;
-  border-radius: 12px;
+  background: var(--color-hover);
+  border-radius: var(--radius-card);
   padding: 0.75rem 1rem;
   cursor: pointer;
   gap: 0.75rem;
   transition: background 0.15s;
 }
+
 .info-card:hover { background: #2f343f; }
 .card-content { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-label { font-size: 0.75rem; color: #8f919d; text-transform: uppercase; }
+label { font-size: 0.75rem; color: var(--color-hint); text-transform: uppercase; }
 .value { font-size: 1rem; font-weight: 500; word-break: break-all; color: #dcdfe4; }
-.copy-icon { font-size: 1.1rem; flex-shrink: 0; color: #61afef; }
+.copy-icon { font-size: 1.1rem; flex-shrink: 0; color: var(--color-accent); }
 .copy-icon.copied { opacity: 0.6; }
 .password-card { align-items: center; }
 .card-actions { display: flex; gap: 0.5rem; align-items: center; }
-.toggle-btn {
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0;
-  color: #61afef;
-}
+.toggle-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 0; color: var(--color-accent); }
 </style>

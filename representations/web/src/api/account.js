@@ -1,9 +1,4 @@
-const BASE_URL = '/pas-manager/v1'
-
-function bearer() {
-    const t = sessionStorage.getItem('web_token')
-    return t ? `Bearer ${t}` : ''
-}
+import { BASE_URL, bearer } from './client.js'
 
 export const accountApi = {
     async getList(categoryId) {

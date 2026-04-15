@@ -80,54 +80,8 @@ onMounted(fetchCategories)
 </template>
 
 <style scoped>
-.screen { padding: 0; }
-.screen-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1rem 0.5rem;
-  border-bottom: 1px solid #2c313c;
-}
-.screen-header h2 { margin: 0; font-size: 1.25rem; color: #abb2bf; }
-.header-actions { display: flex; gap: 0.5rem; }
-.icon-btn {
-  background: none;
-  border: 1.5px solid #3e4451;
-  border-radius: 8px;
-  padding: 0.3rem 0.6rem;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background 0.15s;
-  color: #abb2bf;
-}
-.icon-btn.primary { border-color: #61afef; color: #61afef; font-weight: bold; }
-.icon-btn:hover { background: #2c313c; }
-.loading, .empty { padding: 2rem; text-align: center; color: #8f919d; }
-.list { padding: 0.5rem 0; }
-.list-item {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  gap: 0.75rem;
-  cursor: pointer;
-  border-bottom: 1px solid #2c313c;
-  transition: background 0.1s;
-}
-.list-item:hover { background: #2c313c; }
-.drag-handle { cursor: grab; color: #5c6370; font-size: 1.1rem; }
-.item-icon { font-size: 1.5rem; flex-shrink: 0; color: #abb2bf; }
+.item-icon { font-size: 1.5rem; flex-shrink: 0; color: var(--color-text); }
 .item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.item-name { font-size: 1rem; font-weight: 500; color: #abb2bf; }
-.item-sub { font-size: 0.8rem; color: #8f919d; }
-.chevron { color: #5c6370; font-size: 1.2rem; }
-.delete-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 0.2rem;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.delete-btn:hover { background: #3e4451; }
+.item-name { font-size: 1rem; font-weight: 500; color: var(--color-text); }
+.item-sub { font-size: 0.8rem; color: var(--color-hint); }
 </style>
