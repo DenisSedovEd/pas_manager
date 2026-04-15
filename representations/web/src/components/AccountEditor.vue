@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
 import { resourceApi } from '../api/resource.js'
@@ -11,6 +11,11 @@ const isLoading = ref(false)
 const showPassword = ref(false)
 const categories = ref([])
 const localResources = ref([...(props.resources || [])])
+watch(() => props.resources, (newVal) => {
+  if (newVal && newVal.length > 0 && localResources.value.length === 0) {
+    localResources.value = [...newVal]
+  }
+})
 const isEditing = computed(() => !!props.account?.id)
 const prevResourceId = ref(props.account?.resource_id || props.defaultResourceId || '')
 
@@ -97,7 +102,7 @@ onMounted(async () => {
       <div class="form-group">
         <label>Площадка</label>
         <select :value="formData.resource_id" @change="handleResourceChange">
-          <option value="">Без площадки</option>
+          <option value="">— не выбрано —</option>
           <option v-for="r in localResources" :key="r.id" :value="r.id">{{ r.resource_name }}</option>
           <option value="__add_new__">+ Добавить площадку</option>
         </select>

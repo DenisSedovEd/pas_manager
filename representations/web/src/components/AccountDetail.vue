@@ -12,7 +12,7 @@ const copyStatus = ref({})
 
 const resourceName = computed(() => {
   const rid = fullAccount.value?.resource_id || props.account?.resource_id
-  return props.resources?.find(r => r.id === rid)?.resource_name || 'Без площадки'
+  return props.resources?.find(r => r.id === rid)?.resource_name || '-'
 })
 
 const copyToClipboard = async (text, field) => {

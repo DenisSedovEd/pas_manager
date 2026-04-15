@@ -311,7 +311,7 @@ onUnmounted(() => {
               <div class="main-content">
                 <div class="top-row">
                   <span class="resource-text">
-                    {{ resourceMap[account.resource_id]?.resource_name || '' }}
+                    {{ resourceMap[account.resource_id]?.resource_name || '-' }}
                   </span>
                   <span v-if="account.label" class="label-text">{{ account.label }}</span>
                 </div>

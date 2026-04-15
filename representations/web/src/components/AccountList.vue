@@ -49,7 +49,7 @@ const deleteAccount = async (account) => {
 }
 
 const getResourceName = (account) => {
-  return resourceMap.value[account.resource_id]?.resource_name || 'Без площадки'
+  return resourceMap.value[account.resource_id]?.resource_name || '-'
 }
 
 onMounted(fetchAccounts)
