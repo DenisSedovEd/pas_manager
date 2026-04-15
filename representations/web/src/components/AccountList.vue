@@ -8,7 +8,7 @@ const props = defineProps({
   category: Object,
   resources: { type: Array, default: () => [] },
 })
-const emit = defineEmits(['select-account', 'add-account', 'edit-category'])
+const emit = defineEmits(['select-account', 'add-account', 'edit-category', 'go-back'])
 
 const accounts = ref([])
 const isLoading = ref(true)
@@ -58,6 +58,7 @@ onMounted(fetchAccounts)
 <template>
   <div class="screen">
     <div class="screen-header">
+      <button class="sub-back-btn" @click="$emit('go-back')">←</button>
       <h2>{{ category?.icon || '📁' }} {{ category?.name }}</h2>
       <div class="header-actions">
         <button v-if="!isEditMode" class="icon-btn" @click="$emit('edit-category', category)" title="Редактировать категорию">⚙️</button>
@@ -102,23 +103,43 @@ onMounted(fetchAccounts)
 .screen-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  position: relative;
   padding: 1rem 1rem 0.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #2c313c;
 }
-.screen-header h2 { margin: 0; font-size: 1.25rem; }
-.header-actions { display: flex; gap: 0.5rem; }
+.screen-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #abb2bf;
+}
+.sub-back-btn {
+  position: absolute;
+  left: 1rem;
+  border: none;
+  background: none;
+  color: #61afef;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.header-actions {
+  position: absolute;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
 .icon-btn {
   background: none;
-  border: 1.5px solid #ddd;
+  border: 1.5px solid #3e4451;
   border-radius: 8px;
   padding: 0.3rem 0.6rem;
   cursor: pointer;
   font-size: 1rem;
+  color: #abb2bf;
 }
-.icon-btn.primary { border-color: #5856d6; color: #5856d6; font-weight: bold; }
-.icon-btn:hover { background: #f0f0f0; }
-.loading, .empty { padding: 2rem; text-align: center; color: #999; }
+.icon-btn.primary { border-color: #61afef; color: #61afef; font-weight: bold; }
+.icon-btn:hover { background: #2c313c; }
+.loading, .empty { padding: 2rem; text-align: center; color: #8f919d; }
 .list { padding: 0.5rem 0; }
 .list-item {
   display: flex;
@@ -126,29 +147,30 @@ onMounted(fetchAccounts)
   padding: 0.75rem 1rem;
   gap: 0.75rem;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #2c313c;
   transition: background 0.1s;
 }
-.list-item:hover { background: #fafafa; }
-.drag-handle { cursor: grab; color: #bbb; font-size: 1.1rem; }
+.list-item:hover { background: #2c313c; }
+.drag-handle { cursor: grab; color: #5c6370; font-size: 1.1rem; }
 .item-icon-box {
   width: 42px;
   height: 42px;
   min-width: 42px;
-  background: #f0f0f5;
+  background: #2c313c;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 22px;
+  color: #abb2bf;
   flex-shrink: 0;
 }
 .item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
 .item-top-row { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; overflow: hidden; }
-.item-resource { font-size: 15px; font-weight: 600; color: #1c1c1e; flex-shrink: 0; }
-.item-label { font-size: 12px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-login { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chevron { color: #bbb; font-size: 1.2rem; }
+.item-resource { font-size: 15px; font-weight: 600; color: #abb2bf; flex-shrink: 0; }
+.item-label { font-size: 12px; color: #8f919d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-login { font-size: 11px; color: #7c828f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chevron { color: #5c6370; font-size: 1.2rem; }
 .delete-btn {
   background: none;
   border: none;

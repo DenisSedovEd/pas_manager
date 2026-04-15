@@ -63,8 +63,7 @@ onMounted(async () => {
 
     <template v-else>
       <header class="app-header">
-        <button v-if="canGoBack" class="back-btn" @click="popScreen">← Назад</button>
-        <span v-else class="app-title">🔐 Safe Manager</span>
+        <span class="app-title">🔐 Safe Manager</span>
         <button class="logout-btn" @click="handleLogout">Выйти</button>
       </header>
 
@@ -80,6 +79,7 @@ onMounted(async () => {
           :category-id="currentProps.categoryId"
           :category="currentProps.category"
           :resources="resources"
+          @go-back="popScreen"
           @select-account="acc => pushScreen('account-detail', { account: acc, category: currentProps.category })"
           @add-account="pushScreen('account-editor', { currentCategory: currentProps.category, resources, defaultResourceId, suggestions })"
           @edit-category="cat => pushScreen('category-editor', { category: cat })"
@@ -90,6 +90,7 @@ onMounted(async () => {
           :account="currentProps.account"
           :resources="resources"
           :category="currentProps.category"
+          @go-back="popScreen"
           @edit="acc => pushScreen('account-editor', { account: acc, currentCategory: currentProps.category, resources, defaultResourceId, suggestions })"
           @deleted="popScreen"
         />
@@ -119,51 +120,62 @@ onMounted(async () => {
 
 <style>
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f4f4f8; }
-</style>
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #282c34; color: #abb2bf; }
 
-<style scoped>
-.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.app-shell { min-height: 100vh; background: #282c34; }
+
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: white;
-  border-bottom: 1px solid #eee;
+  padding: 0.85rem 1rem;
+  background: #21252b;
+  border-bottom: 1px solid #181a1f;
+  color: #abb2bf;
   position: sticky;
   top: 0;
   z-index: 10;
 }
-.app-title { font-weight: 600; font-size: 1rem; }
-.back-btn {
-  background: none;
-  border: none;
-  font-size: 0.95rem;
-  color: #5856d6;
-  cursor: pointer;
-  padding: 0.2rem 0;
+
+.app-title {
+  color: #61afef;
+  font-weight: 600;
+  font-size: 1rem;
 }
+
 .logout-btn {
   background: none;
-  border: 1.5px solid #ddd;
-  border-radius: 8px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.85rem;
+  border: 1.5px solid #3e4451;
+  border-radius: 10px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  color: #666;
+  color: #abb2bf;
 }
-.logout-btn:hover { background: #f4f4f8; }
+
+.logout-btn:hover {
+  background: #2c313c;
+}
+
 .app-content {
-  background: white;
-  max-width: 600px;
+  background: #21252b;
+  max-width: 760px;
   width: 100%;
   margin: 1rem auto;
-  border-radius: 16px;
+  border: 1px solid #181a1f;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
   flex: 1;
 }
+
+@media (max-width: 720px) {
+  .app-content { margin: 0.5rem; border-radius: 14px; box-shadow: none; }
+}
+</style>
+
+<style scoped>
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 @media (max-width: 640px) {
   .app-content { margin: 0; border-radius: 0; box-shadow: none; }
 }

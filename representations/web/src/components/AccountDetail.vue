@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { accountApi } from '../api/account.js'
 
 const props = defineProps(['account', 'resources', 'category'])
-const emit = defineEmits(['edit', 'deleted'])
+const emit = defineEmits(['edit', 'deleted', 'go-back'])
 
 const fullAccount = ref(null)
 const isLoading = ref(true)
@@ -40,6 +40,7 @@ onMounted(async () => {
 <template>
   <div class="screen">
     <div class="screen-header">
+      <button class="sub-back-btn" @click="$emit('go-back')">←</button>
       <button v-if="fullAccount" class="icon-btn primary" @click="$emit('edit', fullAccount)">Изменить</button>
     </div>
 
@@ -110,14 +111,26 @@ onMounted(async () => {
 .screen-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  position: relative;
   padding: 1rem 1rem 0.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #2c313c;
+}
+.sub-back-btn {
+  position: absolute;
+  left: 1rem;
+  border: none;
+  background: none;
+  color: #61afef;
+  font-size: 1.25rem;
+  cursor: pointer;
 }
 .screen-header h2 { margin: 0; font-size: 1.25rem; }
 .icon-btn.primary {
-  background: #5856d6;
-  color: white;
+  position: absolute;
+  right: 1rem;
+  background: #61afef;
+  color: #1e2127;
   border: none;
   border-radius: 8px;
   padding: 0.4rem 0.9rem;
@@ -129,17 +142,18 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   padding: 1.25rem 1rem 0.75rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #2c313c;
 }
 .account-avatar {
   font-size: 44px;
   width: 80px;
   height: 80px;
-  background: #f0f0f5;
+  background: #2c313c;
   border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #abb2bf;
   margin-bottom: 12px;
 }
 .account-title {
@@ -147,26 +161,27 @@ onMounted(async () => {
   font-weight: 700;
   margin: 0 0 4px;
   text-align: center;
+  color: #e6c07b;
 }
-.category-tag { font-weight: 400; color: #888; font-size: 0.95rem; }
-.account-subtitle { color: #666; margin: 0; font-size: 0.95rem; text-align: center; }
-.loading { padding: 2rem; text-align: center; color: #999; }
+.category-tag { font-weight: 400; color: #8fbcbb; font-size: 0.95rem; }
+.account-subtitle { color: #8f919d; margin: 0; font-size: 0.95rem; text-align: center; }
+.loading { padding: 2rem; text-align: center; color: #8f919d; }
 .info-cards { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
 .info-card {
   display: flex;
   align-items: center;
-  background: #f8f8fa;
+  background: #2c313c;
   border-radius: 12px;
   padding: 0.75rem 1rem;
   cursor: pointer;
   gap: 0.75rem;
   transition: background 0.15s;
 }
-.info-card:hover { background: #efeffa; }
+.info-card:hover { background: #2f343f; }
 .card-content { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-label { font-size: 0.75rem; color: #888; text-transform: uppercase; }
-.value { font-size: 1rem; font-weight: 500; word-break: break-all; }
-.copy-icon { font-size: 1.1rem; flex-shrink: 0; }
+label { font-size: 0.75rem; color: #8f919d; text-transform: uppercase; }
+.value { font-size: 1rem; font-weight: 500; word-break: break-all; color: #dcdfe4; }
+.copy-icon { font-size: 1.1rem; flex-shrink: 0; color: #61afef; }
 .copy-icon.copied { opacity: 0.6; }
 .password-card { align-items: center; }
 .card-actions { display: flex; gap: 0.5rem; align-items: center; }
@@ -176,5 +191,6 @@ label { font-size: 0.75rem; color: #888; text-transform: uppercase; }
   font-size: 1.1rem;
   cursor: pointer;
   padding: 0;
+  color: #61afef;
 }
 </style>
