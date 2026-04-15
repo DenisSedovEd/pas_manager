@@ -31,14 +31,18 @@ const popScreen = () => {
   if (screenStack.value.length > 1) screenStack.value.pop()
 }
 
-const loadResources = async () => {
+const loadResources = async (attempt = 0) => {
   try {
     resources.value = await resourceApi.getList()
     const def = resources.value.find(r => r.resource_name === 'Без площадки')
     if (def) defaultResourceId.value = def.id
     suggestions.value = await accountApi.getSuggestions()
-  } catch {
-    console.error('Ошибка загрузки ресурсов')
+  } catch (error) {
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 250))
+      return loadResources(attempt + 1)
+    }
+    console.error('Ошибка загрузки ресурсов', error)
   }
 }
 
@@ -159,7 +163,7 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 
 .app-content {
   background: #21252b;
-  max-width: 760px;
+  max-width: 420px;
   width: 100%;
   margin: 1rem auto;
   border: 1px solid #181a1f;
