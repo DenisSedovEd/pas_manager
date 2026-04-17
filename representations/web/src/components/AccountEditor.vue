@@ -56,6 +56,15 @@ const addNewResource = async () => {
   }
 }
 
+const generatePassword = () => {
+  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*()_+-=[]{}|;:,.<>?'
+  const length = 16
+  const values = new Uint32Array(length)
+  crypto.getRandomValues(values)
+  formData.value.password = Array.from(values, (v) => charset[v % charset.length]).join('')
+  showPassword.value = true
+}
+
 const handleSave = async () => {
   if (!formData.value.login.trim()) { alert('Введи логин'); return }
   if (!formData.value.password.trim()) { alert('Введи пароль'); return }
@@ -128,7 +137,10 @@ onMounted(async () => {
       </div>
 
       <div class="form-group password-group">
-        <label>Пароль *</label>
+        <div class="password-label-row">
+          <label>Пароль *</label>
+          <button type="button" class="generate-btn" @click="generatePassword">Сгенерировать</button>
+        </div>
         <div class="password-input-wrap">
           <input v-model="formData.password" :type="showPassword ? 'text' : 'password'" placeholder="Пароль" />
           <button type="button" class="toggle-btn" @click="showPassword = !showPassword">
@@ -170,5 +182,27 @@ onMounted(async () => {
   font-size: 1.1rem;
   cursor: pointer;
   color: var(--color-text);
+}
+
+.password-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.generate-btn {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.generate-btn:hover {
+  background: var(--color-hover);
 }
 </style>
