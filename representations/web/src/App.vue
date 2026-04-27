@@ -107,7 +107,7 @@ watch(
       <header class="app-header">
         <div class="header-brand">
           <span class="app-title">🔐 Safe Manager</span>
-          <a class="local-link" href="http://localhost:8000" target="_blank" rel="noopener">local</a>
+          <a class="local-link" href="http://192.168.10.1:8000" target="_blank" rel="noopener">local</a>
         </div>
         <button class="logout-btn" @click="handleLogout">Выйти</button>
       </header>
