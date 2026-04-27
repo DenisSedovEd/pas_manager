@@ -3,6 +3,7 @@ services:
   api:
     build: .
     image: denissedoved/pas_manager:latest
+    restart: unless-stopped
     env_file:
       - .env
 
@@ -10,7 +11,7 @@ services:
       - ./data:/app/data
 
     ports:
-      - "5173:8080"
+      - "8000:8000"
 
   tunel:
     image: cloudflare/cloudflared:latest

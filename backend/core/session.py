@@ -1,15 +1,18 @@
 import time
+import uuid
 
 from backend.core.config import settings
 
 
 class SessionManager:
     def __init__(self):
-        # {user_id: expiry_timestamp}
-        self._active_sessions: dict[str, dict] = {}
+        self._active_sessions: dict[int, dict] = {}
+        self._tokens: dict[str, int] = {}
         self.ttl = settings.app.session_ttl
 
-    def create_session(self, user_id: int, master_password: str, ttl: int = None):
+    def create_session(
+        self, user_id: int, master_password: str, ttl: int | None = None
+    ) -> None:
         """Создаем сессию с мастер-паролем"""
         if ttl is None:
             ttl = self.ttl
@@ -18,6 +21,23 @@ class SessionManager:
             "expiry": time.time() + ttl,
             "master_password": master_password,
         }
+
+    def create_browser_session(self, user_id: int, master_password: str) -> str:
+        """Создаем сессию для браузерного клиента, возвращаем UUID-токен"""
+        self.create_session(user_id, master_password)
+        token = str(uuid.uuid4())
+        self._tokens[token] = user_id
+        return token
+
+    def verify_browser_token(self, token: str) -> int | None:
+        """Возвращаем user_id по токену, либо None если токен невалиден/сессия истекла"""
+        user_id = self._tokens.get(token)
+        if user_id is None:
+            return None
+        if not self.is_active(user_id):
+            self._tokens.pop(token, None)
+            return None
+        return user_id
 
     def is_active(self, user_id: int) -> bool:
         """Проверка сессии на активность и TTL"""
@@ -40,9 +60,12 @@ class SessionManager:
             return session["master_password"]
         return None
 
-    def close_session(self, user_id: int):
-        """Безопасное удаление сессии"""
+    def close_session(self, user_id: int) -> None:
+        """Безопасное удаление сессии и связанных токенов"""
         self._active_sessions.pop(user_id, None)
+        stale = [t for t, uid in self._tokens.items() if uid == user_id]
+        for t in stale:
+            self._tokens.pop(t, None)
 
 
 session_manager = SessionManager()

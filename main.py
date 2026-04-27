@@ -43,38 +43,67 @@ app = FastAPI(lifespan=lifespan)  # ← Добавь lifespan
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://sde-resume.online",
-        "https://bulkheaded-fleetly-alfreda.ngrok-free.dev",
-        "https://web.telegram.org",
-        "https://t.me",
-    ],
+    allow_origins=settings.app.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+# add
 app.include_router(router)
 
 BASE_DIR = Path(__file__).resolve().parent
-FRONT_DIR = BASE_DIR / "frontend"
-STATIC_DIR = BASE_DIR / "static"
+TG_STATIC_DIR = BASE_DIR / "static" / "tg"
+WEB_STATIC_DIR = BASE_DIR / "static" / "web"
 
-if STATIC_DIR.exists():
-    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+if TG_STATIC_DIR.exists():
+    app.mount(
+        "/tg/assets", StaticFiles(directory=TG_STATIC_DIR / "assets"), name="tg-assets"
+    )
 
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        if full_path.startswith("pas-manager/v1"):
-            return {"detail": "Not Found", "ok": False}, 404
-
-        index_path = STATIC_DIR / "index.html"
+    @app.get("/tg")
+    async def serve_tg_root():
+        index_path = TG_STATIC_DIR / "index.html"
         if index_path.exists():
             return FileResponse(index_path)
-        return {"error": "Frontend build not found"}
+        return {"error": "TG Mini App build not found"}
+
+    @app.get("/tg/{full_path:path}")
+    async def serve_tg_frontend(full_path: str):
+        index_path = TG_STATIC_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        return {"error": "TG Mini App build not found"}
 
 else:
-    logger.warning(f"Static directory not found at {STATIC_DIR}")
+    logger.warning(f"TG Mini App static directory not found at {TG_STATIC_DIR}")
+
+if WEB_STATIC_DIR.exists():
+    app.mount(
+        "/web/assets",
+        StaticFiles(directory=WEB_STATIC_DIR / "assets"),
+        name="web-assets",
+    )
+
+    @app.get("/web")
+    async def serve_web_root():
+        index_path = WEB_STATIC_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        return {"error": "Web SPA build not found"}
+
+    @app.get("/web/{full_path:path}")
+    async def serve_web_frontend(full_path: str):
+        index_path = WEB_STATIC_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        return {"error": "Web SPA build not found"}
+
+    @app.get("/")
+    async def redirect_to_web():
+        return FileResponse(WEB_STATIC_DIR / "index.html")
+
+else:
+    logger.warning(f"Web SPA static directory not found at {WEB_STATIC_DIR}")
 
 if __name__ == "__main__":
     asyncio.run(start())

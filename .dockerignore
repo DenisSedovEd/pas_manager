@@ -7,3 +7,7 @@ ENV
 .idea
 
 .env
+
+# Exclude local Node.js dependencies from build context
+representations/web/node_modules
+representations/tg_mini_app/node_modules
