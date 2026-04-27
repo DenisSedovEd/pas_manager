@@ -105,7 +105,10 @@ watch(
 
     <template v-else>
       <header class="app-header">
-        <span class="app-title">🔐 Safe Manager</span>
+        <div class="header-brand">
+          <span class="app-title">🔐 Safe Manager</span>
+          <a class="local-link" href="http://localhost:8080" target="_blank" rel="noopener">local</a>
+        </div>
         <button class="logout-btn" @click="handleLogout">Выйти</button>
       </header>
 
@@ -183,6 +186,30 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
   color: var(--color-accent);
   font-weight: 600;
   font-size: 1rem;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.local-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.local-link:hover {
+  background: var(--color-hover);
 }
 
 .logout-btn {
