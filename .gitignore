@@ -201,6 +201,18 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Node.js (frontend)
+node_modules/
+representations/web/node_modules/
+representations/tg_mini_app/node_modules/
+representations/web/dist/
+representations/tg_mini_app/dist/
+
+# SQLite databases
+data/
+*.sqlite
+*.sqlite3
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
