@@ -11,3 +11,12 @@ ENV
 # Exclude local Node.js dependencies from build context
 representations/web/node_modules
 representations/tg_mini_app/node_modules
+
+# Exclude local frontend builds (built inside Docker via multi-stage)
+static/
+
+# Exclude DB and cache
+data/
+__pycache__/
+*.pyc
+.pytest_cache/

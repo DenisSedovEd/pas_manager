@@ -1,7 +1,6 @@
 services:
 
   api:
-    build: .
     image: denissedoved/pas_manager:latest
     restart: unless-stopped
     env_file:
