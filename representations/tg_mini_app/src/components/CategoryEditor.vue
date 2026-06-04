@@ -5,18 +5,20 @@ import {categoryApi} from '../api/category.js';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 
-const props = defineProps(['category']);
+const props = defineProps(['category', 'parentCategoryId']);
 const emit = defineEmits(['save', 'cancel']);
 const {tg, initData} = useTelegram();
 
 const showPicker = ref(false);
 const isLoading = ref(false);
+const rootCategories = ref([]);
 
 const formData = ref({
   id: props.category?.id || null,
   name: props.category?.name || '',
   icon: props.category?.icon || '🌐',
-  description: props.category?.description || ''
+  description: props.category?.description || '',
+  parent_id: props.category?.parent_id ?? props.parentCategoryId ?? null,
 });
 
 const isEditing = !!props.category?.id;
@@ -51,10 +53,19 @@ const handleSave = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   tg.MainButton.setText(isEditing ? 'Обновить данные' : 'Создать категорию');
   tg.MainButton.onClick(handleSave);
   tg.MainButton.show();
+
+  try {
+    rootCategories.value = await categoryApi.getList(initData);
+    if (isEditing && formData.value.id) {
+      rootCategories.value = rootCategories.value.filter(c => c.id !== formData.value.id);
+    }
+  } catch (e) {
+    // игнорируем — родитель необязателен
+  }
 });
 
 onUnmounted(() => {
@@ -92,7 +103,7 @@ onUnmounted(() => {
         <input
             v-model="formData.name"
             type="text"
-            placeholder="Например: Binance"
+            placeholder="Например: ВКонтакте"
             class="main-input"
         />
       </div>
@@ -105,6 +116,20 @@ onUnmounted(() => {
             class="main-input"
             rows="3"
         ></textarea>
+      </div>
+
+      <div class="input-group">
+        <label>Родительская категория <span class="hint-inline">(необязательно)</span></label>
+        <select v-model="formData.parent_id" class="main-input select-input">
+          <option :value="null">— Корневая категория —</option>
+          <option
+              v-for="cat in rootCategories"
+              :key="cat.id"
+              :value="cat.id"
+          >
+            {{ cat.icon || '🌐' }} {{ cat.name }}
+          </option>
+        </select>
       </div>
     </div>
   </div>
@@ -169,6 +194,12 @@ onUnmounted(() => {
   margin-top: 8px;
 }
 
+.hint-inline {
+  font-size: 11px;
+  color: var(--tg-theme-hint-color);
+  font-weight: normal;
+}
+
 .picker-container {
   position: absolute;
   top: 90px;
@@ -212,5 +243,10 @@ onUnmounted(() => {
 
 textarea.main-input {
   resize: none;
+}
+
+.select-input {
+  appearance: none;
+  cursor: pointer;
 }
 </style>

@@ -3,11 +3,13 @@ import {ref, watch, onMounted, onUnmounted, computed} from 'vue';
 import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
+import {categoryApi} from '../api/category.js';
 
-const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
+const emit = defineEmits(['select-account', 'add-account', 'edit-category', 'select-subcategory']);
 const {tg, initData} = useTelegram();
 
 const accounts = ref([]);
+const subcategories = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
 const isEditMode = ref(false);
@@ -182,8 +184,12 @@ const onDragStart = () => {
 // ── API ───────────────────────────────────────────────────────────────────────
 const fetchAccounts = async () => {
   try {
-    const response = await accountApi.getList(initData, props.categoryId);
-    accounts.value = response.data || response;
+    const [accountsResp, childrenResp] = await Promise.all([
+      accountApi.getList(initData, props.categoryId),
+      categoryApi.getChildren(initData, props.categoryId),
+    ]);
+    accounts.value = accountsResp.data || accountsResp;
+    subcategories.value = childrenResp.data || childrenResp;
   } catch (e) {
     console.error("Ошибка загрузки:", e);
     error.value = "Не удалось загрузить аккаунты";
@@ -214,6 +220,10 @@ const deleteAccount = async (account) => {
 const selectAccount = (account) => {
   if (isEditMode.value) return;
   emit('select-account', account);
+};
+
+const selectSubcategory = (sub) => {
+  emit('select-subcategory', sub);
 };
 
 onMounted(async () => {
@@ -266,7 +276,29 @@ onUnmounted(() => {
     </div>
 
     <template v-else>
-      <div v-if="accounts.length === 0 && !isEditMode" class="empty-state">
+      <!-- Подкатегории -->
+      <div v-if="subcategories.length > 0" class="subcategories-block">
+        <div class="subcategories-label">Подкатегории</div>
+        <div
+            v-for="sub in subcategories"
+            :key="sub.id"
+            class="card-item subcategory-item"
+            @click="selectSubcategory(sub)"
+        >
+          <div class="icon-box">{{ sub.icon || '📁' }}</div>
+          <div class="main-content">
+            <div class="name">{{ sub.name }}</div>
+            <div v-if="sub.description" class="description">{{ sub.description }}</div>
+          </div>
+          <div class="counts-col">
+            <span v-if="sub.children_count > 0" class="badge-sub">{{ sub.children_count }} подкат.</span>
+            <span class="count-value">{{ sub.accounts_count || 0 }}</span>
+          </div>
+          <div class="chevron">›</div>
+        </div>
+      </div>
+
+      <div v-if="accounts.length === 0 && subcategories.length === 0 && !isEditMode" class="empty-state">
         <div class="empty-icon">📂</div>
         <p>В этой категории пока нет аккаунтов</p>
       </div>
@@ -466,5 +498,54 @@ onUnmounted(() => {
   font-size: 13px;
   color: var(--tg-theme-hint-color);
   line-height: 1.3;
+}
+
+/* ── Подкатегории ── */
+.subcategories-block {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subcategories-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tg-theme-hint-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 4px;
+  margin-bottom: 4px;
+}
+
+.subcategory-item {
+  cursor: pointer;
+}
+
+.counts-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.badge-sub {
+  font-size: 10px;
+  color: var(--tg-theme-button-color);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--tg-theme-text-color);
+  line-height: 1.2;
+}
+
+.description {
+  font-size: 11px;
+  color: var(--tg-theme-hint-color);
+  margin-top: 2px;
 }
 </style>

@@ -204,8 +204,18 @@ onMounted(async () => {
 
   <div v-else class="app-container">
     <div class="content-wrapper">
-      <CategoryList v-if="currentScreen === 'menu'" @select-category="(p) => pushScreen('accounts', { category: p })"
-                    @add-category="pushScreen('category_edit')"/>
+      <CategoryList
+          v-if="currentScreen === 'menu'"
+          @select-category="(cat) => {
+            if (cat._searchAccount) {
+              pushScreen('accounts', { category: cat });
+              pushScreen('account_detail', { account: { id: cat._searchAccount.account_id }, category: cat });
+            } else {
+              pushScreen('accounts', { category: cat });
+            }
+          }"
+          @add-category="pushScreen('category_edit')"
+      />
       <AccountList
           v-if="currentScreen === 'accounts'"
           :categoryId="currentProps.category?.id"
@@ -214,6 +224,7 @@ onMounted(async () => {
           @select-account="(acc) => pushScreen('account_detail', { account: acc, category: currentProps.category })"
           @add-account="pushScreen('account_edit', { currentCategory: currentProps.category })"
           @edit-category="(p) => pushScreen('category_edit', { category: p })"
+          @select-subcategory="(sub) => pushScreen('accounts', { category: sub })"
       />
       <AccountDetail v-if="currentScreen === 'account_detail'" :account="currentProps.account"
                      :resources="resources"
@@ -224,8 +235,13 @@ onMounted(async () => {
                      :defaultResourceId="defaultResourceId" :suggestions="suggestions"
                      :currentCategory="currentProps.currentCategory" @save="popScreen" @cancel="popScreen"
                      @resource-created="resources.push($event)"/>
-      <CategoryEditor v-if="currentScreen === 'category_edit'" :category="currentProps.category" @save="popScreen"
-                      @cancel="popScreen"/>
+      <CategoryEditor
+          v-if="currentScreen === 'category_edit'"
+          :category="currentProps.category"
+          :parentCategoryId="currentProps.parentCategoryId || null"
+          @save="popScreen"
+          @cancel="popScreen"
+      />
     </div>
   </div>
 </template>

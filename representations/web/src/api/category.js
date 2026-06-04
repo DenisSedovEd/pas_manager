@@ -1,9 +1,9 @@
-import { BASE_URL, bearer } from './client.js'
+import { BASE_URL } from './client.js'
 
 export const categoryApi = {
     async getList() {
         const res = await fetch(`${BASE_URL}/category/list`, {
-            headers: { Authorization: bearer() },
+            credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch categories')
         return res.json()
@@ -11,7 +11,7 @@ export const categoryApi = {
 
     async getDetail(categoryId) {
         const res = await fetch(`${BASE_URL}/category/${categoryId}`, {
-            headers: { Authorization: bearer() },
+            credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch category')
         return res.json()
@@ -20,7 +20,8 @@ export const categoryApi = {
     async create(category) {
         const res = await fetch(`${BASE_URL}/category`, {
             method: 'POST',
-            headers: { Authorization: bearer(), 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(category),
         })
         if (!res.ok) throw new Error('Failed to create category')
@@ -30,7 +31,8 @@ export const categoryApi = {
     async update(categoryId, category) {
         const res = await fetch(`${BASE_URL}/category/${categoryId}`, {
             method: 'PUT',
-            headers: { Authorization: bearer(), 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(category),
         })
         if (!res.ok) throw new Error('Failed to update category')
@@ -40,17 +42,26 @@ export const categoryApi = {
     async reorder(orderList) {
         const res = await fetch(`${BASE_URL}/category/reorder`, {
             method: 'PUT',
-            headers: { Authorization: bearer(), 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderList),
         })
         if (!res.ok) throw new Error('Failed to reorder')
         return res.json()
     },
 
+    async getChildren(categoryId) {
+        const res = await fetch(`${BASE_URL}/category/${categoryId}/children`, {
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error('Failed to fetch children')
+        return res.json()
+    },
+
     async delete(categoryId, transfer = true) {
         const res = await fetch(`${BASE_URL}/category/${categoryId}?transfer=${transfer}`, {
             method: 'DELETE',
-            headers: { Authorization: bearer() },
+            credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to delete category')
         return res.json()

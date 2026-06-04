@@ -1,10 +1,15 @@
+from sqlalchemy import select, or_
+
 from backend.schemas.account_schema import (
     AccountRequestSchema,
     AccountListItemSchema,
     AccountDetailSchema,
     AccountSuggestionsSchema,
+    SearchResultItemSchema,
 )
 from backend.models.account import Account
+from backend.models.category import CategoryTable
+from backend.models.resource import ResourceTable
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from cryptography.exceptions import InvalidTag as CryptoInvalidTag
@@ -197,3 +202,59 @@ class AccountService:
             raise ValueError(f"Account with id {account_id} not found")
 
         await self.db_repo.delete(account)
+
+    async def search(self, query: str) -> list[SearchResultItemSchema]:
+        """Глобальный поиск по всем полям аккаунтов"""
+        q = f"%{query.lower()}%"
+
+        stmt = (
+            select(Account, CategoryTable, ResourceTable)
+            .join(CategoryTable, Account.category_id == CategoryTable.id)
+            .outerjoin(ResourceTable, Account.resource_id == ResourceTable.id)
+            .where(
+                or_(
+                    Account.login.ilike(q),
+                    Account.email.ilike(q),
+                    Account.phone.ilike(q),
+                    Account.label.ilike(q),
+                    CategoryTable.category_name.ilike(q),
+                    ResourceTable.resource_name.ilike(q),
+                )
+            )
+            .limit(50)
+        )
+
+        result = await self.db_repo.session.execute(stmt)
+        rows = result.all()
+
+        parent_ids = {cat.parent_id for _, cat, _ in rows if cat.parent_id}
+        parent_map: dict[str, CategoryTable] = {}
+        if parent_ids:
+            parent_stmt = select(CategoryTable).where(CategoryTable.id.in_(parent_ids))
+            parent_result = await self.db_repo.session.execute(parent_stmt)
+            for parent in parent_result.scalars().all():
+                parent_map[parent.id] = parent
+
+        items = []
+        for account, category, resource in rows:
+            parent_name = None
+            if category.parent_id and category.parent_id in parent_map:
+                parent_name = parent_map[category.parent_id].category_name
+
+            items.append(
+                SearchResultItemSchema(
+                    account_id=account.id,
+                    login=account.login,
+                    label=account.label,
+                    email=account.email,
+                    phone=account.phone,
+                    category_id=category.id,
+                    category_name=category.category_name,
+                    category_icon=category.icon,
+                    parent_category_name=parent_name,
+                    resource_id=resource.id if resource else None,
+                    resource_name=resource.resource_name if resource else None,
+                )
+            )
+
+        return items

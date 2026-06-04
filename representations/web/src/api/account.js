@@ -1,9 +1,9 @@
-import { BASE_URL, bearer } from './client.js'
+import { BASE_URL } from './client.js'
 
 export const accountApi = {
     async getList(categoryId) {
         const res = await fetch(`${BASE_URL}/account/list/${categoryId}`, {
-            headers: { Authorization: bearer() },
+            credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch accounts')
         return res.json()
@@ -11,7 +11,7 @@ export const accountApi = {
 
     async getDetail(accountId) {
         const res = await fetch(`${BASE_URL}/account/${accountId}`, {
-            headers: { Authorization: bearer() },
+            credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch account')
         return res.json()
@@ -20,7 +20,8 @@ export const accountApi = {
     async create(account) {
         const res = await fetch(`${BASE_URL}/account`, {
             method: 'POST',
-            headers: { Authorization: bearer(), 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 category_id: account.category_id,
                 resource_id: account.resource_id,
@@ -38,7 +39,8 @@ export const accountApi = {
     async update(accountId, account) {
         const res = await fetch(`${BASE_URL}/account/${accountId}`, {
             method: 'PUT',
-            headers: { Authorization: bearer(), 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 category_id: account.category_id,
                 resource_id: account.resource_id,
@@ -56,7 +58,7 @@ export const accountApi = {
     async delete(accountId) {
         const res = await fetch(`${BASE_URL}/account/${accountId}`, {
             method: 'DELETE',
-            headers: { Authorization: bearer() },
+            credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to delete account')
         return res.json()
@@ -65,7 +67,8 @@ export const accountApi = {
     async reorder(orderList) {
         const res = await fetch(`${BASE_URL}/account/reorder`, {
             method: 'PUT',
-            headers: { Authorization: bearer(), 'Content-Type': 'application/json' },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderList),
         })
         if (!res.ok) throw new Error('Failed to reorder')
@@ -74,9 +77,17 @@ export const accountApi = {
 
     async getSuggestions() {
         const res = await fetch(`${BASE_URL}/account/suggestions`, {
-            headers: { Authorization: bearer() },
+            credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch suggestions')
+        return res.json()
+    },
+
+    async search(query) {
+        const res = await fetch(`${BASE_URL}/account/search?q=${encodeURIComponent(query)}`, {
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error('Failed to search')
         return res.json()
     },
 }

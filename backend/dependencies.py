@@ -1,4 +1,4 @@
-from fastapi import Depends, Header, HTTPException
+from fastapi import Cookie, Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.db import get_session
@@ -44,12 +44,14 @@ def get_encrypt_repo() -> EncryptionRepository:
 
 
 def get_current_user(
-    authorization: str = Header(...),
+    authorization: str | None = Header(default=None),
+    session_token: str | None = Cookie(default=None),
 ) -> dict:
-    if authorization.startswith("Bearer "):
-        token = authorization.removeprefix("Bearer ")
-        return verify_browser_token(token)
-    return verify_telegram_data(authorization)
+    if session_token:
+        return verify_browser_token(session_token)
+    if authorization:
+        return verify_telegram_data(authorization)
+    raise HTTPException(status_code=401, detail="Not authenticated")
 
 
 def get_active_session(user: dict = Depends(get_current_user)):

@@ -9,6 +9,14 @@ export const categoryApi = {
         return response.json();
     },
 
+    async getChildren(initData, categoryId) {
+        const response = await fetch(`${BASE_URL}/category/${categoryId}/children`, {
+            headers: {'Authorization': initData}
+        });
+        if (!response.ok) throw new Error('Failed to fetch children');
+        return response.json();
+    },
+
     async getDetail(initData, categoryId) {
         const response = await fetch(`${BASE_URL}/category/${categoryId}`, {
             headers: {'Authorization': initData}
@@ -52,14 +60,9 @@ export const categoryApi = {
             },
             body: JSON.stringify(orderList)
         });
-
-        if (!response.ok) {
-            throw new Error('Failed to update order');
-        }
-
-        return await response.json();
+        if (!response.ok) throw new Error('Failed to update order');
+        return response.json();
     },
-
 
     async delete(initData, categoryId, transfer = true) {
         const response = await fetch(`${BASE_URL}/category/${categoryId}?transfer=${transfer}`, {

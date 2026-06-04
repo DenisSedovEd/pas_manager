@@ -5,7 +5,9 @@ from backend.dependencies import get_account_service, get_current_user
 from backend.schemas.account_schema import (
     AccountRequestSchema,
     AccountListItemSchema,
-    AccountDetailSchema, AccountSuggestionsSchema,
+    AccountDetailSchema,
+    AccountSuggestionsSchema,
+    SearchResultItemSchema,
 )
 from backend.schemas.response_schema import MessageResponse, SuccessResponse
 from backend.services.account_service import AccountService
@@ -26,6 +28,20 @@ async def get_accounts_by_category(
 
     accounts = await service.get_accounts_by_category(category_id)
     return accounts
+
+
+@router.get("/search")
+async def search_accounts(
+    q: str,
+    user: dict = Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
+) -> list[SearchResultItemSchema]:
+    """GET /pas-manager/v1/account/search?q=..."""
+    if not session_manager.is_active(user["id"]):
+        raise HTTPException(status_code=401, detail="Locker is closed")
+    if not q or len(q.strip()) < 1:
+        return []
+    return await service.search(q.strip())
 
 
 @router.get('/suggestions')

@@ -45,12 +45,15 @@ async def init_db():
     async with async_session() as session:
 
         result = await session.execute(
-            select(CategoryTable).where(CategoryTable.category_name == "Other")
+            select(CategoryTable).where(
+                CategoryTable.category_name == "Other",
+                CategoryTable.parent_id.is_(None),
+            )
         )
         if not result.scalar():
             other_category = CategoryTable(
                 category_name="Other",
-                description="📌"
+                description="📌",
             )
             session.add(other_category)
             await session.commit()

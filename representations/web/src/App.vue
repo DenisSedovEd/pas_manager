@@ -115,12 +115,20 @@ watch(
       <main class="app-content">
         <CategoryList
           v-if="currentScreen === 'categories'"
-          @select-category="cat => pushScreen('accounts', { category: cat, categoryId: cat.id })"
+          @select-category="cat => {
+            if (cat._searchAccount) {
+              pushScreen('accounts', { category: cat, categoryId: cat.id })
+              pushScreen('account-detail', { account: { id: cat._searchAccount.account_id }, category: cat })
+            } else {
+              pushScreen('accounts', { category: cat, categoryId: cat.id })
+            }
+          }"
           @add-category="pushScreen('category-editor', {})"
         />
 
         <AccountList
           v-else-if="currentScreen === 'accounts'"
+          :key="currentProps.categoryId"
           :category-id="currentProps.categoryId"
           :category="currentProps.category"
           :resources="resources"
@@ -128,6 +136,7 @@ watch(
           @select-account="acc => pushScreen('account-detail', { account: acc, category: currentProps.category })"
           @add-account="pushScreen('account-editor', { currentCategory: currentProps.category, resources, defaultResourceId, suggestions })"
           @edit-category="cat => pushScreen('category-editor', { category: cat })"
+          @select-subcategory="sub => pushScreen('accounts', { category: sub, categoryId: sub.id })"
         />
 
         <AccountDetail
@@ -155,6 +164,7 @@ watch(
         <CategoryEditor
           v-else-if="currentScreen === 'category-editor'"
           :category="currentProps.category"
+          :parent-category-id="currentProps.parentCategoryId || null"
           @save="popScreen"
           @cancel="popScreen"
         />

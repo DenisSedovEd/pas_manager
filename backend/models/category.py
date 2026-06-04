@@ -1,7 +1,7 @@
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import String, Text, Integer
+from sqlalchemy import String, Text, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.models.base import Base
@@ -21,7 +21,6 @@ class CategoryTable(Base):
     )
     category_name: Mapped[str] = mapped_column(
         String,
-        unique=True,
         nullable=False,
     )
     description: Mapped[str] = mapped_column(
@@ -36,6 +35,24 @@ class CategoryTable(Base):
         Integer,
         default=0,
         nullable=False,
+    )
+    parent_id: Mapped[Optional[str]] = mapped_column(
+        Text,
+        ForeignKey("categories.id"),
+        nullable=True,
+        default=None,
+    )
+    parent: Mapped[Optional["CategoryTable"]] = relationship(
+        "CategoryTable",
+        remote_side="CategoryTable.id",
+        back_populates="children",
+        lazy="select",
+    )
+    children: Mapped[list["CategoryTable"]] = relationship(
+        "CategoryTable",
+        back_populates="parent",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
     accounts: Mapped[list["Account"]] = relationship(
         "Account",

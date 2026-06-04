@@ -1,22 +1,14 @@
 import { ref, computed } from 'vue'
 
-const TOKEN_KEY = 'web_token'
-const token = ref(sessionStorage.getItem(TOKEN_KEY) || '')
+const authenticated = ref(false)
 
 export function useWebAuth() {
-    const isAuthenticated = computed(() => !!token.value)
-
-    function getToken() {
-        return token.value
-    }
-
-    function getAuthHeader() {
-        return token.value ? `Bearer ${token.value}` : ''
-    }
+    const isAuthenticated = computed(() => authenticated.value)
 
     async function login(masterPassword) {
         const res = await fetch('/pas-manager/v1/web/auth/unlock', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ master_password: masterPassword }),
         })
@@ -24,40 +16,37 @@ export function useWebAuth() {
             const data = await res.json().catch(() => ({}))
             throw new Error(data.detail || 'Неверный пароль')
         }
-        const data = await res.json()
-        token.value = data.token
-        sessionStorage.setItem(TOKEN_KEY, data.token)
+        authenticated.value = true
     }
 
     async function logout() {
         try {
             await fetch('/pas-manager/v1/web/auth/logout', {
                 method: 'POST',
-                headers: { Authorization: getAuthHeader() },
+                credentials: 'include',
             })
         } finally {
-            token.value = ''
-            sessionStorage.removeItem(TOKEN_KEY)
+            authenticated.value = false
         }
     }
 
     async function checkStatus() {
-        if (!token.value) return false
         try {
             const res = await fetch('/pas-manager/v1/web/auth/status', {
-                headers: { Authorization: getAuthHeader() },
+                credentials: 'include',
             })
             if (!res.ok) {
-                token.value = ''
-                sessionStorage.removeItem(TOKEN_KEY)
+                authenticated.value = false
                 return false
             }
             const data = await res.json()
+            authenticated.value = data.is_unlocked
             return data.is_unlocked
         } catch {
+            authenticated.value = false
             return false
         }
     }
 
-    return { isAuthenticated, getToken, getAuthHeader, login, logout, checkStatus }
+    return { isAuthenticated, login, logout, checkStatus }
 }

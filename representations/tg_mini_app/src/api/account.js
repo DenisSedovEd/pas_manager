@@ -92,6 +92,14 @@ export const accountApi = {
         });
         if (!response.ok) throw new Error('Failed to fetch suggestions');
         return response.json();
+    },
+
+    async search(initData, query) {
+        const response = await fetch(`${BASE_URL}/account/search?q=${encodeURIComponent(query)}`, {
+            headers: {'Authorization': initData}
+        });
+        if (!response.ok) throw new Error('Failed to search');
+        return response.json();
     }
 
 };

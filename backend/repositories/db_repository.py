@@ -20,9 +20,11 @@ class DatabaseRepository:
         await self.session.execute(query)
         await self.session.commit()
 
-    async def get(self, model, filters: dict):
+    async def get(self, model, filters: dict, options: list | None = None):
         """Получить один объект по фильтрам"""
         query = select(model).filter_by(**filters)
+        if options is not None:
+            query = query.options(*options)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 

@@ -52,3 +52,18 @@ class AccountSuggestionsSchema(BaseModel):
         default_factory=list,
         description="Labels from accounts",
     )
+
+
+class SearchResultItemSchema(BaseModel):
+    """Элемент результата глобального поиска"""
+    account_id: int
+    login: str
+    label: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    category_id: str
+    category_name: str
+    category_icon: Optional[str] = None
+    parent_category_name: Optional[str] = None
+    resource_id: Optional[str] = None
+    resource_name: Optional[str] = None

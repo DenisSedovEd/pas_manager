@@ -14,13 +14,22 @@ async def get_categories(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ) -> list[CategoryResponseSchema]:
-    """GET /pas-manager/v1/category/list"""
-
+    """Корневые категории (parent_id IS NULL)"""
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
+    return await service.get_categories()
 
-    categories = await service.get_categories()
-    return categories
+
+@router.get("/{category_id}/children")
+async def get_children(
+    category_id: str,
+    user: dict = Depends(get_current_user),
+    service: CategoryService = Depends(get_category_service),
+) -> list[CategoryResponseSchema]:
+    """Подкатегории для category_id"""
+    if not session_manager.is_active(user["id"]):
+        raise HTTPException(status_code=401, detail="Locker is closed")
+    return await service.get_children(category_id)
 
 
 @router.get("/{category_id}")
@@ -29,13 +38,9 @@ async def get_category(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ) -> CategoryResponseSchema:
-    """GET /pas-manager/v1/category/{category_id}"""
-
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
-
-    category = await service.get_category(category_id)
-    return category
+    return await service.get_category(category_id)
 
 
 @router.post("")
@@ -44,13 +49,9 @@ async def add_category(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ) -> CategoryResponseSchema:
-    """POST /pas-manager/v1/category"""
-
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
-
-    new_category = await service.add_category(payload)
-    return new_category
+    return await service.add_category(payload)
 
 
 @router.put("/reorder")
@@ -72,13 +73,9 @@ async def update_category(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ) -> CategoryResponseSchema:
-    """PUT /pas-manager/v1/category/{category_id}"""
-
     if not session_manager.is_active(user["id"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
-
-    category = await service.update_category(category_id, payload)
-    return category
+    return await service.update_category(category_id, payload)
 
 
 @router.delete("/{category_id}")
