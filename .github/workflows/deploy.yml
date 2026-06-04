@@ -45,6 +45,9 @@ jobs:
             git fetch origin
             git reset --hard origin/master
             mkdir -p data
-            docker compose pull api
-            docker compose up -d --force-recreate --no-build --remove-orphans
+            docker pull denissedoved/pas_manager:latest
+            docker compose stop api
+            docker compose rm -f api
+            docker compose up -d api
+            docker compose up -d --remove-orphans
             docker image prune -f
