@@ -1,3 +1,5 @@
+.python-version
+
 # Виртуальные окружения
 .venv
 venv
