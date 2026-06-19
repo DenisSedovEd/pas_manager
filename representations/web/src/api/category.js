@@ -1,5 +1,21 @@
 import { BASE_URL } from './client.js'
 
+const asList = (payload) => (Array.isArray(payload) ? payload : payload?.data || [])
+
+const flattenCategories = async (getRoots, getChildren) => {
+    const roots = asList(await getRoots())
+    const flat = []
+    for (const root of roots) {
+        flat.push(root)
+        try {
+            flat.push(...asList(await getChildren(root.id)))
+        } catch {
+            // подкатегории необязательны
+        }
+    }
+    return flat
+}
+
 export const categoryApi = {
     async getList() {
         const res = await fetch(`${BASE_URL}/category/list`, {
@@ -13,8 +29,12 @@ export const categoryApi = {
         const res = await fetch(`${BASE_URL}/category/all`, {
             credentials: 'include',
         })
-        if (!res.ok) throw new Error('Failed to fetch categories')
-        return res.json()
+        if (res.ok) return res.json()
+
+        return flattenCategories(
+            () => this.getList(),
+            (categoryId) => this.getChildren(categoryId),
+        )
     },
 
     async getDetail(categoryId) {

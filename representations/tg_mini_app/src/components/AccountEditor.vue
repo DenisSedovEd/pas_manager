@@ -21,7 +21,7 @@ const isEditing = computed(() => !!props.account?.id);
 
 const formData = ref({
   id: props.account?.id || null,
-  category_id: props.currentCategory?.id || props.account?.category_id,
+  category_id: String(props.currentCategory?.id || props.account?.category_id || ''),
   resource_id: props.account?.resource_id || props.defaultResourceId || '',
   label: props.account?.label || '',
   login: props.account?.login || '',
@@ -83,9 +83,9 @@ const categoryLabel = (category) => {
 onMounted(async () => {
   try {
     const response = await categoryApi.getAll(initData);
-    categories.value = response.data || response;
+    categories.value = (response.data || response).map(c => ({ ...c, id: String(c.id) }));
   } catch (e) {
-    console.error('Ошибка загрузки категорий', e);
+    tg.showAlert('Ошибка загрузки категорий');
   }
 
   tg.MainButton.setText(isEditing.value ? 'Обновить данные' : 'Сохранить аккаунт');
@@ -308,7 +308,7 @@ const generatePassword = () => {
       <div class="input-group">
         <label>Категория</label>
         <select v-model="formData.category_id" class="main-input select-input">
-          <option v-for="p in categories" :key="p.id" :value="p.id">
+          <option v-for="p in categories" :key="p.id" :value="String(p.id)">
             {{ categoryLabel(p) }}
           </option>
         </select>

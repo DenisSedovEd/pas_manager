@@ -1,5 +1,21 @@
 const BASE_URL = '/pas-manager/v1';
 
+const asList = (payload) => (Array.isArray(payload) ? payload : payload?.data || []);
+
+const flattenCategories = async (getRoots, getChildren) => {
+    const roots = asList(await getRoots());
+    const flat = [];
+    for (const root of roots) {
+        flat.push(root);
+        try {
+            flat.push(...asList(await getChildren(root.id)));
+        } catch {
+            // подкатегории необязательны
+        }
+    }
+    return flat;
+};
+
 export const categoryApi = {
     async getList(initData) {
         const response = await fetch(`${BASE_URL}/category/list`, {
@@ -13,8 +29,12 @@ export const categoryApi = {
         const response = await fetch(`${BASE_URL}/category/all`, {
             headers: {'Authorization': initData}
         });
-        if (!response.ok) throw new Error('Failed to fetch categories');
-        return response.json();
+        if (response.ok) return response.json();
+
+        return flattenCategories(
+            () => this.getList(initData),
+            (categoryId) => this.getChildren(initData, categoryId),
+        );
     },
 
     async getChildren(initData, categoryId) {

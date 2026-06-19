@@ -23,7 +23,7 @@ const prevResourceId = ref(props.account?.resource_id || props.defaultResourceId
 
 const formData = ref({
   id: props.account?.id || null,
-  category_id: props.currentCategory?.id || props.account?.category_id,
+  category_id: String(props.currentCategory?.id || props.account?.category_id || ''),
   resource_id: props.account?.resource_id || props.defaultResourceId || '',
   label: props.account?.label || '',
   login: props.account?.login || '',
@@ -101,9 +101,9 @@ const categoryLabel = (category) => {
 onMounted(async () => {
   try {
     const response = await categoryApi.getAll()
-    categories.value = response.data || response
+    categories.value = (response.data || response).map(c => ({ ...c, id: String(c.id) }))
   } catch {
-    console.error('Ошибка загрузки категорий')
+    alert('Ошибка загрузки категорий')
   }
 })
 </script>
@@ -127,7 +127,7 @@ onMounted(async () => {
       <div class="form-group">
         <label>Категория</label>
         <select v-model="formData.category_id">
-          <option v-for="c in categories" :key="c.id" :value="c.id">{{ categoryLabel(c) }}</option>
+          <option v-for="c in categories" :key="c.id" :value="String(c.id)">{{ categoryLabel(c) }}</option>
         </select>
       </div>
 
