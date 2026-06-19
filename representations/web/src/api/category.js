@@ -9,6 +9,14 @@ export const categoryApi = {
         return res.json()
     },
 
+    async getAll() {
+        const res = await fetch(`${BASE_URL}/category/all`, {
+            credentials: 'include',
+        })
+        if (!res.ok) throw new Error('Failed to fetch categories')
+        return res.json()
+    },
+
     async getDetail(categoryId) {
         const res = await fetch(`${BASE_URL}/category/${categoryId}`, {
             credentials: 'include',

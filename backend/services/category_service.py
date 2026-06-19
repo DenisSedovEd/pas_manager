@@ -39,6 +39,21 @@ class CategoryService:
         )
         return [self._to_schema(c) for c in categories]
 
+    async def get_all_categories(self) -> list[CategoryResponseSchema]:
+        """Вернуть все категории в порядке дерева: корень, затем подкатегории."""
+        from backend.models.category import CategoryTable as CT
+        roots = await self.db_repo.get_list(
+            CategoryTable,
+            filters=CT.parent_id.is_(None),
+            options=_CATEGORY_OPTIONS,
+        )
+        result: list[CategoryResponseSchema] = []
+        for root in sorted(roots, key=lambda c: c.order):
+            result.append(self._to_schema(root))
+            for child in sorted(root.children, key=lambda c: c.order):
+                result.append(self._to_schema(child))
+        return result
+
     async def get_children(self, parent_id: str) -> list[CategoryResponseSchema]:
         """Вернуть подкатегории"""
         from backend.models.category import CategoryTable as CT

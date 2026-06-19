@@ -9,6 +9,14 @@ export const categoryApi = {
         return response.json();
     },
 
+    async getAll(initData) {
+        const response = await fetch(`${BASE_URL}/category/all`, {
+            headers: {'Authorization': initData}
+        });
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        return response.json();
+    },
+
     async getChildren(initData, categoryId) {
         const response = await fetch(`${BASE_URL}/category/${categoryId}/children`, {
             headers: {'Authorization': initData}

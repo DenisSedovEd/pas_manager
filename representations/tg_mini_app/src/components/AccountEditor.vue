@@ -75,9 +75,14 @@ const onResourceCreated = (newResource) => {
   emit('resource-created', newResource);
 };
 
+const categoryLabel = (category) => {
+  const prefix = category.parent_id ? '↳ ' : '';
+  return `${prefix}${category.icon || ''} ${category.name}`.trim();
+};
+
 onMounted(async () => {
   try {
-    const response = await categoryApi.getList(initData);
+    const response = await categoryApi.getAll(initData);
     categories.value = response.data || response;
   } catch (e) {
     console.error('Ошибка загрузки категорий', e);
@@ -304,7 +309,7 @@ const generatePassword = () => {
         <label>Категория</label>
         <select v-model="formData.category_id" class="main-input select-input">
           <option v-for="p in categories" :key="p.id" :value="p.id">
-            {{ p.icon }} {{ p.name }}
+            {{ categoryLabel(p) }}
           </option>
         </select>
       </div>

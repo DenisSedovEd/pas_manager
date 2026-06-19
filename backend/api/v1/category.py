@@ -20,6 +20,17 @@ async def get_categories(
     return await service.get_categories()
 
 
+@router.get("/all")
+async def get_all_categories(
+    user: dict = Depends(get_current_user),
+    service: CategoryService = Depends(get_category_service),
+) -> list[CategoryResponseSchema]:
+    """Все категории для выбора при перемещении аккаунта"""
+    if not session_manager.is_active(user["id"]):
+        raise HTTPException(status_code=401, detail="Locker is closed")
+    return await service.get_all_categories()
+
+
 @router.get("/{category_id}/children")
 async def get_children(
     category_id: str,

@@ -93,9 +93,14 @@ const handleDelete = async () => {
   }
 }
 
+const categoryLabel = (category) => {
+  const prefix = category.parent_id ? '↳ ' : ''
+  return `${prefix}${category.icon || ''} ${category.name}`.trim()
+}
+
 onMounted(async () => {
   try {
-    const response = await categoryApi.getList()
+    const response = await categoryApi.getAll()
     categories.value = response.data || response
   } catch {
     console.error('Ошибка загрузки категорий')
@@ -122,7 +127,7 @@ onMounted(async () => {
       <div class="form-group">
         <label>Категория</label>
         <select v-model="formData.category_id">
-          <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.icon }} {{ c.name }}</option>
+          <option v-for="c in categories" :key="c.id" :value="c.id">{{ categoryLabel(c) }}</option>
         </select>
       </div>
 
