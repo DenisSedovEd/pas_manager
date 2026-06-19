@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
@@ -44,8 +44,8 @@ const fetchAccounts = async () => {
   }
 }
 
-const loadSubAccounts = async (subId) => {
-  if (subAccounts.value[subId]) return
+const loadSubAccounts = async (subId, force = false) => {
+  if (!force && subAccounts.value[subId]) return
   subLoadingIds.value = { ...subLoadingIds.value, [subId]: true }
   try {
     const resp = await accountApi.getList(subId)
@@ -78,6 +78,28 @@ const handleReorder = async () => {
     await fetchAccounts()
   }
 }
+
+const handleSubReorder = async (subId) => {
+  try {
+    const ids = (subAccounts.value[subId] || []).map(a => String(a.id))
+    await accountApi.reorder(ids)
+  } catch {
+    await loadSubAccounts(subId, true)
+  }
+}
+
+const expandAllSubcategories = async () => {
+  const nextExpanded = { ...expandedSubIds.value }
+  for (const sub of subcategories.value) {
+    nextExpanded[sub.id] = true
+    await loadSubAccounts(sub.id)
+  }
+  expandedSubIds.value = nextExpanded
+}
+
+watch(isEditMode, async (enabled) => {
+  if (enabled) await expandAllSubcategories()
+})
 
 const deleteAccount = async (account, subId = null) => {
   if (!confirm(`Удалить аккаунт «${account.label || account.login}»?`)) return
@@ -173,23 +195,31 @@ onMounted(fetchAccounts)
           <div v-if="expandedSubIds[sub.id]" class="sub-accounts">
             <div v-if="subLoadingIds[sub.id]" class="sub-status">Загрузка...</div>
             <div v-else-if="!(subAccounts[sub.id] || []).length" class="sub-status">Нет аккаунтов</div>
-            <div
-              v-for="acc in subAccounts[sub.id] || []"
-              :key="acc.id"
-              class="list-item sub-account-item"
-              @click="selectAccount(acc, sub)"
+            <draggable
+              v-else
+              :model-value="subAccounts[sub.id]"
+              @update:model-value="(list) => { subAccounts[sub.id] = list }"
+              item-key="id"
+              handle=".drag-handle"
+              class="sub-accounts-list"
+              @end="() => handleSubReorder(sub.id)"
             >
-              <div class="item-icon-box">{{ sub.icon || '👤' }}</div>
-              <div class="item-info">
-                <div class="item-top-row">
-                  <span class="item-resource">{{ getResourceName(acc) }}</span>
-                  <span v-if="acc.label" class="item-label">{{ acc.label }}</span>
+              <template #item="{ element: acc }">
+                <div class="list-item sub-account-item" @click="selectAccount(acc, sub)">
+                  <span v-if="isEditMode" class="drag-handle">☰</span>
+                  <div class="item-icon-box">{{ sub.icon || '👤' }}</div>
+                  <div class="item-info">
+                    <div class="item-top-row">
+                      <span class="item-resource">{{ getResourceName(acc) }}</span>
+                      <span v-if="acc.label" class="item-label">{{ acc.label }}</span>
+                    </div>
+                    <span class="item-login">{{ acc.login }}</span>
+                  </div>
+                  <button v-if="isEditMode" class="delete-btn" @click.stop="deleteAccount(acc, sub.id)">🗑️</button>
+                  <span v-else class="chevron">›</span>
                 </div>
-                <span class="item-login">{{ acc.login }}</span>
-              </div>
-              <button v-if="isEditMode" class="delete-btn" @click.stop="deleteAccount(acc, sub.id)">🗑️</button>
-              <span v-else class="chevron">›</span>
-            </div>
+              </template>
+            </draggable>
           </div>
         </div>
         <div v-if="accounts.length > 0" class="section-divider"></div>
@@ -311,6 +341,10 @@ onMounted(fetchAccounts)
 
 .sub-accounts {
   background: rgba(0, 0, 0, 0.12);
+}
+
+.sub-accounts-list {
+  padding: 0;
 }
 
 .sub-account-item {

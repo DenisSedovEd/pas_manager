@@ -58,9 +58,13 @@ const exitEditMode = () => {
   tg.SettingsButton.show();
 };
 
-watch(isEditMode, (val) => {
-  if (val) enterEditMode();
-  else exitEditMode();
+watch(isEditMode, async (val) => {
+  if (val) {
+    await expandAllSubcategories();
+    enterEditMode();
+  } else {
+    exitEditMode();
+  }
 });
 
 // ── Общая логика свайпа (touch + mouse) ─────────────────────────────────────
@@ -218,6 +222,26 @@ const handleReorder = async () => {
   }
 };
 
+const handleSubReorder = async (subId) => {
+  tg.HapticFeedback.impactOccurred('medium');
+  try {
+    const ids = (subAccounts.value[subId] || []).map(a => String(a.id));
+    await accountApi.reorder(initData, ids);
+  } catch (e) {
+    tg.showAlert('Ошибка сохранения порядка');
+    await loadSubAccounts(subId, true);
+  }
+};
+
+const expandAllSubcategories = async () => {
+  const nextExpanded = {...expandedSubIds.value};
+  for (const sub of subcategories.value) {
+    nextExpanded[sub.id] = true;
+    await loadSubAccounts(sub.id);
+  }
+  expandedSubIds.value = nextExpanded;
+};
+
 const deleteAccount = async (account, subId = null) => {
   try {
     await accountApi.delete(initData, account.id);
@@ -235,8 +259,8 @@ const deleteAccount = async (account, subId = null) => {
   }
 };
 
-const loadSubAccounts = async (subId) => {
-  if (subAccounts.value[subId]) return;
+const loadSubAccounts = async (subId, force = false) => {
+  if (!force && subAccounts.value[subId]) return;
   subLoadingIds.value = {...subLoadingIds.value, [subId]: true};
   try {
     const resp = await accountApi.getList(initData, subId);
@@ -348,43 +372,58 @@ onUnmounted(() => {
           <div v-if="expandedSubIds[sub.id]" class="sub-accounts">
             <div v-if="subLoadingIds[sub.id]" class="sub-status">Загрузка...</div>
             <div v-else-if="!(subAccounts[sub.id] || []).length" class="sub-status">Нет аккаунтов</div>
-            <div
-                v-for="account in subAccounts[sub.id] || []"
-                :key="account.id"
-                class="swipe-wrapper sub-account-wrapper"
+            <draggable
+                v-else
+                :model-value="subAccounts[sub.id]"
+                @update:model-value="(list) => { subAccounts[sub.id] = list }"
+                item-key="id"
+                class="sub-accounts-list"
+                handle=".drag-handle"
+                :disabled="!isEditMode"
+                ghost-class="ghost-card"
+                :animation="200"
+                :force-fallback="true"
+                :delay="300"
+                :delay-on-touch-only="true"
+                @start="onDragStart"
+                @end="() => handleSubReorder(sub.id)"
             >
-              <div v-if="(swipeData[account.id]?.currentX || 0) < -5"
-                   class="delete-bg"
-                   :class="{ 'delete-ready': swipeData[account.id]?.reachedLimit }">
-                <span class="delete-icon">🗑</span>
-              </div>
-              <div
-                  class="card-item account-item sub-account-item"
-                  :class="{ 'editing': isEditMode }"
-                  :style="getItemStyle(account)"
-                  @click="!isEditMode && selectAccount(account, sub)"
-                  @contextmenu.prevent
-                  @touchstart="onTouchStart($event, account)"
-                  @touchmove="onTouchMove($event, account)"
-                  @touchend="onTouchEnd($event, account)"
-                  @mousedown="onMouseDown($event, account)"
-              >
-                <div class="icon-box">{{ sub.icon || '👤' }}</div>
-                <div class="main-content">
-                  <div class="top-row">
-                    <span class="resource-text">
-                      {{ resourceMap[account.resource_id]?.resource_name || '-' }}
-                    </span>
-                    <span v-if="account.label" class="label-text">{{ account.label }}</span>
+              <template #item="{ element: account }">
+                <div class="swipe-wrapper sub-account-wrapper">
+                  <div v-if="(swipeData[account.id]?.currentX || 0) < -5"
+                       class="delete-bg"
+                       :class="{ 'delete-ready': swipeData[account.id]?.reachedLimit }">
+                    <span class="delete-icon">🗑</span>
                   </div>
-                  <div class="login-text">{{ account.login }}</div>
+                  <div
+                      class="card-item account-item sub-account-item"
+                      :class="{ 'editing': isEditMode }"
+                      :style="getItemStyle(account)"
+                      @click="!isEditMode && selectAccount(account, sub)"
+                      @contextmenu.prevent
+                      @touchstart="onTouchStart($event, account)"
+                      @touchmove="onTouchMove($event, account)"
+                      @touchend="onTouchEnd($event, account)"
+                      @mousedown="onMouseDown($event, account)"
+                  >
+                    <div class="icon-box">{{ sub.icon || '👤' }}</div>
+                    <div class="main-content">
+                      <div class="top-row">
+                        <span class="resource-text">
+                          {{ resourceMap[account.resource_id]?.resource_name || '-' }}
+                        </span>
+                        <span v-if="account.label" class="label-text">{{ account.label }}</span>
+                      </div>
+                      <div class="login-text">{{ account.login }}</div>
+                    </div>
+                    <template v-if="!isEditMode">
+                      <div class="chevron">›</div>
+                    </template>
+                    <div v-if="isEditMode" class="drag-handle">☰</div>
+                  </div>
                 </div>
-                <template v-if="!isEditMode">
-                  <div class="chevron">›</div>
-                </template>
-                <div v-if="isEditMode" class="drag-handle">☰</div>
-              </div>
-            </div>
+              </template>
+            </draggable>
           </div>
         </div>
       </div>
@@ -651,6 +690,12 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
   padding: 0 0 8px 12px;
+}
+
+.sub-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .sub-account-wrapper {
