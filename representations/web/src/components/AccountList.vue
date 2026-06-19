@@ -159,8 +159,15 @@ onMounted(fetchAccounts)
               <span class="item-name">{{ sub.name }}</span>
               <span class="item-sub">{{ sub.accounts_count }} аккаунтов</span>
             </div>
-            <button v-if="isEditMode" class="delete-btn" @click.stop="deleteSubcategory(sub)">🗑️</button>
-            <span v-else class="chevron expand-chevron" :class="{ open: expandedSubIds[sub.id] }">›</span>
+            <div class="subcategory-actions">
+              <button
+                class="edit-btn"
+                title="Редактировать подкатегорию"
+                @click.stop="$emit('edit-category', sub)"
+              >⚙️</button>
+              <button v-if="isEditMode" class="delete-btn" @click.stop="deleteSubcategory(sub)">🗑️</button>
+              <span v-else class="chevron expand-chevron" :class="{ open: expandedSubIds[sub.id] }">›</span>
+            </div>
           </div>
 
           <div v-if="expandedSubIds[sub.id]" class="sub-accounts">
@@ -270,6 +277,27 @@ onMounted(fetchAccounts)
 
 .subcategory-item.expanded {
   background: var(--color-hover);
+}
+
+.subcategory-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.2rem 0.35rem;
+  opacity: 0.75;
+  line-height: 1;
+}
+
+.edit-btn:hover {
+  opacity: 1;
 }
 
 .expand-chevron {

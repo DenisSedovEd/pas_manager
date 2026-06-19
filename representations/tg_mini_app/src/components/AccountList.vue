@@ -338,6 +338,10 @@ onUnmounted(() => {
             <div class="counts-col">
               <span class="count-value">{{ sub.accounts_count || 0 }}</span>
             </div>
+            <button
+                class="sub-edit-btn"
+                @click.stop="$emit('edit-category', sub)"
+            >⚙️</button>
             <div class="chevron expand-chevron" :class="{ open: expandedSubIds[sub.id] }">›</div>
           </div>
 
@@ -617,6 +621,21 @@ onUnmounted(() => {
 
 .subcategory-item.expanded {
   background: rgba(128, 128, 128, 0.08);
+}
+
+.sub-edit-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  padding: 4px 6px;
+  cursor: pointer;
+  opacity: 0.7;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.sub-edit-btn:active {
+  opacity: 1;
 }
 
 .expand-chevron {
