@@ -5,11 +5,14 @@ import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
 
-const emit = defineEmits(['select-account', 'add-account', 'edit-category', 'select-subcategory']);
+const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
 const {tg, initData} = useTelegram();
 
 const accounts = ref([]);
 const subcategories = ref([]);
+const subAccounts = ref({});
+const expandedSubIds = ref({});
+const subLoadingIds = ref({});
 const isLoading = ref(true);
 const error = ref(null);
 const isEditMode = ref(false);
@@ -110,6 +113,13 @@ const swipeMove = (clientX, clientY, account, e) => {
   }
 };
 
+const findSubcategoryId = (accountId) => {
+  for (const [subId, list] of Object.entries(subAccounts.value)) {
+    if (list.some(a => a.id === accountId)) return subId;
+  }
+  return null;
+};
+
 const swipeEnd = (account) => {
   if (!isEditMode.value) return;
   const state = swipeData.value[account.id];
@@ -118,10 +128,11 @@ const swipeEnd = (account) => {
   if (state.isSwiping && state.reachedLimit) {
     state.currentX = 0;
     state.isSwiping = false;
+    const subId = findSubcategoryId(account.id);
     tg.showConfirm(
         `Удалить аккаунт «${account.label || account.login}»?`,
         async (confirmed) => {
-          if (confirmed) await deleteAccount(account);
+          if (confirmed) await deleteAccount(account, subId);
         }
     );
   } else {
@@ -207,23 +218,53 @@ const handleReorder = async () => {
   }
 };
 
-const deleteAccount = async (account) => {
+const deleteAccount = async (account, subId = null) => {
   try {
     await accountApi.delete(initData, account.id);
-    accounts.value = accounts.value.filter(a => a.id !== account.id);
+    if (subId) {
+      subAccounts.value = {
+        ...subAccounts.value,
+        [subId]: subAccounts.value[subId].filter(a => a.id !== account.id),
+      };
+    } else {
+      accounts.value = accounts.value.filter(a => a.id !== account.id);
+    }
     tg.HapticFeedback.notificationOccurred('success');
   } catch (e) {
     tg.showAlert('Ошибка удаления');
   }
 };
 
-const selectAccount = (account) => {
-  if (isEditMode.value) return;
-  emit('select-account', account);
+const loadSubAccounts = async (subId) => {
+  if (subAccounts.value[subId]) return;
+  subLoadingIds.value = {...subLoadingIds.value, [subId]: true};
+  try {
+    const resp = await accountApi.getList(initData, subId);
+    subAccounts.value = {...subAccounts.value, [subId]: resp.data || resp};
+  } catch (e) {
+    tg.showAlert('Ошибка загрузки аккаунтов подкатегории');
+  } finally {
+    const next = {...subLoadingIds.value};
+    delete next[subId];
+    subLoadingIds.value = next;
+  }
 };
 
-const selectSubcategory = (sub) => {
-  emit('select-subcategory', sub);
+const toggleSubcategory = async (sub) => {
+  if (isEditMode.value) return;
+  const subId = sub.id;
+  if (expandedSubIds.value[subId]) {
+    expandedSubIds.value = {...expandedSubIds.value, [subId]: false};
+    return;
+  }
+  tg.HapticFeedback.impactOccurred('light');
+  expandedSubIds.value = {...expandedSubIds.value, [subId]: true};
+  await loadSubAccounts(subId);
+};
+
+const selectAccount = (account, subCategory = null) => {
+  if (isEditMode.value) return;
+  emit('select-account', account, subCategory);
 };
 
 onMounted(async () => {
@@ -282,19 +323,65 @@ onUnmounted(() => {
         <div
             v-for="sub in subcategories"
             :key="sub.id"
-            class="card-item subcategory-item"
-            @click="selectSubcategory(sub)"
+            class="subcategory-group"
         >
-          <div class="icon-box">{{ sub.icon || '📁' }}</div>
-          <div class="main-content">
-            <div class="name">{{ sub.name }}</div>
-            <div v-if="sub.description" class="description">{{ sub.description }}</div>
+          <div
+              class="card-item subcategory-item"
+              :class="{ expanded: expandedSubIds[sub.id] }"
+              @click="toggleSubcategory(sub)"
+          >
+            <div class="icon-box">{{ sub.icon || '📁' }}</div>
+            <div class="main-content">
+              <div class="name">{{ sub.name }}</div>
+              <div v-if="sub.description" class="description">{{ sub.description }}</div>
+            </div>
+            <div class="counts-col">
+              <span class="count-value">{{ sub.accounts_count || 0 }}</span>
+            </div>
+            <div class="chevron expand-chevron" :class="{ open: expandedSubIds[sub.id] }">›</div>
           </div>
-          <div class="counts-col">
-            <span v-if="sub.children_count > 0" class="badge-sub">{{ sub.children_count }} подкат.</span>
-            <span class="count-value">{{ sub.accounts_count || 0 }}</span>
+
+          <div v-if="expandedSubIds[sub.id]" class="sub-accounts">
+            <div v-if="subLoadingIds[sub.id]" class="sub-status">Загрузка...</div>
+            <div v-else-if="!(subAccounts[sub.id] || []).length" class="sub-status">Нет аккаунтов</div>
+            <div
+                v-for="account in subAccounts[sub.id] || []"
+                :key="account.id"
+                class="swipe-wrapper sub-account-wrapper"
+            >
+              <div v-if="(swipeData[account.id]?.currentX || 0) < -5"
+                   class="delete-bg"
+                   :class="{ 'delete-ready': swipeData[account.id]?.reachedLimit }">
+                <span class="delete-icon">🗑</span>
+              </div>
+              <div
+                  class="card-item account-item sub-account-item"
+                  :class="{ 'editing': isEditMode }"
+                  :style="getItemStyle(account)"
+                  @click="!isEditMode && selectAccount(account, sub)"
+                  @contextmenu.prevent
+                  @touchstart="onTouchStart($event, account)"
+                  @touchmove="onTouchMove($event, account)"
+                  @touchend="onTouchEnd($event, account)"
+                  @mousedown="onMouseDown($event, account)"
+              >
+                <div class="icon-box">{{ sub.icon || '👤' }}</div>
+                <div class="main-content">
+                  <div class="top-row">
+                    <span class="resource-text">
+                      {{ resourceMap[account.resource_id]?.resource_name || '-' }}
+                    </span>
+                    <span v-if="account.label" class="label-text">{{ account.label }}</span>
+                  </div>
+                  <div class="login-text">{{ account.login }}</div>
+                </div>
+                <template v-if="!isEditMode">
+                  <div class="chevron">›</div>
+                </template>
+                <div v-if="isEditMode" class="drag-handle">☰</div>
+              </div>
+            </div>
           </div>
-          <div class="chevron">›</div>
         </div>
       </div>
 
@@ -331,7 +418,7 @@ onUnmounted(() => {
                 class="card-item account-item"
                 :class="{ 'editing': isEditMode }"
                 :style="getItemStyle(account)"
-                @click="!isEditMode && selectAccount(account)"
+                @click="!isEditMode && selectAccount(account, null)"
                 @contextmenu.prevent
                 @touchstart="onTouchStart($event, account)"
                 @touchmove="onTouchMove($event, account)"
@@ -518,8 +605,47 @@ onUnmounted(() => {
   margin-bottom: 4px;
 }
 
+.subcategory-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .subcategory-item {
   cursor: pointer;
+}
+
+.subcategory-item.expanded {
+  background: rgba(128, 128, 128, 0.08);
+}
+
+.expand-chevron {
+  transition: transform 0.2s ease;
+}
+
+.expand-chevron.open {
+  transform: rotate(90deg);
+}
+
+.sub-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 0 8px 12px;
+}
+
+.sub-account-wrapper {
+  margin-left: 8px;
+}
+
+.sub-account-item {
+  opacity: 0.95;
+}
+
+.sub-status {
+  padding: 8px 12px 8px 20px;
+  font-size: 13px;
+  color: var(--tg-theme-hint-color);
 }
 
 .counts-col {

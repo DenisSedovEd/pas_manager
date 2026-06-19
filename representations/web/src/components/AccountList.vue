@@ -9,15 +9,24 @@ const props = defineProps({
   category: Object,
   resources: { type: Array, default: () => [] },
 })
-const emit = defineEmits(['select-account', 'add-account', 'edit-category', 'go-back', 'select-subcategory'])
+const emit = defineEmits(['select-account', 'add-account', 'edit-category', 'go-back'])
 
 const accounts = ref([])
 const subcategories = ref([])
+const subAccounts = ref({})
+const expandedSubIds = ref({})
+const subLoadingIds = ref({})
 const isLoading = ref(true)
 const isEditMode = ref(false)
 
 const resourceMap = computed(() =>
   Object.fromEntries(props.resources.map(r => [r.id, r]))
+)
+
+const hasVisibleContent = computed(() =>
+  accounts.value.length > 0
+  || subcategories.value.length > 0
+  || Object.values(subAccounts.value).some(list => list.length > 0)
 )
 
 const fetchAccounts = async () => {
@@ -35,6 +44,32 @@ const fetchAccounts = async () => {
   }
 }
 
+const loadSubAccounts = async (subId) => {
+  if (subAccounts.value[subId]) return
+  subLoadingIds.value = { ...subLoadingIds.value, [subId]: true }
+  try {
+    const resp = await accountApi.getList(subId)
+    subAccounts.value = { ...subAccounts.value, [subId]: resp.data || resp }
+  } catch {
+    alert('Ошибка загрузки аккаунтов подкатегории')
+  } finally {
+    const next = { ...subLoadingIds.value }
+    delete next[subId]
+    subLoadingIds.value = next
+  }
+}
+
+const toggleSubcategory = async (sub) => {
+  if (isEditMode.value) return
+  const subId = sub.id
+  if (expandedSubIds.value[subId]) {
+    expandedSubIds.value = { ...expandedSubIds.value, [subId]: false }
+    return
+  }
+  expandedSubIds.value = { ...expandedSubIds.value, [subId]: true }
+  await loadSubAccounts(subId)
+}
+
 const handleReorder = async () => {
   try {
     const ids = accounts.value.map(a => String(a.id))
@@ -44,11 +79,18 @@ const handleReorder = async () => {
   }
 }
 
-const deleteAccount = async (account) => {
+const deleteAccount = async (account, subId = null) => {
   if (!confirm(`Удалить аккаунт «${account.label || account.login}»?`)) return
   try {
     await accountApi.delete(account.id)
-    accounts.value = accounts.value.filter(a => a.id !== account.id)
+    if (subId) {
+      subAccounts.value = {
+        ...subAccounts.value,
+        [subId]: subAccounts.value[subId].filter(a => a.id !== account.id),
+      }
+    } else {
+      accounts.value = accounts.value.filter(a => a.id !== account.id)
+    }
   } catch {
     alert('Ошибка удаления')
   }
@@ -59,6 +101,12 @@ const deleteSubcategory = async (sub) => {
   try {
     await categoryApi.delete(sub.id)
     subcategories.value = subcategories.value.filter(s => s.id !== sub.id)
+    const nextAccounts = { ...subAccounts.value }
+    delete nextAccounts[sub.id]
+    subAccounts.value = nextAccounts
+    const nextExpanded = { ...expandedSubIds.value }
+    delete nextExpanded[sub.id]
+    expandedSubIds.value = nextExpanded
   } catch {
     alert('Ошибка удаления категории')
   }
@@ -66,6 +114,11 @@ const deleteSubcategory = async (sub) => {
 
 const getResourceName = (account) => {
   return resourceMap.value[account.resource_id]?.resource_name || '-'
+}
+
+const selectAccount = (account, subCategory = null) => {
+  if (isEditMode.value) return
+  emit('select-account', account, subCategory)
 }
 
 onMounted(fetchAccounts)
@@ -89,30 +142,53 @@ onMounted(fetchAccounts)
     <div v-if="isLoading" class="loading">Загрузка...</div>
 
     <template v-else>
-      <!-- Подкатегории -->
       <div v-if="subcategories.length > 0" class="subcategories-section">
         <div class="section-label">Подкатегории</div>
         <div
           v-for="sub in subcategories"
           :key="sub.id"
-          class="list-item subcategory-item"
-          @click="!isEditMode && $emit('select-subcategory', sub)"
+          class="subcategory-group"
         >
-          <span class="item-icon">{{ sub.icon || '📁' }}</span>
-          <div class="item-info">
-            <span class="item-name">{{ sub.name }}</span>
-            <span class="item-sub">
-              <span v-if="sub.children_count > 0">{{ sub.children_count }} подкат. · </span>
-              {{ sub.accounts_count }} аккаунтов
-            </span>
+          <div
+            class="list-item subcategory-item"
+            :class="{ expanded: expandedSubIds[sub.id] }"
+            @click="toggleSubcategory(sub)"
+          >
+            <span class="item-icon">{{ sub.icon || '📁' }}</span>
+            <div class="item-info">
+              <span class="item-name">{{ sub.name }}</span>
+              <span class="item-sub">{{ sub.accounts_count }} аккаунтов</span>
+            </div>
+            <button v-if="isEditMode" class="delete-btn" @click.stop="deleteSubcategory(sub)">🗑️</button>
+            <span v-else class="chevron expand-chevron" :class="{ open: expandedSubIds[sub.id] }">›</span>
           </div>
-          <button v-if="isEditMode" class="delete-btn" @click.stop="deleteSubcategory(sub)">🗑️</button>
-          <span v-else class="chevron">›</span>
+
+          <div v-if="expandedSubIds[sub.id]" class="sub-accounts">
+            <div v-if="subLoadingIds[sub.id]" class="sub-status">Загрузка...</div>
+            <div v-else-if="!(subAccounts[sub.id] || []).length" class="sub-status">Нет аккаунтов</div>
+            <div
+              v-for="acc in subAccounts[sub.id] || []"
+              :key="acc.id"
+              class="list-item sub-account-item"
+              @click="selectAccount(acc, sub)"
+            >
+              <div class="item-icon-box">{{ sub.icon || '👤' }}</div>
+              <div class="item-info">
+                <div class="item-top-row">
+                  <span class="item-resource">{{ getResourceName(acc) }}</span>
+                  <span v-if="acc.label" class="item-label">{{ acc.label }}</span>
+                </div>
+                <span class="item-login">{{ acc.login }}</span>
+              </div>
+              <button v-if="isEditMode" class="delete-btn" @click.stop="deleteAccount(acc, sub.id)">🗑️</button>
+              <span v-else class="chevron">›</span>
+            </div>
+          </div>
         </div>
         <div v-if="accounts.length > 0" class="section-divider"></div>
       </div>
 
-      <div v-if="!accounts.length && !subcategories.length" class="empty">Нет аккаунтов. Добавь первый!</div>
+      <div v-if="!hasVisibleContent" class="empty">Нет аккаунтов. Добавь первый!</div>
 
       <draggable
         v-if="accounts.length > 0"
@@ -123,9 +199,9 @@ onMounted(fetchAccounts)
         class="list"
       >
         <template #item="{ element: acc }">
-          <div class="list-item" @click="!isEditMode && $emit('select-account', acc)">
+          <div class="list-item" @click="selectAccount(acc)">
             <span v-if="isEditMode" class="drag-handle">☰</span>
-            <div class="item-icon-box">{{ '👤' }}</div>
+            <div class="item-icon-box">{{ category?.icon || '👤' }}</div>
             <div class="item-info">
               <div class="item-top-row">
                 <span class="item-resource">{{ getResourceName(acc) }}</span>
@@ -165,7 +241,6 @@ onMounted(fetchAccounts)
 .item-label { font-size: 12px; color: var(--color-hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item-login { font-size: 11px; color: var(--color-hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ── Подкатегории ── */
 .subcategories-section {
   padding: 0;
 }
@@ -185,8 +260,44 @@ onMounted(fetchAccounts)
   margin: 0.5rem 1rem;
 }
 
+.subcategory-group {
+  border-bottom: 1px solid var(--color-separator);
+}
+
 .subcategory-item {
   cursor: pointer;
+}
+
+.subcategory-item.expanded {
+  background: var(--color-hover);
+}
+
+.expand-chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.expand-chevron.open {
+  transform: rotate(90deg);
+}
+
+.sub-accounts {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.sub-account-item {
+  padding-left: 2.25rem;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.sub-account-item:last-child {
+  border-bottom: none;
+}
+
+.sub-status {
+  padding: 0.65rem 1rem 0.65rem 2.25rem;
+  font-size: 0.85rem;
+  color: var(--color-hint);
 }
 
 .item-icon { font-size: 1.5rem; flex-shrink: 0; }

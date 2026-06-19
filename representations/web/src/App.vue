@@ -133,10 +133,9 @@ watch(
           :category="currentProps.category"
           :resources="resources"
           @go-back="popScreen"
-          @select-account="acc => pushScreen('account-detail', { account: acc, category: currentProps.category })"
+          @select-account="(acc, cat) => pushScreen('account-detail', { account: acc, category: cat || currentProps.category })"
           @add-account="pushScreen('account-editor', { currentCategory: currentProps.category, resources, defaultResourceId, suggestions })"
           @edit-category="cat => pushScreen('category-editor', { category: cat })"
-          @select-subcategory="sub => pushScreen('accounts', { category: sub, categoryId: sub.id })"
         />
 
         <AccountDetail

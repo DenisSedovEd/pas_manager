@@ -221,10 +221,9 @@ onMounted(async () => {
           :categoryId="currentProps.category?.id"
           :category="currentProps.category"
           :resources="resources"
-          @select-account="(acc) => pushScreen('account_detail', { account: acc, category: currentProps.category })"
+          @select-account="(acc, cat) => pushScreen('account_detail', { account: acc, category: cat || currentProps.category })"
           @add-account="pushScreen('account_edit', { currentCategory: currentProps.category })"
           @edit-category="(p) => pushScreen('category_edit', { category: p })"
-          @select-subcategory="(sub) => pushScreen('accounts', { category: sub })"
       />
       <AccountDetail v-if="currentScreen === 'account_detail'" :account="currentProps.account"
                      :resources="resources"
