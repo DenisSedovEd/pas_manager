@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # --- СТАДИЯ 1: СБОРКА TG MINI APP (NODE) ---
 FROM node:20-slim AS tg-builder
 WORKDIR /app
@@ -16,16 +18,10 @@ COPY representations/web/ ./
 RUN npm run build
 
 
-# --- СТАДИЯ 2: СБОРКА (PYTHON) ---
+# --- СТАДИЯ 3: СБОРКА (PYTHON) ---
 FROM docker.io/python:3.14-slim AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:0.11.19 /uv /uvx /bin/
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir "uv==0.11.19"
 
 WORKDIR /app
 
@@ -34,10 +30,10 @@ ENV UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --all-extras --no-editable
+    uv sync --frozen --no-install-project --no-editable
 
 
-# --- СТАДИЯ 3: ВЫПОЛНЕНИЕ (RUNTIME) ---
+# --- СТАДИЯ 4: ВЫПОЛНЕНИЕ (RUNTIME) ---
 FROM docker.io/python:3.14-slim AS runtime
 WORKDIR /app
 RUN mkdir -p /app/data
