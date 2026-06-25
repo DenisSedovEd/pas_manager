@@ -45,7 +45,7 @@ async def web_unlock(
         samesite="strict",
         secure=False,
         path="/",
-        max_age=app_settings.app.session_ttl,
+        max_age=app_settings.app.session_ttl_web,
     )
     return SuccessResponse()
 

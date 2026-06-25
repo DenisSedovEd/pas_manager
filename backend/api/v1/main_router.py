@@ -51,7 +51,7 @@ async def unlock(
         payload.master_password, settings.master_password_hash
     )
     if is_valid:
-        session_manager.create_session(user["id"], payload.master_password)
+        session_manager.create_miniapp_session(user["id"], payload.master_password)
         return SuccessResponse()
 
     raise HTTPException(status_code=403, detail="Wrong password")
@@ -103,7 +103,7 @@ async def unlock_bio(
             master_password=request_data.bio_token,
         )
 
-        session_manager.create_session(user["id"], recovered_master_password)
+        session_manager.create_miniapp_session(user["id"], recovered_master_password)
         return SuccessResponse()
 
     except (InvalidTag, Exception):

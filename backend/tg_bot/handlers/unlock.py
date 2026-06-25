@@ -43,7 +43,7 @@ async def receive_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     if MasterPasswordService().verify_password(
         password, app_settings.master_password_hash
     ):
-        session_manager.create_session(settings.tg.user_id, password)
+        session_manager.create_miniapp_session(settings.tg.user_id, password)
         await update.message.reply_text(
             "✅ Сейф разблокирован!\n\n"
             "/categories — список категорий\n"
