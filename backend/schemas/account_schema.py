@@ -40,6 +40,10 @@ class AccountRequestSchema(BaseModel):
 
 
 class AccountSuggestionsSchema(BaseModel):
+    login: list[str] = Field(
+        default_factory=list,
+        description="Logins from accounts",
+    )
     email: list[str] = Field(
         default_factory=list,
         description="Emails from accounts",

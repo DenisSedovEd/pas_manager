@@ -15,7 +15,7 @@ const { isAuthenticated, logout, checkStatus } = useWebAuth()
 
 const resources = ref([])
 const defaultResourceId = ref(null)
-const suggestions = ref({ email: [], phone: [], label: [] })
+const suggestions = ref({ login: [], email: [], phone: [], label: [] })
 const isAppReady = ref(false)
 const loadError = ref('')
 
@@ -68,7 +68,7 @@ const handleLogout = async () => {
   loadError.value = ''
   resources.value = []
   defaultResourceId.value = null
-  suggestions.value = { email: [], phone: [], label: [] }
+  suggestions.value = { login: [], email: [], phone: [], label: [] }
   screenStack.value = [{ name: 'categories' }]
 }
 

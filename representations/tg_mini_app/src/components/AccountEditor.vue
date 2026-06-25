@@ -44,6 +44,10 @@ const filteredSuggestions = (field) => {
   )
 }
 
+const showSuggestions = (field) => {
+  activeSuggestion.value = field
+}
+
 const selectSuggestion = (field, value) => {
   formData.value[field] = value
   activeSuggestion.value = null
@@ -224,14 +228,22 @@ const generatePassword = () => {
       </div>
 
       <!-- 1. Логин -->
-      <div class="input-group">
+      <div class="input-group autocomplete-group">
         <label>Логин / Имя пользователя</label>
         <input
             v-model="formData.login"
             type="text"
             placeholder="username"
             class="main-input"
+            @focus="showSuggestions('login')"
         />
+        <div v-if="activeSuggestion === 'login' && filteredSuggestions('login').length" class="suggestions-list">
+          <div v-for="s in filteredSuggestions('login')" :key="s"
+               class="suggestion-item"
+               @mousedown.prevent="selectSuggestion('login', s)"
+               @touchend.prevent="selectSuggestion('login', s)">{{ s }}
+          </div>
+        </div>
       </div>
 
       <!-- 2. Пароль -->
@@ -284,7 +296,7 @@ const generatePassword = () => {
         <label>Название / Метка</label>
         <input v-model="formData.label" type="text" placeholder="Например: Основной"
                class="main-input"
-               @click="activeSuggestion = activeSuggestion === 'label' ? null : 'label'">
+               @focus="showSuggestions('label')">
         <div v-if="activeSuggestion === 'label' && filteredSuggestions('label').length" class="suggestions-list">
           <div v-for="s in filteredSuggestions('label')" :key="s"
                class="suggestion-item"
@@ -299,7 +311,7 @@ const generatePassword = () => {
         <label>E-mail</label>
         <input v-model="formData.email" type="text" placeholder="example@mail.com"
                class="main-input"
-               @click="activeSuggestion = activeSuggestion === 'email' ? null : 'email'">
+               @focus="showSuggestions('email')">
         <div v-if="activeSuggestion === 'email' && filteredSuggestions('email').length" class="suggestions-list">
           <div v-for="s in filteredSuggestions('email')" :key="s"
                class="suggestion-item"
@@ -314,7 +326,7 @@ const generatePassword = () => {
         <label>Телефон</label>
         <input v-model="formData.phone" type="text" placeholder="+7 (___) ___-__-__"
                class="main-input"
-               @click="activeSuggestion = activeSuggestion === 'phone' ? null : 'phone'">
+               @focus="showSuggestions('phone')">
         <div v-if="activeSuggestion === 'phone' && filteredSuggestions('phone').length" class="suggestions-list">
           <div v-for="s in filteredSuggestions('phone')" :key="s"
                class="suggestion-item"

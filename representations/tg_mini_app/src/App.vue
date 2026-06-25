@@ -15,7 +15,7 @@ import CategoryEditor from './components/CategoryEditor.vue'
 const {tg, bio, initApp, initData} = useTelegram()
 const resources = ref([])
 const defaultResourceId = ref(null)
-const suggestions = ref({email: [], phone: [], label: []})
+const suggestions = ref({login: [], email: [], phone: [], label: []})
 // ==================== НАВИГАЦИЯ ====================
 const screenStack = ref([{name: 'menu'}])
 const currentScreen = computed(() => screenStack.value[screenStack.value.length - 1].name)

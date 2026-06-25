@@ -51,7 +51,10 @@ class AccountService:
         emails_set = set()
         phones_set = set()
         labels_set = set()
+        logins_set = set()
         for s in suggestions:
+            if s.login:
+                logins_set.add(s.login)
             if s.email:
                 emails_set.add(s.email)
             if s.phone:
@@ -60,6 +63,7 @@ class AccountService:
                 labels_set.add(s.label)
 
         return AccountSuggestionsSchema(
+            login=list(logins_set),
             email=list(emails_set),
             phone=list(phones_set),
             label=list(labels_set),

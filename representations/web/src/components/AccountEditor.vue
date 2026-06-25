@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
 import { resourceApi } from '../api/resource.js'
@@ -11,6 +11,7 @@ const isLoading = ref(false)
 const showPassword = ref(false)
 const showCategoryWarning = ref(false)
 const categoryError = ref(false)
+const activeSuggestion = ref(null)
 const categories = ref([])
 const localResources = ref([])
 watch(
@@ -115,13 +116,40 @@ const categoryLabel = (category) => {
   return `${prefix}${category.icon || ''} ${category.name}`.trim()
 }
 
+const filteredSuggestions = (field) => {
+  const value = formData.value[field]?.toLowerCase() || ''
+  return (props.suggestions?.[field] || []).filter(
+    (s) => s && s.toLowerCase().includes(value) && s !== formData.value[field]
+  )
+}
+
+const showSuggestions = (field) => {
+  activeSuggestion.value = field
+}
+
+const selectSuggestion = (field, value) => {
+  formData.value[field] = value
+  activeSuggestion.value = null
+}
+
+const handleOutsideClick = (event) => {
+  if (!event.target.closest('.autocomplete-group')) {
+    activeSuggestion.value = null
+  }
+}
+
 onMounted(async () => {
+  document.addEventListener('mousedown', handleOutsideClick)
   try {
     const response = await categoryApi.getAll()
     categories.value = (response.data || response).map(c => ({ ...c, id: String(c.id) }))
   } catch {
     alert('Ошибка загрузки категорий')
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mousedown', handleOutsideClick)
 })
 </script>
 
@@ -149,14 +177,46 @@ onMounted(async () => {
         </select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group autocomplete-group">
         <label>Метка (необязательно)</label>
-        <input v-model="formData.label" type="text" placeholder="Например: рабочий аккаунт" />
+        <input
+          v-model="formData.label"
+          type="text"
+          placeholder="Например: рабочий аккаунт"
+          @focus="showSuggestions('label')"
+        />
+        <div v-if="activeSuggestion === 'label' && filteredSuggestions('label').length" class="suggestions-list">
+          <button
+            v-for="s in filteredSuggestions('label')"
+            :key="s"
+            type="button"
+            class="suggestion-item"
+            @mousedown.prevent="selectSuggestion('label', s)"
+          >
+            {{ s }}
+          </button>
+        </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group autocomplete-group">
         <label>Логин *</label>
-        <input v-model="formData.login" type="text" placeholder="Логин или email" />
+        <input
+          v-model="formData.login"
+          type="text"
+          placeholder="Логин или email"
+          @focus="showSuggestions('login')"
+        />
+        <div v-if="activeSuggestion === 'login' && filteredSuggestions('login').length" class="suggestions-list">
+          <button
+            v-for="s in filteredSuggestions('login')"
+            :key="s"
+            type="button"
+            class="suggestion-item"
+            @mousedown.prevent="selectSuggestion('login', s)"
+          >
+            {{ s }}
+          </button>
+        </div>
       </div>
 
       <div class="form-group password-group">
@@ -172,14 +232,46 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group autocomplete-group">
         <label>Email (необязательно)</label>
-        <input v-model="formData.email" type="email" placeholder="email@example.com" />
+        <input
+          v-model="formData.email"
+          type="email"
+          placeholder="email@example.com"
+          @focus="showSuggestions('email')"
+        />
+        <div v-if="activeSuggestion === 'email' && filteredSuggestions('email').length" class="suggestions-list">
+          <button
+            v-for="s in filteredSuggestions('email')"
+            :key="s"
+            type="button"
+            class="suggestion-item"
+            @mousedown.prevent="selectSuggestion('email', s)"
+          >
+            {{ s }}
+          </button>
+        </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group autocomplete-group">
         <label>Телефон (необязательно)</label>
-        <input v-model="formData.phone" type="tel" placeholder="+7..." />
+        <input
+          v-model="formData.phone"
+          type="tel"
+          placeholder="+7..."
+          @focus="showSuggestions('phone')"
+        />
+        <div v-if="activeSuggestion === 'phone' && filteredSuggestions('phone').length" class="suggestions-list">
+          <button
+            v-for="s in filteredSuggestions('phone')"
+            :key="s"
+            type="button"
+            class="suggestion-item"
+            @mousedown.prevent="selectSuggestion('phone', s)"
+          >
+            {{ s }}
+          </button>
+        </div>
       </div>
 
       <div class="form-actions">
@@ -281,6 +373,45 @@ onMounted(async () => {
 }
 
 .generate-btn:hover {
+  background: var(--color-hover);
+}
+
+.autocomplete-group {
+  position: relative;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.suggestion-item {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
   background: var(--color-hover);
 }
 </style>
