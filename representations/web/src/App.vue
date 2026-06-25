@@ -124,6 +124,7 @@ watch(
             }
           }"
           @add-category="pushScreen('category-editor', {})"
+          @add-account="pushScreen('account-editor', { resources, defaultResourceId, suggestions })"
         />
 
         <AccountList
@@ -135,6 +136,7 @@ watch(
           @go-back="popScreen"
           @select-account="(acc, cat) => pushScreen('account-detail', { account: acc, category: cat || currentProps.category })"
           @add-account="pushScreen('account-editor', { currentCategory: currentProps.category, resources, defaultResourceId, suggestions })"
+          @add-category="pushScreen('category-editor', { parentCategoryId: currentProps.categoryId })"
           @edit-category="cat => pushScreen('category-editor', { category: cat })"
         />
 

@@ -3,8 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { categoryApi } from '../api/category.js'
 import { accountApi } from '../api/account.js'
+import AddItemMenu from './AddItemMenu.vue'
 
-const emit = defineEmits(['select-category', 'add-category'])
+const emit = defineEmits(['select-category', 'add-category', 'add-account'])
 const categories = ref([])
 const isLoading = ref(true)
 const isEditMode = ref(false)
@@ -77,7 +78,10 @@ onMounted(fetchCategories)
       <div class="header-actions">
         <button v-if="!isEditMode" class="icon-btn" @click="isEditMode = true" title="Редактировать">⚙️</button>
         <button v-else class="icon-btn" @click="isEditMode = false" title="Готово">✅</button>
-        <button class="icon-btn primary" @click="$emit('add-category')" title="Добавить">＋</button>
+        <AddItemMenu
+          @add-category="$emit('add-category')"
+          @add-account="$emit('add-account')"
+        />
       </div>
     </div>
 

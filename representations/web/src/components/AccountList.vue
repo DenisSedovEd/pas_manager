@@ -3,13 +3,14 @@ import { ref, computed, watch, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
+import AddItemMenu from './AddItemMenu.vue'
 
 const props = defineProps({
   categoryId: String,
   category: Object,
   resources: { type: Array, default: () => [] },
 })
-const emit = defineEmits(['select-account', 'add-account', 'edit-category', 'go-back'])
+const emit = defineEmits(['select-account', 'add-account', 'add-category', 'edit-category', 'go-back'])
 
 const accounts = ref([])
 const subcategories = ref([])
@@ -70,21 +71,56 @@ const toggleSubcategory = async (sub) => {
   await loadSubAccounts(subId)
 }
 
-const handleReorder = async () => {
-  try {
-    const ids = accounts.value.map(a => String(a.id))
-    await accountApi.reorder(ids)
-  } catch {
-    await fetchAccounts()
+const dragGroup = computed(() => (
+  isEditMode.value ? 'accounts' : { name: 'accounts', pull: false, put: false }
+))
+
+const getListByCategoryId = (categoryId) => {
+  if (String(categoryId) === String(props.categoryId)) return accounts.value
+  return subAccounts.value[categoryId] || []
+}
+
+const refreshAll = async () => {
+  await fetchAccounts()
+  for (const sub of subcategories.value) {
+    if (expandedSubIds.value[sub.id]) {
+      await loadSubAccounts(sub.id, true)
+    }
   }
 }
 
-const handleSubReorder = async (subId) => {
+const persistOrder = async (categoryId) => {
+  const list = getListByCategoryId(categoryId)
+  if (!list.length) return
+  const ids = list.map(a => String(a.id))
+  await accountApi.reorder(ids)
+}
+
+const moveAccountToCategory = async (account, targetCategoryId) => {
+  if (String(account.category_id) === String(targetCategoryId)) return
+
+  const detail = await accountApi.getDetail(account.id)
+  await accountApi.update(account.id, {
+    ...detail,
+    category_id: String(targetCategoryId),
+  })
+  account.category_id = String(targetCategoryId)
+}
+
+const handleListChange = async (event, targetCategoryId) => {
+  if (!isEditMode.value) return
+
   try {
-    const ids = (subAccounts.value[subId] || []).map(a => String(a.id))
-    await accountApi.reorder(ids)
+    if (event.added) {
+      await moveAccountToCategory(event.added.element, targetCategoryId)
+    }
+
+    if (event.added || event.moved || event.removed) {
+      await persistOrder(targetCategoryId)
+    }
   } catch {
-    await loadSubAccounts(subId, true)
+    alert('Ошибка сохранения')
+    await refreshAll()
   }
 }
 
@@ -157,7 +193,10 @@ onMounted(fetchAccounts)
         <button v-if="!isEditMode" class="icon-btn" @click="$emit('edit-category', category)" title="Редактировать категорию">⚙️</button>
         <button v-if="isEditMode" class="icon-btn" @click="isEditMode = false">✅</button>
         <button v-else class="icon-btn" @click="isEditMode = true">✏️</button>
-        <button class="icon-btn primary" @click="$emit('add-account')">＋</button>
+        <AddItemMenu
+          @add-account="$emit('add-account')"
+          @add-category="$emit('add-category')"
+        />
       </div>
     </div>
 
@@ -194,15 +233,18 @@ onMounted(fetchAccounts)
 
           <div v-if="expandedSubIds[sub.id]" class="sub-accounts">
             <div v-if="subLoadingIds[sub.id]" class="sub-status">Загрузка...</div>
-            <div v-else-if="!(subAccounts[sub.id] || []).length" class="sub-status">Нет аккаунтов</div>
             <draggable
               v-else
-              :model-value="subAccounts[sub.id]"
+              :model-value="subAccounts[sub.id] || []"
               @update:model-value="(list) => { subAccounts[sub.id] = list }"
               item-key="id"
               handle=".drag-handle"
+              :group="dragGroup"
+              :disabled="!isEditMode"
+              ghost-class="drag-ghost"
               class="sub-accounts-list"
-              @end="() => handleSubReorder(sub.id)"
+              :class="{ 'drop-target': isEditMode && !(subAccounts[sub.id] || []).length }"
+              @change="(event) => handleListChange(event, sub.id)"
             >
               <template #item="{ element: acc }">
                 <div class="list-item sub-account-item" @click="selectAccount(acc, sub)">
@@ -220,20 +262,32 @@ onMounted(fetchAccounts)
                 </div>
               </template>
             </draggable>
+            <div
+              v-if="isEditMode && !(subAccounts[sub.id] || []).length"
+              class="sub-status sub-drop-hint"
+            >Перетащи аккаунт сюда</div>
+            <div
+              v-else-if="!isEditMode && !(subAccounts[sub.id] || []).length"
+              class="sub-status"
+            >Нет аккаунтов</div>
           </div>
         </div>
         <div v-if="accounts.length > 0" class="section-divider"></div>
       </div>
 
-      <div v-if="!hasVisibleContent" class="empty">Нет аккаунтов. Добавь первый!</div>
+      <div v-if="!hasVisibleContent && !isEditMode" class="empty">Нет аккаунтов. Добавь первый!</div>
 
       <draggable
-        v-if="accounts.length > 0"
+        v-if="isEditMode || accounts.length > 0"
         v-model="accounts"
         item-key="id"
         handle=".drag-handle"
-        @end="handleReorder"
+        :group="dragGroup"
+        :disabled="!isEditMode"
+        ghost-class="drag-ghost"
         class="list"
+        :class="{ 'drop-target': isEditMode && accounts.length === 0 }"
+        @change="(event) => handleListChange(event, categoryId)"
       >
         <template #item="{ element: acc }">
           <div class="list-item" @click="selectAccount(acc)">
@@ -251,6 +305,10 @@ onMounted(fetchAccounts)
           </div>
         </template>
       </draggable>
+      <div
+        v-if="isEditMode && accounts.length === 0 && (subcategories.length > 0 || hasVisibleContent)"
+        class="sub-status root-drop-hint"
+      >Перетащи аккаунт сюда</div>
     </template>
   </div>
 </template>
@@ -345,6 +403,28 @@ onMounted(fetchAccounts)
 
 .sub-accounts-list {
   padding: 0;
+}
+
+.sub-accounts-list.drop-target {
+  min-height: 44px;
+}
+
+.list.drop-target {
+  min-height: 48px;
+}
+
+.sub-drop-hint,
+.root-drop-hint {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.root-drop-hint {
+  padding: 0.65rem 1rem;
+}
+
+:global(.drag-ghost) {
+  opacity: 0.45;
 }
 
 .sub-account-item {
