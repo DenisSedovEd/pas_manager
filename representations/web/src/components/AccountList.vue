@@ -272,7 +272,6 @@ onMounted(fetchAccounts)
             >Нет аккаунтов</div>
           </div>
         </div>
-        <div v-if="accounts.length > 0" class="section-divider"></div>
       </div>
 
       <div v-if="!hasVisibleContent && !isEditMode" class="empty">Нет аккаунтов. Добавь первый!</div>
@@ -349,14 +348,12 @@ onMounted(fetchAccounts)
   padding: 0.5rem 1rem 0.25rem;
 }
 
-.section-divider {
-  height: 1px;
-  background: var(--color-border);
-  margin: 0.5rem 1rem;
+.subcategories-section:has(~ .list) .subcategory-group:last-child > .subcategory-item {
+  border-bottom: none;
 }
 
 .subcategory-group {
-  border-bottom: 1px solid var(--color-separator);
+  border-bottom: none;
 }
 
 .subcategory-item {

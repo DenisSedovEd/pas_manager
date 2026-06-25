@@ -395,6 +395,7 @@ onUnmounted(() => {
   background: var(--tg-theme-secondary-bg-color);
   border-radius: 12px;
   padding: 0 12px;
+  margin-top: 8px;
   margin-bottom: 16px;
   border: 1px solid rgba(128, 128, 128, 0.15);
   gap: 8px;

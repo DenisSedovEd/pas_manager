@@ -399,7 +399,7 @@ input:focus, textarea:focus {
 
 .card-item.editing {
   cursor: default;
-  touch-action: pan-y;
+  touch-action: manipulation;
 }
 
 .card-item.editing:active {

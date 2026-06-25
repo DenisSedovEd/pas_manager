@@ -175,7 +175,7 @@ onMounted(fetchCategories)
   border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 0 0.75rem;
-  margin: 0 1rem 0.75rem;
+  margin: 0.85rem 1rem 0.75rem;
   gap: 0.5rem;
 }
 

@@ -16,6 +16,7 @@ const subLoadingIds = ref({});
 const isLoading = ref(true);
 const error = ref(null);
 const isEditMode = ref(false);
+const isDragging = ref(false);
 
 const props = defineProps({
   categoryId: String,
@@ -38,6 +39,68 @@ const onSettingsClick = () => {
 const resourceMap = computed(() =>
     Object.fromEntries(props.resources.map(r => [r.id, r]))
 );
+
+const dragGroup = computed(() => (
+    isEditMode.value ? 'accounts' : {name: 'accounts', pull: false, put: false}
+));
+
+const hasVisibleContent = computed(() =>
+    accounts.value.length > 0
+    || subcategories.value.length > 0
+    || Object.values(subAccounts.value).some(list => list.length > 0)
+);
+
+const getListByCategoryId = (categoryId) => {
+  if (String(categoryId) === String(props.categoryId)) return accounts.value;
+  return subAccounts.value[categoryId] || [];
+};
+
+const refreshAll = async () => {
+  await fetchAccounts();
+  for (const sub of subcategories.value) {
+    if (expandedSubIds.value[sub.id]) {
+      await loadSubAccounts(sub.id, true);
+    }
+  }
+};
+
+const persistOrder = async (categoryId) => {
+  const list = getListByCategoryId(categoryId);
+  if (!list.length) return;
+  const ids = list.map(a => String(a.id));
+  await accountApi.reorder(initData, ids);
+};
+
+const moveAccountToCategory = async (account, targetCategoryId) => {
+  if (String(account.category_id) === String(targetCategoryId)) return;
+
+  const detail = await accountApi.getDetail(initData, account.id);
+  await accountApi.update(initData, account.id, {
+    ...detail,
+    category_id: String(targetCategoryId),
+  });
+  account.category_id = String(targetCategoryId);
+};
+
+const handleListChange = async (event, targetCategoryId) => {
+  if (!isEditMode.value) return;
+
+  try {
+    if (event.added) {
+      await moveAccountToCategory(event.added.element, targetCategoryId);
+      tg.HapticFeedback.impactOccurred('medium');
+    } else if (event.moved) {
+      tg.HapticFeedback.impactOccurred('light');
+    }
+
+    if (event.added || event.moved || event.removed) {
+      await persistOrder(targetCategoryId);
+    }
+  } catch (e) {
+    tg.showAlert('Ошибка сохранения');
+    await refreshAll();
+  }
+};
 
 const enterEditMode = () => {
   tg.MainButton.offClick(onAddClick);
@@ -71,7 +134,7 @@ watch(isEditMode, async (val) => {
 const mouseSwipeAccount = ref(null);
 
 const swipeStart = (clientX, clientY, account, target) => {
-  if (!isEditMode.value) return;
+  if (!isEditMode.value || isDragging.value) return;
   if (target.closest('.drag-handle')) return;
   const wrapper = target.closest('.swipe-wrapper');
   const maxSwipe = wrapper ? wrapper.offsetWidth * 0.2 : 80;
@@ -147,10 +210,13 @@ const swipeEnd = (account) => {
 
 // ── Touch-обработчики ────────────────────────────────────────────────────────
 const onTouchStart = (e, account) => {
+  if (e.target.closest('.drag-handle')) return;
   swipeStart(e.touches[0].clientX, e.touches[0].clientY, account, e.target);
 };
 
 const onTouchMove = (e, account) => {
+  const state = swipeData.value[account.id];
+  if (!state) return;
   swipeMove(e.touches[0].clientX, e.touches[0].clientY, account, e);
 };
 
@@ -189,11 +255,16 @@ const getItemStyle = (account) => {
 
 // ── Drag start — сбрасываем все swipe-состояния ───────────────────────────────
 const onDragStart = () => {
+  isDragging.value = true;
   tg.HapticFeedback.impactOccurred('light');
   for (const id in swipeData.value) {
     swipeData.value[id].currentX = 0;
     swipeData.value[id].isSwiping = false;
   }
+};
+
+const onDragEnd = () => {
+  isDragging.value = false;
 };
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -208,28 +279,6 @@ const fetchAccounts = async () => {
   } catch (e) {
     console.error("Ошибка загрузки:", e);
     error.value = "Не удалось загрузить аккаунты";
-  }
-};
-
-const handleReorder = async () => {
-  tg.HapticFeedback.impactOccurred('medium');
-  try {
-    const ids = accounts.value.map(a => String(a.id));
-    await accountApi.reorder(initData, ids);
-  } catch (e) {
-    tg.showAlert('Ошибка сохранения порядка');
-    await fetchAccounts();
-  }
-};
-
-const handleSubReorder = async (subId) => {
-  tg.HapticFeedback.impactOccurred('medium');
-  try {
-    const ids = (subAccounts.value[subId] || []).map(a => String(a.id));
-    await accountApi.reorder(initData, ids);
-  } catch (e) {
-    tg.showAlert('Ошибка сохранения порядка');
-    await loadSubAccounts(subId, true);
   }
 };
 
@@ -371,22 +420,26 @@ onUnmounted(() => {
 
           <div v-if="expandedSubIds[sub.id]" class="sub-accounts">
             <div v-if="subLoadingIds[sub.id]" class="sub-status">Загрузка...</div>
-            <div v-else-if="!(subAccounts[sub.id] || []).length" class="sub-status">Нет аккаунтов</div>
             <draggable
                 v-else
-                :model-value="subAccounts[sub.id]"
+                :model-value="subAccounts[sub.id] || []"
                 @update:model-value="(list) => { subAccounts[sub.id] = list }"
                 item-key="id"
                 class="sub-accounts-list"
+                :class="{ 'drop-target': isEditMode && !(subAccounts[sub.id] || []).length }"
                 handle=".drag-handle"
+                :group="dragGroup"
                 :disabled="!isEditMode"
                 ghost-class="ghost-card"
                 :animation="200"
                 :force-fallback="true"
+                :fallback-on-body="true"
+                :empty-insert-threshold="12"
                 :delay="300"
                 :delay-on-touch-only="true"
                 @start="onDragStart"
-                @end="() => handleSubReorder(sub.id)"
+                @end="onDragEnd"
+                @change="(event) => handleListChange(event, sub.id)"
             >
               <template #item="{ element: account }">
                 <div class="swipe-wrapper sub-account-wrapper">
@@ -424,6 +477,14 @@ onUnmounted(() => {
                 </div>
               </template>
             </draggable>
+            <div
+                v-if="isEditMode && !(subAccounts[sub.id] || []).length"
+                class="sub-status sub-drop-hint"
+            >Перетащи аккаунт сюда</div>
+            <div
+                v-else-if="!isEditMode && !(subAccounts[sub.id] || []).length"
+                class="sub-status"
+            >Нет аккаунтов</div>
           </div>
         </div>
       </div>
@@ -434,18 +495,24 @@ onUnmounted(() => {
       </div>
 
       <draggable
+          v-if="isEditMode || accounts.length > 0"
           v-model="accounts"
           item-key="id"
           class="accounts-list"
+          :class="{ 'drop-target': isEditMode && accounts.length === 0 }"
           handle=".drag-handle"
+          :group="dragGroup"
           :disabled="!isEditMode"
           ghost-class="ghost-card"
           :animation="200"
           :force-fallback="true"
+          :fallback-on-body="true"
+          :empty-insert-threshold="12"
           :delay="300"
           :delay-on-touch-only="true"
           @start="onDragStart"
-          @end="handleReorder"
+          @end="onDragEnd"
+          @change="(event) => handleListChange(event, categoryId)"
       >
         <template #item="{ element: account }">
           <div class="swipe-wrapper">
@@ -490,6 +557,10 @@ onUnmounted(() => {
           </div>
         </template>
       </draggable>
+      <div
+          v-if="isEditMode && accounts.length === 0 && (subcategories.length > 0 || hasVisibleContent)"
+          class="sub-status root-drop-hint"
+      >Перетащи аккаунт сюда</div>
     </template>
   </div>
 </template>
@@ -632,10 +703,14 @@ onUnmounted(() => {
 
 /* ── Подкатегории ── */
 .subcategories-block {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.subcategories-block:has(~ .accounts-list) {
+  margin-bottom: 10px;
 }
 
 .subcategories-label {
@@ -696,6 +771,22 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.sub-accounts-list.drop-target,
+.accounts-list.drop-target {
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px dashed rgba(128, 128, 128, 0.35);
+}
+
+.sub-drop-hint,
+.root-drop-hint {
+  font-style: italic;
+}
+
+.root-drop-hint {
+  padding: 8px 4px 0;
 }
 
 .sub-account-wrapper {
