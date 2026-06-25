@@ -9,6 +9,8 @@ const emit = defineEmits(['save', 'cancel', 'resource-created'])
 
 const isLoading = ref(false)
 const showPassword = ref(false)
+const showCategoryWarning = ref(false)
+const categoryError = ref(false)
 const categories = ref([])
 const localResources = ref([])
 watch(
@@ -65,9 +67,24 @@ const generatePassword = () => {
   showPassword.value = true
 }
 
+const dismissCategoryWarning = () => {
+  showCategoryWarning.value = false
+}
+
+const cancelWithoutSave = () => {
+  showCategoryWarning.value = false
+  emit('cancel')
+}
+
 const handleSave = async () => {
   if (!formData.value.login.trim()) { alert('Введи логин'); return }
   if (!formData.value.password.trim()) { alert('Введи пароль'); return }
+  if (!formData.value.category_id.trim()) {
+    categoryError.value = true
+    showCategoryWarning.value = true
+    return
+  }
+  categoryError.value = false
   isLoading.value = true
   try {
     if (isEditing.value) {
@@ -124,9 +141,10 @@ onMounted(async () => {
         </select>
       </div>
 
-      <div class="form-group">
-        <label>Категория</label>
-        <select v-model="formData.category_id">
+      <div class="form-group" :class="{ 'form-group-error': categoryError }">
+        <label>Категория *</label>
+        <select v-model="formData.category_id" @change="categoryError = false">
+          <option value="" disabled>— выберите категорию —</option>
           <option v-for="c in categories" :key="c.id" :value="String(c.id)">{{ categoryLabel(c) }}</option>
         </select>
       </div>
@@ -172,10 +190,65 @@ onMounted(async () => {
         <button class="btn-secondary" @click="$emit('cancel')">Отмена</button>
       </div>
     </div>
+
+    <div v-if="showCategoryWarning" class="warning-backdrop" @click.self="dismissCategoryWarning">
+      <div class="warning-card" role="alertdialog" aria-labelledby="category-warning-title">
+        <h3 id="category-warning-title">Категория не выбрана</h3>
+        <p>Выберите категорию для аккаунта или отмените сохранение.</p>
+        <div class="warning-actions">
+          <button type="button" class="btn-primary" @click="dismissCategoryWarning">
+            Вернуться к заполнению
+          </button>
+          <button type="button" class="btn-secondary" @click="cancelWithoutSave">
+            Не сохранять
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.form-group-error select {
+  border-color: #e74c3c;
+}
+
+.warning-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.warning-card {
+  width: min(100%, 420px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.warning-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.warning-card p {
+  margin: 0 0 1rem;
+  color: var(--color-text-muted, #888);
+  line-height: 1.45;
+}
+
+.warning-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 .password-input-wrap { display: flex; gap: 0.5rem; }
 .password-input-wrap input { flex: 1; }
 

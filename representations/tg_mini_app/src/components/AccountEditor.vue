@@ -13,6 +13,8 @@ const isLoading = ref(false);
 const showPassword = ref(false);
 const categories = ref([]);
 const showResourceModal = ref(false);
+const showCategoryWarning = ref(false);
+const categoryError = ref(false);
 
 // Локальная копия ресурсов — чтобы добавлять новые без перезагрузки
 const localResources = ref([...(props.resources || [])]);
@@ -118,6 +120,15 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', handleOutsideTouch)
 });
 
+const dismissCategoryWarning = () => {
+  showCategoryWarning.value = false;
+};
+
+const cancelWithoutSave = () => {
+  showCategoryWarning.value = false;
+  emit('cancel');
+};
+
 const handleSave = async () => {
   if (!formData.value.login.trim() || !formData.value.password.trim()) {
     tg.showAlert('Логин и пароль обязательны');
@@ -128,6 +139,15 @@ const handleSave = async () => {
     tg.showAlert('Выберите площадку');
     return;
   }
+
+  if (!formData.value.category_id.trim()) {
+    categoryError.value = true;
+    showCategoryWarning.value = true;
+    tg.HapticFeedback.notificationOccurred('warning');
+    return;
+  }
+
+  categoryError.value = false;
 
   if (isEditing.value) {
     tg.showConfirm('Сохранить изменения?', (confirmed) => {
@@ -305,15 +325,35 @@ const generatePassword = () => {
       </div>
 
       <!-- 7. Категория -->
-      <div class="input-group">
-        <label>Категория</label>
-        <select v-model="formData.category_id" class="main-input select-input">
+      <div class="input-group" :class="{ 'input-group-error': categoryError }">
+        <label>Категория *</label>
+        <select
+            v-model="formData.category_id"
+            class="main-input select-input"
+            @change="categoryError = false"
+        >
+          <option value="" disabled>Выберите категорию</option>
           <option v-for="p in categories" :key="p.id" :value="String(p.id)">
             {{ categoryLabel(p) }}
           </option>
         </select>
       </div>
 
+    </div>
+  </div>
+
+  <div v-if="showCategoryWarning" class="warning-backdrop" @click.self="dismissCategoryWarning">
+    <div class="warning-card" role="alertdialog">
+      <h3>Категория не выбрана</h3>
+      <p>Выберите категорию для аккаунта или отмените сохранение.</p>
+      <div class="warning-actions">
+        <button type="button" class="warning-btn-primary" @click="dismissCategoryWarning">
+          Вернуться к заполнению
+        </button>
+        <button type="button" class="warning-btn-secondary" @click="cancelWithoutSave">
+          Не сохранять
+        </button>
+      </div>
     </div>
   </div>
 
@@ -476,5 +516,68 @@ const generatePassword = () => {
 
 .suggestion-item:active {
   background: rgba(128, 128, 128, 0.1);
+}
+
+.input-group-error .main-input {
+  border-color: #ff3b30;
+}
+
+.warning-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1100;
+}
+
+.warning-card {
+  width: min(100%, 360px);
+  background: var(--tg-theme-bg-color);
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.warning-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--tg-theme-text-color);
+}
+
+.warning-card p {
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--tg-theme-hint-color);
+}
+
+.warning-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.warning-btn-primary,
+.warning-btn-secondary {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.warning-btn-primary {
+  background: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+}
+
+.warning-btn-secondary {
+  background: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
 }
 </style>
