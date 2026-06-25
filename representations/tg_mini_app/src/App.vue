@@ -251,6 +251,18 @@ body {
   background-color: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);
   overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+.app-container,
+.content-wrapper,
+.lock-screen {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 input, textarea {

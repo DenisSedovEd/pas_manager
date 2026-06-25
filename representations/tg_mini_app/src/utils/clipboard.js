@@ -13,6 +13,27 @@ export function initTelegramClipboard() {
     )
   }
 
+  const isTouchDevice = () => (
+    'ontouchstart' in window || navigator.maxTouchPoints > 0
+  )
+
+  document.addEventListener('contextmenu', (e) => {
+    if (!isEditable(e.target)) {
+      e.preventDefault()
+    }
+  })
+
+  document.addEventListener('selectstart', (e) => {
+    if (!isEditable(e.target)) {
+      e.preventDefault()
+    }
+  })
+
+  document.addEventListener('touchend', () => {
+    if (isEditable(document.activeElement)) return
+    window.getSelection()?.removeAllRanges()
+  }, { passive: true })
+
   const getSelectedText = (target) => {
 
     if (!target) return ""
@@ -118,13 +139,18 @@ export function initTelegramClipboard() {
     return success
   }
 
-  // remember focused element
-  document.addEventListener("focusin", (e) => {
+  let clipboardUnlocked = false
+  const unlockClipboard = () => {
+    if (clipboardUnlocked) return
+    clipboardUnlocked = true
+    navigator.clipboard?.readText?.().catch(() => { })
+  }
 
+  document.addEventListener('focusin', (e) => {
     if (isEditable(e.target)) {
       lastFocused = e.target
+      unlockClipboard()
     }
-
   })
 
   const handlePaste = async () => {
@@ -196,46 +222,35 @@ export function initTelegramClipboard() {
 
   })
 
-  // unlock clipboard API
-  document.addEventListener("click", () => {
+  if (!isTouchDevice()) {
+    const pasteCatcher = document.createElement('textarea')
+    pasteCatcher.setAttribute('readonly', 'true')
+    pasteCatcher.setAttribute('tabindex', '-1')
+    pasteCatcher.setAttribute('aria-hidden', 'true')
+    pasteCatcher.style.position = 'fixed'
+    pasteCatcher.style.opacity = '0'
+    pasteCatcher.style.left = '-9999px'
+    pasteCatcher.style.pointerEvents = 'none'
 
-    navigator.clipboard?.readText?.().catch(() => { })
+    document.body.appendChild(pasteCatcher)
 
-  }, { once: true })
+    window.addEventListener('keydown', (e) => {
+      const ctrl = e.ctrlKey || e.metaKey
 
-  // TELEGRAM DESKTOP WORKAROUND
+      if (ctrl && e.key.toLowerCase() === 'v') {
+        pasteCatcher.focus()
 
-  const pasteCatcher = document.createElement("textarea")
+        setTimeout(() => {
+          const text = pasteCatcher.value
 
-  pasteCatcher.style.position = "fixed"
-  pasteCatcher.style.opacity = "0"
-  pasteCatcher.style.left = "-9999px"
-  pasteCatcher.style.pointerEvents = "none"
+          if (text && isEditable(lastFocused)) {
+            insertText(lastFocused, text)
+          }
 
-  document.body.appendChild(pasteCatcher)
-
-  window.addEventListener("keydown", (e) => {
-
-    const ctrl = e.ctrlKey || e.metaKey
-
-    if (ctrl && e.key.toLowerCase() === "v") {
-
-      pasteCatcher.focus()
-
-      setTimeout(() => {
-
-        const text = pasteCatcher.value
-
-        if (text && isEditable(lastFocused)) {
-          insertText(lastFocused, text)
-        }
-
-        pasteCatcher.value = ""
-
-      }, 10)
-
-    }
-
-  })
+          pasteCatcher.value = ''
+        }, 10)
+      }
+    })
+  }
 
 }
