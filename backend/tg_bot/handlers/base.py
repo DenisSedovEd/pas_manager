@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from backend.core.config import settings
-from backend.core.session import session_manager
+from backend.core.session import session_manager, KIND_MINIAPP
 
 
 def is_admin(update: Update) -> bool:
@@ -29,7 +29,7 @@ def require_session(func):
         if not is_admin(update):
             await update.effective_message.reply_text("⛔ Доступ запрещён.")
             return
-        if not session_manager.is_active(settings.tg.user_id):
+        if not session_manager.is_active(settings.tg.user_id, KIND_MINIAPP):
             await update.effective_message.reply_text(
                 "🔒 Сейф заблокирован. Введи /unlock чтобы разблокировать."
             )

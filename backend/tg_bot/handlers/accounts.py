@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 
 from backend.core.config import settings
 from backend.core.db import async_session
-from backend.core.session import session_manager
+from backend.core.session import session_manager, KIND_MINIAPP
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from backend.services.account_service import AccountService
@@ -36,7 +36,7 @@ async def cmd_categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 @require_session
 async def cmd_lock(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    session_manager.close_session(settings.tg.user_id)
+    session_manager.close_session(settings.tg.user_id, KIND_MINIAPP)
     await update.message.reply_text("🔒 Сейф заблокирован.")
 
 
@@ -44,7 +44,7 @@ async def callback_category(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     query = update.callback_query
     await query.answer()
 
-    if not session_manager.is_active(settings.tg.user_id):
+    if not session_manager.is_active(settings.tg.user_id, KIND_MINIAPP):
         await query.edit_message_text("🔒 Сессия истекла. Введи /unlock.")
         return
 
@@ -81,12 +81,12 @@ async def callback_account(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     query = update.callback_query
     await query.answer()
 
-    if not session_manager.is_active(settings.tg.user_id):
+    if not session_manager.is_active(settings.tg.user_id, KIND_MINIAPP):
         await query.edit_message_text("🔒 Сессия истекла. Введи /unlock.")
         return
 
     account_id = int(query.data.removeprefix("acc_"))
-    master_password = session_manager.get_master_password(settings.tg.user_id)
+    master_password = session_manager.get_master_password(settings.tg.user_id, KIND_MINIAPP)
 
     async with async_session() as db:
         service = AccountService(DatabaseRepository(db), EncryptionRepository())

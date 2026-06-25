@@ -23,7 +23,7 @@ async def get_accounts_by_category(
 ) -> list[AccountListItemSchema]:
     """GET /pas-manager/v1/account/list/{category_id}"""
 
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
     accounts = await service.get_accounts_by_category(category_id)
@@ -37,7 +37,7 @@ async def search_accounts(
     service: AccountService = Depends(get_account_service),
 ) -> list[SearchResultItemSchema]:
     """GET /pas-manager/v1/account/search?q=..."""
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     if not q or len(q.strip()) < 1:
         return []
@@ -49,7 +49,7 @@ async def get_suggestions(
         user: dict = Depends(get_current_user),
         service: AccountService = Depends(get_account_service),
 ) -> AccountSuggestionsSchema:
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
     suggestions = await service.get_suggestions()
@@ -64,10 +64,10 @@ async def get_account(
 ) -> AccountDetailSchema:
     """GET /pas-manager/v1/account/{account_id}"""
 
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
-    master_password = session_manager.get_master_password(user["id"])
+    master_password = session_manager.get_master_password(user["id"], user["session_kind"])
     if not master_password:
         raise HTTPException(status_code=401, detail="Master password not found")
 
@@ -83,10 +83,10 @@ async def create_account(
 ):
     """POST /pas-manager/v1/account"""
 
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
-    master_password = session_manager.get_master_password(user["id"])
+    master_password = session_manager.get_master_password(user["id"], user["session_kind"])
     if not master_password:
         raise HTTPException(status_code=401, detail="Master password not found")
 
@@ -100,7 +100,7 @@ async def reorder_accounts(
     user: dict = Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
 ):
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     await service.reorder_accounts(payload)
     return SuccessResponse()
@@ -115,10 +115,10 @@ async def update_account(
 ):
     """PUT /pas-manager/v1/account/{account_id}"""
 
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
-    master_password = session_manager.get_master_password(user["id"])
+    master_password = session_manager.get_master_password(user["id"], user["session_kind"])
     if not master_password:
         raise HTTPException(status_code=401, detail="Master password not found")
 
@@ -133,7 +133,7 @@ async def delete_account(
     service: AccountService = Depends(get_account_service),
 ):
     """DELETE /pas-manager/v1/account/{account_id}"""
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
     await service.delete_account(account_id)

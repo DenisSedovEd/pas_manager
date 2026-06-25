@@ -4,7 +4,7 @@ from telegram.ext import ContextTypes, ConversationHandler
 from backend.core.config import settings
 from backend.core.db import async_session
 from backend.core.security import MasterPasswordService
-from backend.core.session import session_manager
+from backend.core.session import session_manager, KIND_MINIAPP
 from backend.models import AppSettings
 from backend.repositories import DatabaseRepository
 from backend.tg_bot.handlers.base import is_admin
@@ -17,7 +17,7 @@ async def cmd_unlock(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text("⛔ Доступ запрещён.")
         return ConversationHandler.END
 
-    if session_manager.is_active(settings.tg.user_id):
+    if session_manager.is_active(settings.tg.user_id, KIND_MINIAPP):
         await update.message.reply_text(
             "✅ Сейф уже разблокирован. /categories для списка категорий."
         )

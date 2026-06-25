@@ -18,7 +18,7 @@ async def get_resources(
     service: ResourceService = Depends(get_resource_service),
 ) -> list[ResourceResponseSchema]:
 
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
     resources = await service.get_resources()
@@ -31,7 +31,7 @@ async def get_resource_by_name(
     user: dict = Depends(get_current_user),
     service: ResourceService = Depends(get_resource_service),
 ) -> ResourceResponseSchema:
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     return await service.get_by_name(resource_name)
 
@@ -43,7 +43,7 @@ async def create_resource(
     service: ResourceService = Depends(get_resource_service),
 ) -> ResourceResponseSchema:
 
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
     new_resource = await service.add_resource(payload)
@@ -57,7 +57,7 @@ async def get_resource(
     service: ResourceService = Depends(get_resource_service),
 ) -> ResourceResponseSchema:
 
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
 
     resource = await service.get_resource(resource_id)

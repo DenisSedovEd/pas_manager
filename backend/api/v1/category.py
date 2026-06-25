@@ -15,7 +15,7 @@ async def get_categories(
     service: CategoryService = Depends(get_category_service),
 ) -> list[CategoryResponseSchema]:
     """Корневые категории (parent_id IS NULL)"""
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     return await service.get_categories()
 
@@ -26,7 +26,7 @@ async def get_all_categories(
     service: CategoryService = Depends(get_category_service),
 ) -> list[CategoryResponseSchema]:
     """Все категории для выбора при перемещении аккаунта"""
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     return await service.get_all_categories()
 
@@ -38,7 +38,7 @@ async def get_children(
     service: CategoryService = Depends(get_category_service),
 ) -> list[CategoryResponseSchema]:
     """Подкатегории для category_id"""
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     return await service.get_children(category_id)
 
@@ -49,7 +49,7 @@ async def get_category(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ) -> CategoryResponseSchema:
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     return await service.get_category(category_id)
 
@@ -60,7 +60,7 @@ async def add_category(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ) -> CategoryResponseSchema:
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     return await service.add_category(payload)
 
@@ -71,7 +71,7 @@ async def reorder_categories(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ):
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     await service.reorder_categories(payload)
     return SuccessResponse()
@@ -84,7 +84,7 @@ async def update_category(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ) -> CategoryResponseSchema:
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     return await service.update_category(category_id, payload)
 
@@ -96,7 +96,7 @@ async def delete_category(
     user: dict = Depends(get_current_user),
     service: CategoryService = Depends(get_category_service),
 ):
-    if not session_manager.is_active(user["id"]):
+    if not session_manager.is_active(user["id"], user["session_kind"]):
         raise HTTPException(status_code=401, detail="Locker is closed")
     try:
         await service.delete_category(category_id, transfer_accounts=transfer)

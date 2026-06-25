@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.db import get_session
 from backend.core.security import verify_browser_token, verify_telegram_data
-from backend.core.session import session_manager
+from backend.core.session import session_manager, KIND_WEB, KIND_MINIAPP
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from backend.services.account_service import AccountService
@@ -48,21 +48,28 @@ def get_current_user(
     session_token: str | None = Cookie(default=None),
 ) -> dict:
     if session_token:
-        return verify_browser_token(session_token)
+        user = verify_browser_token(session_token)
+        user["session_kind"] = KIND_WEB
+        return user
     if authorization:
-        return verify_telegram_data(authorization)
+        user = verify_telegram_data(authorization)
+        user["session_kind"] = KIND_MINIAPP
+        return user
     raise HTTPException(status_code=401, detail="Not authenticated")
 
 
 def get_active_session(user: dict = Depends(get_current_user)):
     user_id = user.get("id")
-    if not session_manager.is_active(user_id):
+    kind = user.get("session_kind")
+    if not session_manager.is_active(user_id, kind):
         raise HTTPException(status_code=401, detail="Session expired")
-    return {"user_id": user_id}
+    return {"user_id": user_id, "session_kind": kind}
 
 
 def get_master_password(session: dict = Depends(get_active_session)) -> str:
-    password = session_manager.get_master_password(session["user_id"])
+    password = session_manager.get_master_password(
+        session["user_id"], session["session_kind"]
+    )
     if not password:
         raise HTTPException(status_code=401, detail="Not authenticated")
     return password

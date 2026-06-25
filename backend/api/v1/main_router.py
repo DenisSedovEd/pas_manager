@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from backend.core.security import MasterPasswordService
 from backend.core.config import settings as app_settings
-from backend.core.session import session_manager
+from backend.core.session import session_manager, KIND_MINIAPP, KIND_WEB
 from backend.dependencies import (
     get_db_repo,
     get_encrypt_repo,
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/main")
 @router.get("/auth/status")
 async def check_status(user: dict = Depends(get_current_user)) -> StatusResponse:
     """Проверка статуса разблокировки"""
-    is_unlocked = session_manager.is_active(user["id"])
+    is_unlocked = session_manager.is_active(user["id"], KIND_MINIAPP)
 
     return StatusResponse(user_id=user["id"], is_unlocked=is_unlocked)
 
@@ -142,5 +142,5 @@ async def logout(
     user: dict = Depends(get_current_user),
 ) -> SuccessResponse:
     """Логаут и закрытие менеджера"""
-    session_manager.close_session(user["id"])
+    session_manager.close_session(user["id"], KIND_MINIAPP)
     return SuccessResponse()

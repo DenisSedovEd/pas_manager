@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from backend.core.config import settings as app_settings
 from backend.core.rate_limit import check_rate_limit, reset_rate_limit
 from backend.core.security import MasterPasswordService
-from backend.core.session import session_manager
+from backend.core.session import session_manager, KIND_WEB
 from backend.dependencies import get_current_user, get_db_repo
 from backend.models import AppSettings
 from backend.repositories import DatabaseRepository
@@ -54,7 +54,7 @@ async def web_unlock(
 async def web_status(user: dict = Depends(get_current_user)) -> StatusResponse:
     """Проверка валидности сессии."""
     return StatusResponse(
-        user_id=user["id"], is_unlocked=session_manager.is_active(user["id"])
+        user_id=user["id"], is_unlocked=session_manager.is_active(user["id"], KIND_WEB)
     )
 
 
@@ -64,6 +64,6 @@ async def web_logout(
     user: dict = Depends(get_current_user),
 ) -> SuccessResponse:
     """Завершение браузерной сессии."""
-    session_manager.close_session(user["id"])
+    session_manager.close_session(user["id"], KIND_WEB)
     response.delete_cookie(key="session_token", path="/")
     return SuccessResponse()
