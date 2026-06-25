@@ -19,25 +19,27 @@ RUN npm run build
 # --- СТАДИЯ 2: СБОРКА (PYTHON) ---
 FROM docker.io/python:3.14-slim AS builder
 
+COPY --from=ghcr.io/astral-sh/uv:0.11.19 /uv /uvx /bin/
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir uv
-
 WORKDIR /app
+
+ENV UV_LINK_MODE=copy
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --all-extras --no-editable
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --all-extras --no-editable
 
 
 # --- СТАДИЯ 3: ВЫПОЛНЕНИЕ (RUNTIME) ---
 FROM docker.io/python:3.14-slim AS runtime
 WORKDIR /app
-RUN pip install --no-cache-dir uv
 RUN mkdir -p /app/data
 
 #COPY --from=builder /src/.venv/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
