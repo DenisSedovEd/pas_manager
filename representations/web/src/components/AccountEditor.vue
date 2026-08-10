@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
 import { resourceApi } from '../api/resource.js'
+import { iconDisplayLabel } from '../api/customIcon.js'
 
 const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions'])
 const emit = defineEmits(['save', 'cancel', 'resource-created'])
@@ -113,7 +114,7 @@ const handleDelete = async () => {
 
 const categoryLabel = (category) => {
   const prefix = category.parent_id ? '↳ ' : ''
-  return `${prefix}${category.icon || ''} ${category.name}`.trim()
+  return `${prefix}${iconDisplayLabel(category.icon, '')} ${category.name}`.trim()
 }
 
 const filteredSuggestions = (field) => {

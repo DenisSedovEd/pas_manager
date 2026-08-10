@@ -3,7 +3,9 @@ import { ref, computed, watch, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
+import { iconDisplayLabel } from '../api/customIcon.js'
 import AddItemMenu from './AddItemMenu.vue'
+import CategoryIcon from './CategoryIcon.vue'
 
 const props = defineProps({
   categoryId: String,
@@ -155,7 +157,7 @@ const deleteAccount = async (account, subId = null) => {
 }
 
 const deleteSubcategory = async (sub) => {
-  if (!confirm(`Удалить категорию «${sub.icon || ''} ${sub.name}»?`)) return
+  if (!confirm(`Удалить категорию «${iconDisplayLabel(sub.icon)} ${sub.name}»?`)) return
   try {
     await categoryApi.delete(sub.id)
     subcategories.value = subcategories.value.filter(s => s.id !== sub.id)
@@ -187,7 +189,7 @@ onMounted(fetchAccounts)
     <div class="screen-header">
       <div class="title-row">
         <button class="sub-back-btn" @click="$emit('go-back')">⬅️</button>
-        <h2>{{ category?.icon || '📁' }} {{ category?.name }}</h2>
+        <h2 class="title-with-icon"><CategoryIcon :icon="category?.icon" fallback="📁" /><span>{{ category?.name }}</span></h2>
       </div>
       <div class="header-actions">
         <button v-if="!isEditMode" class="icon-btn" @click="$emit('edit-category', category)" title="Редактировать категорию">⚙️</button>
@@ -215,7 +217,7 @@ onMounted(fetchAccounts)
             :class="{ expanded: expandedSubIds[sub.id] }"
             @click="toggleSubcategory(sub)"
           >
-            <span class="item-icon">{{ sub.icon || '📁' }}</span>
+            <CategoryIcon class="item-icon" :icon="sub.icon" fallback="📁" />
             <div class="item-info">
               <span class="item-name">{{ sub.name }}</span>
               <span class="item-sub">{{ sub.accounts_count }} аккаунтов</span>
@@ -249,7 +251,7 @@ onMounted(fetchAccounts)
               <template #item="{ element: acc }">
                 <div class="list-item sub-account-item" @click="selectAccount(acc, sub)">
                   <span v-if="isEditMode" class="drag-handle">☰</span>
-                  <div class="item-icon-box">{{ sub.icon || '👤' }}</div>
+                  <div class="item-icon-box"><CategoryIcon :icon="sub.icon" fallback="👤" size="lg" /></div>
                   <div class="item-info">
                     <div class="item-top-row">
                       <span class="item-resource">{{ getResourceName(acc) }}</span>
@@ -291,7 +293,7 @@ onMounted(fetchAccounts)
         <template #item="{ element: acc }">
           <div class="list-item" @click="selectAccount(acc)">
             <span v-if="isEditMode" class="drag-handle">☰</span>
-            <div class="item-icon-box">{{ category?.icon || '👤' }}</div>
+            <div class="item-icon-box"><CategoryIcon :icon="category?.icon" fallback="👤" size="lg" /></div>
             <div class="item-info">
               <div class="item-top-row">
                 <span class="item-resource">{{ getResourceName(acc) }}</span>
@@ -314,6 +316,8 @@ onMounted(fetchAccounts)
 
 <style scoped>
 .title-row { display: flex; align-items: center; gap: 0.75rem; }
+
+.title-with-icon { display: inline-flex; align-items: center; gap: 0.5rem; }
 
 .item-icon-box {
   width: 42px;

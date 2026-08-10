@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { accountApi } from '../api/account.js'
+import CategoryIcon from './CategoryIcon.vue'
 
 const props = defineProps(['account', 'resources', 'category'])
 const emit = defineEmits(['edit', 'deleted', 'go-back'])
@@ -48,7 +49,7 @@ onMounted(async () => {
 
     <template v-else-if="fullAccount">
       <div class="header-section">
-        <div class="account-avatar">{{ props.category?.icon || '👤' }}</div>
+        <div class="account-avatar"><CategoryIcon :icon="props.category?.icon" fallback="👤" size="xl" /></div>
         <h2 class="account-title">
           {{ resourceName }}
           <span v-if="props.category?.name" class="category-tag"> ({{ props.category.name }})</span>

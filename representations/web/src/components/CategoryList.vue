@@ -3,7 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { categoryApi } from '../api/category.js'
 import { accountApi } from '../api/account.js'
+import { iconDisplayLabel } from '../api/customIcon.js'
 import AddItemMenu from './AddItemMenu.vue'
+import CategoryIcon from './CategoryIcon.vue'
 
 const emit = defineEmits(['select-category', 'add-category', 'add-account'])
 const categories = ref([])
@@ -59,7 +61,7 @@ const handleReorder = async () => {
 }
 
 const deleteCategory = async (category) => {
-  if (!confirm(`Удалить категорию «${category.icon} ${category.name}»?`)) return
+  if (!confirm(`Удалить категорию «${iconDisplayLabel(category.icon)} ${category.name}»?`)) return
   try {
     await categoryApi.delete(category.id)
     categories.value = categories.value.filter(c => c.id !== category.id)
@@ -109,7 +111,7 @@ onMounted(fetchCategories)
           class="list-item search-item"
           @click="$emit('select-category', { id: result.category_id, name: result.category_name, icon: result.category_icon, _searchAccount: result })"
         >
-          <span class="item-icon">{{ result.category_icon || '🌐' }}</span>
+          <CategoryIcon class="item-icon" :icon="result.category_icon" fallback="🌐" />
           <div class="item-info">
             <div class="search-breadcrumb">
               <span v-if="result.parent_category_name" class="breadcrumb-part">{{ result.parent_category_name }}</span>
@@ -144,7 +146,7 @@ onMounted(fetchCategories)
         <template #item="{ element: cat }">
           <div class="list-item" @click="!isEditMode && $emit('select-category', cat)">
             <span v-if="isEditMode" class="drag-handle">☰</span>
-            <span class="item-icon">{{ cat.icon || '📁' }}</span>
+            <CategoryIcon class="item-icon" :icon="cat.icon" fallback="📁" />
             <div class="item-info">
               <span class="item-name">{{ cat.name }}</span>
               <span class="item-sub">
