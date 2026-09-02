@@ -2,6 +2,8 @@
 import {ref, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {categoryApi} from '../api/category.js';
+import {iconDisplayLabel} from '../api/customIcon.js';
+import CategoryIcon from './CategoryIcon.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 
@@ -79,7 +81,9 @@ onUnmounted(() => {
     <div class="form">
       <div class="icon-section">
         <div class="icon-wrapper" @click="showPicker = !showPicker">
-          <div class="icon-preview">{{ formData.icon }}</div>
+          <div class="icon-preview">
+            <CategoryIcon :icon="formData.icon" fallback="🌐" size="xl" />
+          </div>
           <div class="edit-badge">
             <span v-if="!showPicker">⚙️</span>
             <span v-else>✕</span>
@@ -127,7 +131,7 @@ onUnmounted(() => {
               :key="cat.id"
               :value="cat.id"
           >
-            {{ cat.icon || '🌐' }} {{ cat.name }}
+            {{ iconDisplayLabel(cat.icon, '🌐') }} {{ cat.name }}
           </option>
         </select>
       </div>

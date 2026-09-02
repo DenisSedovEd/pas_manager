@@ -3,6 +3,7 @@ import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
+import {iconDisplayLabel} from '../api/customIcon.js';
 import ResourceEditor from './ResourceEditor.vue';
 
 const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions']);
@@ -83,7 +84,7 @@ const onResourceCreated = (newResource) => {
 
 const categoryLabel = (category) => {
   const prefix = category.parent_id ? '↳ ' : '';
-  return `${prefix}${category.icon || ''} ${category.name}`.trim();
+  return `${prefix}${iconDisplayLabel(category.icon, '')} ${category.name}`.trim();
 };
 
 onMounted(async () => {

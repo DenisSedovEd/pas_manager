@@ -4,6 +4,8 @@ import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {categoryApi} from '../api/category.js';
 import {accountApi} from '../api/account.js';
+import {iconDisplayLabel} from '../api/customIcon.js';
+import CategoryIcon from './CategoryIcon.vue';
 
 const emit = defineEmits(['select-category', 'add-category']);
 const {tg, initData} = useTelegram();
@@ -135,7 +137,7 @@ const swipeEnd = (category) => {
     state.currentX = 0;
     state.isSwiping = false;
     tg.showConfirm(
-        `Удалить категорию «${category.icon} ${category.name}»?`,
+        `Удалить категорию «${iconDisplayLabel(category.icon)} ${category.name}»?`,
         async (confirmed) => { if (confirmed) await deleteCategory(category); }
     );
   } else {
@@ -282,7 +284,9 @@ onUnmounted(() => {
             class="card-item search-item"
             @click="selectSearchResult(result)"
         >
-          <div class="icon-box">{{ result.category_icon || '🌐' }}</div>
+          <div class="icon-box">
+            <CategoryIcon :icon="result.category_icon" fallback="🌐" size="fill" />
+          </div>
           <div class="main-content">
             <div class="search-breadcrumb">
               <span v-if="result.parent_category_name" class="breadcrumb-part">{{ result.parent_category_name }}</span>
@@ -349,7 +353,9 @@ onUnmounted(() => {
                   @touchend="onTouchEnd($event, category)"
                   @mousedown="onMouseDown($event, category)"
               >
-                <div class="icon-box">{{ category.icon || '🌐' }}</div>
+                <div class="icon-box">
+                  <CategoryIcon :icon="category.icon" fallback="🌐" size="fill" />
+                </div>
                 <div class="main-content">
                   <div class="name">{{ category.name }}</div>
                   <div v-if="category.description" class="description">

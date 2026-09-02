@@ -2,6 +2,7 @@
 import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
+import CategoryIcon from './CategoryIcon.vue';
 
 const props = defineProps(['account', 'resources', 'category']);
 const emit = defineEmits(['edit', 'deleted']);
@@ -105,7 +106,9 @@ const copyToClipboard = async (text, field) => {
 
     <template v-else-if="fullAccount">
       <div class="header-section">
-        <div class="account-avatar">👤</div>
+        <div class="account-avatar">
+          <CategoryIcon :icon="props.category?.icon" fallback="👤" size="xl" />
+        </div>
         <h2 class="account-title">{{ resourceName }}<span v-if="categoryName" class="category-tag"> ({{ categoryName }})</span></h2>
         <p class="account-subtitle">{{ fullAccount.label || fullAccount.login }}</p>
       </div>

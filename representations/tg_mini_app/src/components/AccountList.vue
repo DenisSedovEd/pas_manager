@@ -4,6 +4,7 @@ import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
+import CategoryIcon from './CategoryIcon.vue';
 
 const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
 const {tg, initData} = useTelegram();
@@ -369,7 +370,9 @@ onUnmounted(() => {
           :class="{ 'category-info--tappable': props.category?.name !== 'Other' }"
           @click="props.category?.name !== 'Other' && $emit('edit-category', props.category)"
       >
-        <span class="category-icon">{{ props.category?.icon || '🌐' }}</span>
+        <span class="category-icon">
+          <CategoryIcon :icon="props.category?.icon" fallback="🌐" size="fill" />
+        </span>
         <div class="category-text">
           <h1>{{ props.category?.name || 'Категория' }}</h1>
           <p v-if="props.category?.description" class="category-desc">
@@ -403,7 +406,9 @@ onUnmounted(() => {
               :class="{ expanded: expandedSubIds[sub.id] }"
               @click="toggleSubcategory(sub)"
           >
-            <div class="icon-box">{{ sub.icon || '📁' }}</div>
+            <div class="icon-box">
+              <CategoryIcon :icon="sub.icon" fallback="📁" size="fill" />
+            </div>
             <div class="main-content">
               <div class="name">{{ sub.name }}</div>
               <div v-if="sub.description" class="description">{{ sub.description }}</div>
@@ -459,7 +464,9 @@ onUnmounted(() => {
                       @touchend="onTouchEnd($event, account)"
                       @mousedown="onMouseDown($event, account)"
                   >
-                    <div class="icon-box">{{ sub.icon || '👤' }}</div>
+                    <div class="icon-box">
+                      <CategoryIcon :icon="sub.icon" fallback="👤" size="fill" />
+                    </div>
                     <div class="main-content">
                       <div class="top-row">
                         <span class="resource-text">
@@ -535,7 +542,9 @@ onUnmounted(() => {
                 @touchend="onTouchEnd($event, account)"
                 @mousedown="onMouseDown($event, account)"
             >
-              <div class="icon-box">{{ props.category?.icon || '👤' }}</div>
+              <div class="icon-box">
+                <CategoryIcon :icon="props.category?.icon" fallback="👤" size="fill" />
+              </div>
 
               <div class="main-content">
                 <div class="top-row">
