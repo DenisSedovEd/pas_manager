@@ -35,18 +35,18 @@ const loadResources = async () => {
 
 const pushScreen = (name, props = {}) => {
   screenStack.value.push({name, props})
-  tg.BackButton.show()
+  tg?.BackButton?.show()
   const container = document.querySelector('.app-container')
   if (container) container.scrollTo(0, 0)
 }
 
 const popScreen = () => {
   if (screenStack.value.length <= 1) {
-    tg.BackButton.hide()
+    tg?.BackButton?.hide()
     return
   }
   screenStack.value.pop()
-  if (screenStack.value.length === 1) tg.BackButton.hide()
+  if (screenStack.value.length === 1) tg?.BackButton?.hide()
 }
 
 
@@ -57,6 +57,7 @@ const isBioSupported = ref(false)
 const isAuthLoading = ref(false)
 
 const authenticateWithBio = async () => {
+  if (!bio) return
   try {
     const settings = await authApi.getBioSettings(initData)
     if (!settings.is_enabled) {
@@ -85,7 +86,7 @@ const authenticateWithBio = async () => {
 }
 
 const offerBiometricSetup = () => {
-  if (!isBioSupported.value) return
+  if (!isBioSupported.value || !bio) return
 
   tg.showConfirm('Привязать Face ID / Touch ID для быстрого входа?', (agreed) => {
     if (!agreed) return
@@ -134,7 +135,23 @@ const handleUnlock = async () => {
   }
 }
 
+const initAuth = async () => {
+  try {
+    const status = await authApi.getStatus(initData)
+    isUnlocked.value = status.is_unlocked
+    if (isUnlocked.value) await loadResources()
+    if (!isUnlocked.value && isBioSupported.value) {
+      const settings = await authApi.getBioSettings(initData)
+      if (settings.is_enabled) authenticateWithBio()
+    }
+  } catch (e) {
+    console.error('Auth init error:', e)
+  }
+}
+
 onMounted(async () => {
+  if (!tg) return
+
   initApp()
 
   // Telegram Mini App ready
@@ -153,16 +170,14 @@ onMounted(async () => {
   if (tg?.setBackgroundColor) tg.setBackgroundColor('bg_color')
 
   // Инициализация биометрии
-  bio.init(async () => {
-    isBioSupported.value = bio.isInited && bio.isBiometricAvailable
-    const status = await authApi.getStatus(initData)
-    isUnlocked.value = status.is_unlocked
-    if (isUnlocked.value) await loadResources()
-    if (!isUnlocked.value && isBioSupported.value) {
-      const settings = await authApi.getBioSettings(initData)
-      if (settings.is_enabled) authenticateWithBio()
-    }
-  })
+  if (bio?.init) {
+    bio.init(async () => {
+      isBioSupported.value = bio.isInited && bio.isBiometricAvailable
+      await initAuth()
+    })
+  } else {
+    await initAuth()
+  }
 
   // --- ЗАВЕРШЕНИЕ СЕССИИ ---
   const handleLogout = () => {
@@ -188,7 +203,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="!isUnlocked" class="lock-screen">
+  <div v-if="!tg" class="lock-screen">
+    <div class="lock-card">
+      <div class="lock-icon">⚠️</div>
+      <h2>Safe Manager</h2>
+      <p class="lock-hint">Откройте приложение из Telegram или обновите страницу</p>
+    </div>
+  </div>
+
+  <div v-else-if="!isUnlocked" class="lock-screen">
     <div class="lock-card">
       <div class="lock-icon">🔒</div>
       <h2>Safe Manager</h2>
@@ -308,6 +331,13 @@ input:focus, textarea:focus {
   max-width: 320px;
   text-align: center;
   padding: 20px;
+}
+
+.lock-hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--tg-theme-hint-color);
+  line-height: 1.4;
 }
 
 .lock-input-wrapper {

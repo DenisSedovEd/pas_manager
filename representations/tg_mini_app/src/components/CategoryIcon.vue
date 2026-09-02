@@ -1,6 +1,5 @@
 <script setup>
 import { computed, ref, watch, onUnmounted } from 'vue'
-import { useTelegram } from '../composables/useTelegram.js'
 import {
   customIconFileUrl,
   iconDisplayLabel,
@@ -13,7 +12,7 @@ const props = defineProps({
   size: { type: String, default: 'md' },
 })
 
-const { initData } = useTelegram()
+const initData = window.Telegram?.WebApp?.initData ?? ''
 
 const imgFailed = ref(false)
 const blobUrl = ref(null)

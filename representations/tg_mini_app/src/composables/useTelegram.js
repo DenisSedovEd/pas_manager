@@ -1,37 +1,44 @@
-import { ref } from 'vue';
-
 export function useTelegram() {
-  const tg = window.Telegram.WebApp;
-  const bio = tg.BiometricManager;
+  const tg = window.Telegram?.WebApp ?? null
+  const bio = tg?.BiometricManager ?? null
 
   const initApp = () => {
-    tg.ready();
-    tg.expand();
-  };
+    if (!tg) return
+    tg.ready()
+    tg.expand()
+  }
 
   const setupSettingsButton = (onShowCallback) => {
-    tg.SettingsButton.show();
-    tg.onEvent('settingsButtonClicked', onShowCallback);
-  };
+    if (!tg) return
+    tg.SettingsButton.show()
+    tg.onEvent('settingsButtonClicked', onShowCallback)
+  }
 
   const hideSettingsButton = () => {
-    tg.SettingsButton.hide();
-    tg.offEvent('settingsButtonClicked');
-  };
-  const showAlert = (message) => tg.showAlert(message);
-  const haptic = tg.HapticFeedback;
+    if (!tg) return
+    tg.SettingsButton.hide()
+    tg.offEvent('settingsButtonClicked')
+  }
 
-  const closeApp = () => tg.close();
+  const showAlert = (message) => {
+    if (tg) tg.showAlert(message)
+    else alert(message)
+  }
+
+  const closeApp = () => {
+    if (tg) tg.close()
+  }
 
   return {
     tg,
     bio,
+    isAvailable: !!tg,
     initApp,
     closeApp,
     setupSettingsButton,
     hideSettingsButton,
-    haptic,
+    haptic: tg?.HapticFeedback ?? null,
     showAlert,
-    initData: tg.initData
-  };
+    initData: tg?.initData ?? '',
+  }
 }
