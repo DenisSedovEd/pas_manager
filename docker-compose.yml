@@ -12,9 +12,18 @@ services:
 
     ports:
       - "8000:8000"
-  # tunel:
-  #   image: cloudflare/cloudflared:latest
-  #   restart: unless-stopped
-  #   command: tunnel --no-autoupdate run --token ${APP__TUNNEL_TOKEN}
-  #   env_file:
-  #     - .env
+
+    networks:
+      - default
+      - postgres_net
+      # tunel:
+      #   image: cloudflare/cloudflared:latest
+      #   restart: unless-stopped
+      #   command: tunnel --no-autoupdate run --token ${APP__TUNNEL_TOKEN}
+      #   env_file:
+      #     - .env
+
+networks:
+  postgres_net:
+    external: true
+    name: postgres_net
