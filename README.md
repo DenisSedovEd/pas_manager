@@ -116,7 +116,6 @@ docker compose up -d
 | `DB__NAME` | Имя базы |
 | `DB__USER` | Пользователь БД |
 | `DB__PASSWORD` | Пароль БД |
-| `DB__SQLITE_PATH` | Файл SQLite в `data/` для одноразового переноса |
 | `TG__USER_ID` | Ваш Telegram user ID (только вы имеете доступ) |
 | `TG__TELEGRAM_TOKEN` | Токен бота от [@BotFather](https://t.me/BotFather) |
 | `APP__DELETE_TIMEOUT_SECONDS` | Через сколько секунд удаляются сообщения бота |
@@ -137,9 +136,6 @@ uv sync
 
 # Применить миграции
 uv run alembic upgrade head
-
-# (Опционально) одноразовый перенос данных из SQLite
-uv run python -m scripts.migrate_sqlite_to_postgres
 
 # Запустить API
 uv run python -m main

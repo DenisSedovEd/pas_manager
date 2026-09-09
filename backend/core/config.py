@@ -28,10 +28,6 @@ class DbSettings(Base):
     password: str = Field(...)
     echo: bool = Field(False)
     future: bool = Field(True)
-    sqlite_path: str = Field(
-        default="accounts.sqlite",
-        description="Путь к файлу SQLite относительно data/ для одноразового переноса",
-    )
 
     @property
     def url(self) -> str:
