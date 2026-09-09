@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, pool
 
 from alembic import context
 from backend.core.config import settings
@@ -13,14 +13,11 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-config.set_main_option("sqlalchemy.url", settings.db.sync_url)
-
 
 def run_migrations_offline() -> None:
     """Запуск миграций в offline-режиме."""
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=settings.db.sync_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -32,9 +29,8 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Запуск миграций в online-режиме."""
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connectable = create_engine(
+        settings.db.sync_url,
         poolclass=pool.NullPool,
     )
 
