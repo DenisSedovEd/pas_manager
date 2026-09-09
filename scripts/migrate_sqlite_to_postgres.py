@@ -1,9 +1,10 @@
 """Одноразовый перенос данных из SQLite в PostgreSQL.
 
-Запускать после `alembic upgrade head` на пустой Postgres-БД:
+Запускать после старта сервиса (Alembic + init_db):
 
     python -m scripts.migrate_sqlite_to_postgres
     python -m scripts.migrate_sqlite_to_postgres --sqlite data/accounts.sqlite
+    python -m scripts.migrate_sqlite_to_postgres --force
 """
 
 from __future__ import annotations
@@ -156,19 +157,33 @@ def _reset_sequences(pg_conn: Connection) -> None:
         )
 
 
-def _assert_target_empty(pg_conn: Connection) -> None:
-    for table in TABLE_COLUMNS:
-        count = pg_conn.execute(
-            text(f"SELECT COUNT(*) FROM {_quote_ident(table)}")
-        ).scalar_one()
-        if count:
-            raise RuntimeError(
-                f"Таблица {table} в PostgreSQL уже содержит {count} строк. "
-                "Перенос рассчитан на пустую БД после alembic upgrade head."
-            )
+def _count(pg_conn: Connection, table: str) -> int:
+    return pg_conn.execute(
+        text(f"SELECT COUNT(*) FROM {_quote_ident(table)}")
+    ).scalar_one()
 
 
-def migrate(sqlite_path: Path, engine: Engine) -> None:
+def _prepare_target(pg_conn: Connection, *, force: bool) -> None:
+    """Очистить Postgres перед копированием.
+
+    init_db после старта всегда создаёт категорию Other — без wipe перенос
+    невозможен. Если уже есть accounts/app_settings — нужен --force.
+    """
+    accounts = _count(pg_conn, "accounts")
+    settings_rows = _count(pg_conn, "app_settings")
+    if (accounts or settings_rows) and not force:
+        raise RuntimeError(
+            "В PostgreSQL уже есть данные "
+            f"(accounts={accounts}, app_settings={settings_rows}). "
+            "Перезапустите с --force, если нужно полностью заменить их из SQLite."
+        )
+
+    tables_sql = ", ".join(_quote_ident(t) for t in TABLE_COLUMNS)
+    pg_conn.execute(text(f"TRUNCATE {tables_sql} RESTART IDENTITY CASCADE"))
+    print("wipe  target tables")
+
+
+def migrate(sqlite_path: Path, engine: Engine, *, force: bool = False) -> None:
     """Скопировать данные из SQLite в PostgreSQL."""
     if not sqlite_path.is_file():
         raise FileNotFoundError(f"SQLite-файл не найден: {sqlite_path}")
@@ -177,7 +192,7 @@ def migrate(sqlite_path: Path, engine: Engine) -> None:
     sqlite_conn.row_factory = sqlite3.Row
     try:
         with engine.begin() as pg_conn:
-            _assert_target_empty(pg_conn)
+            _prepare_target(pg_conn, force=force)
 
             for table, columns in TABLE_COLUMNS.items():
                 if not _table_exists(sqlite_conn, table):
@@ -206,6 +221,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Путь к SQLite-файлу (по умолчанию data/<DB__SQLITE_PATH>)",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Очистить Postgres даже если там уже есть accounts/app_settings",
+    )
     return parser.parse_args(argv)
 
 
@@ -217,7 +237,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     print(f"source: {sqlite_path}")
     print(f"target: {settings.db.host}:{settings.db.port}/{settings.db.name}")
-    migrate(sqlite_path, engine)
+    migrate(sqlite_path, engine, force=args.force)
     print("done")
     return 0
 
