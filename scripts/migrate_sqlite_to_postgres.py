@@ -90,9 +90,15 @@ def _fetch_rows(
 
 def _sort_categories(rows: list[dict]) -> list[dict]:
     """Родители раньше детей (self-FK parent_id)."""
-    by_id = {row["id"]: row for row in rows}
-    children: dict[str | None, list[dict]] = defaultdict(list)
+    normalized = []
     for row in rows:
+        item = dict(row)
+        item["parent_id"] = _blank_to_none(item.get("parent_id"))
+        normalized.append(item)
+
+    by_id = {row["id"]: row for row in normalized}
+    children: dict[str | None, list[dict]] = defaultdict(list)
+    for row in normalized:
         parent_id = row.get("parent_id")
         if parent_id and parent_id not in by_id:
             raise ValueError(
@@ -108,13 +114,49 @@ def _sort_categories(rows: list[dict]) -> list[dict]:
             walk(row["id"])
 
     walk(None)
-    if len(ordered) != len(rows):
+    if len(ordered) != len(normalized):
         raise ValueError("Обнаружен цикл в parent_id категорий")
     return ordered
 
 
-def _normalize_row(table: str, row: dict) -> dict:
-    data = dict(row)
+def _blank_to_none(value: object) -> object:
+    if isinstance(value, str) and value.strip() == "":
+        return None
+    return value
+
+
+def _default_category_id(categories: Sequence[dict]) -> str:
+    """id корневой категории Other (fallback для битых category_id)."""
+    for row in categories:
+        if row.get("category_name") == "Other" and not row.get("parent_id"):
+            return str(row["id"])
+    for row in categories:
+        if not row.get("parent_id"):
+            return str(row["id"])
+    raise ValueError("В SQLite нет категории для подстановки пустого category_id")
+
+
+def _normalize_row(
+    table: str,
+    row: dict,
+    *,
+    default_category_id: str | None = None,
+) -> dict:
+    data = {key: _blank_to_none(value) for key, value in row.items()}
+
+    if table == "categories":
+        data["parent_id"] = _blank_to_none(data.get("parent_id"))
+
+    if table == "accounts":
+        data["resource_id"] = _blank_to_none(data.get("resource_id"))
+        if not data.get("category_id"):
+            if not default_category_id:
+                raise ValueError(
+                    f"Account id={data.get('id')}: пустой category_id, "
+                    "дефолтная категория не найдена"
+                )
+            data["category_id"] = default_category_id
+
     if table == "app_settings" and data.get("bio_enc_data") is not None:
         value = data["bio_enc_data"]
         if isinstance(value, str | bytes | bytearray):
@@ -127,6 +169,8 @@ def _insert_rows(
     table: str,
     columns: Sequence[str],
     rows: Iterable[dict],
+    *,
+    default_category_id: str | None = None,
 ) -> int:
     cols_sql = ", ".join(_quote_ident(c) for c in columns)
     placeholders = ", ".join(f":{c}" for c in columns)
@@ -135,9 +179,28 @@ def _insert_rows(
         f"VALUES ({placeholders})"
     )
     count = 0
+    remapped = 0
     for row in rows:
-        pg_conn.execute(stmt, _normalize_row(table, row))
+        if (
+            table == "accounts"
+            and default_category_id
+            and not _blank_to_none(row.get("category_id"))
+        ):
+            remapped += 1
+        pg_conn.execute(
+            stmt,
+            _normalize_row(
+                table,
+                row,
+                default_category_id=default_category_id,
+            ),
+        )
         count += 1
+    if remapped:
+        print(
+            f"warn  {table}: {remapped} строк с пустым category_id "
+            f"→ {default_category_id}"
+        )
     return count
 
 
@@ -194,6 +257,7 @@ def migrate(sqlite_path: Path, engine: Engine, *, force: bool = False) -> None:
         with engine.begin() as pg_conn:
             _prepare_target(pg_conn, force=force)
 
+            default_category_id: str | None = None
             for table, columns in TABLE_COLUMNS.items():
                 if not _table_exists(sqlite_conn, table):
                     print(f"skip  {table}: нет в SQLite")
@@ -202,8 +266,15 @@ def migrate(sqlite_path: Path, engine: Engine, *, force: bool = False) -> None:
                 rows = _fetch_rows(sqlite_conn, table, columns)
                 if table == "categories":
                     rows = _sort_categories(rows)
+                    default_category_id = _default_category_id(rows)
 
-                inserted = _insert_rows(pg_conn, table, columns, rows)
+                inserted = _insert_rows(
+                    pg_conn,
+                    table,
+                    columns,
+                    rows,
+                    default_category_id=default_category_id,
+                )
                 print(f"ok    {table}: {inserted}")
 
             _reset_sequences(pg_conn)
