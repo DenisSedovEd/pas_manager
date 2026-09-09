@@ -201,7 +201,7 @@ const handleDelete = () => {
 };
 
 const generatePassword = () => {
-  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*';
+  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789-_.@%^+'
   const length = 16;
 
   const array = new Uint32Array(length);

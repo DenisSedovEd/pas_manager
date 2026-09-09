@@ -4,6 +4,9 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: '/tg/',
+  build: {
+    target: ['es2020', 'safari14', 'chrome87'],
+  },
   server: {
     port: 5173,
     // Разрешаем любые хосты для разработки через туннели

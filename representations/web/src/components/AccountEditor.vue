@@ -61,7 +61,7 @@ const addNewResource = async () => {
 }
 
 const generatePassword = () => {
-  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*()_+-=[]{}|;:,.<>?'
+  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789-_.@%^+'
   const length = 16
   const values = new Uint32Array(length)
   crypto.getRandomValues(values)

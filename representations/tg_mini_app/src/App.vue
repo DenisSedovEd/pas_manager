@@ -1,16 +1,16 @@
 <script setup>
-import {ref, computed, onMounted} from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import {initTelegramClipboard} from "./utils/clipboard"
 import {useTelegram} from './composables/useTelegram'
 import {authApi} from './api/auth.js'
 import {resourceApi} from './api/resource.js'
 import {accountApi} from './api/account.js'
 
-import CategoryList from './components/CategoryList.vue'
-import AccountList from './components/AccountList.vue'
-import AccountDetail from './components/AccountDetail.vue'
-import AccountEditor from './components/AccountEditor.vue'
-import CategoryEditor from './components/CategoryEditor.vue'
+const CategoryList = defineAsyncComponent(() => import('./components/CategoryList.vue'))
+const AccountList = defineAsyncComponent(() => import('./components/AccountList.vue'))
+const AccountDetail = defineAsyncComponent(() => import('./components/AccountDetail.vue'))
+const AccountEditor = defineAsyncComponent(() => import('./components/AccountEditor.vue'))
+const CategoryEditor = defineAsyncComponent(() => import('./components/CategoryEditor.vue'))
 
 const {tg, bio, initApp, initData} = useTelegram()
 const resources = ref([])
@@ -55,6 +55,7 @@ const isUnlocked = ref(false)
 const password = ref('')
 const isBioSupported = ref(false)
 const isAuthLoading = ref(false)
+const isBootstrapping = ref(!!tg)
 
 const authenticateWithBio = async () => {
   if (!bio) return
@@ -76,7 +77,7 @@ const authenticateWithBio = async () => {
         if (res.ok || res.status === 'success') {
           isUnlocked.value = true
           await loadResources()
-          tg.HapticFeedback.notificationOccurred('success')
+          tg?.HapticFeedback?.notificationOccurred('success')
         }
       } catch (e) {
         console.error(e)
@@ -99,7 +100,7 @@ const offerBiometricSetup = () => {
         try {
           // Бэкенд шифрует master_password этим токеном
           await authApi.enableBiometric(initData, {bio_token: bioToken})
-          tg.HapticFeedback.notificationOccurred('success')
+          tg?.HapticFeedback?.notificationOccurred('success')
           tg.showAlert('Биометрия привязана!')
         } catch (e) {
           console.error('Bio enable error:', e)
@@ -118,7 +119,7 @@ const handleUnlock = async () => {
     const res = await authApi.unlockWithPassword(initData, password.value)
     if (res.ok === true) {
       isUnlocked.value = true
-      tg.HapticFeedback.notificationOccurred('success')
+      tg?.HapticFeedback?.notificationOccurred('success')
       await loadResources()
 
       if (isBioSupported.value) {
@@ -146,11 +147,26 @@ const initAuth = async () => {
     }
   } catch (e) {
     console.error('Auth init error:', e)
+  } finally {
+    isBootstrapping.value = false
   }
 }
 
+let authStarted = false
+const startAuth = async () => {
+  if (authStarted) return
+  authStarted = true
+  if (bio?.isInited !== undefined) {
+    isBioSupported.value = bio.isInited && bio.isBiometricAvailable
+  }
+  await initAuth()
+}
+
 onMounted(async () => {
-  if (!tg) return
+  if (!tg) {
+    isBootstrapping.value = false
+    return
+  }
 
   initApp()
 
@@ -171,12 +187,10 @@ onMounted(async () => {
 
   // Инициализация биометрии
   if (bio?.init) {
-    bio.init(async () => {
-      isBioSupported.value = bio.isInited && bio.isBiometricAvailable
-      await initAuth()
-    })
+    bio.init(startAuth)
+    setTimeout(startAuth, 1500)
   } else {
-    await initAuth()
+    await startAuth()
   }
 
   // --- ЗАВЕРШЕНИЕ СЕССИИ ---
@@ -208,6 +222,14 @@ onMounted(async () => {
       <div class="lock-icon">⚠️</div>
       <h2>Safe Manager</h2>
       <p class="lock-hint">Откройте приложение из Telegram или обновите страницу</p>
+    </div>
+  </div>
+
+  <div v-else-if="isBootstrapping" class="lock-screen">
+    <div class="lock-card">
+      <div class="lock-icon">⏳</div>
+      <h2>Safe Manager</h2>
+      <p class="lock-hint">Загрузка...</p>
     </div>
   </div>
 

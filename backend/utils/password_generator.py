@@ -4,15 +4,15 @@ import string
 
 
 def generate_secure_password(length: int = 20) -> str:
-    # alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-    alphabet = string.ascii_letters + string.digits + "!#$%&()*+,-.:;<=>?@[]^_{|}~"
+    special = "-_.@%^+"
+    alphabet = string.ascii_letters + string.digits + special
     while True:
         password = "".join(secrets.choice(alphabet) for _ in range(length))
         if (
             any(c.islower() for c in password)
             and any(c.isupper() for c in password)
             and any(c.isdigit() for c in password)
-            and any(c in "!#$%&()*+,-.:;<=>?@[]^_{|}~" for c in password)
+            and any(c in special for c in password)
         ):
             return password
 
