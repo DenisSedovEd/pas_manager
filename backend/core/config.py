@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,21 +21,33 @@ class DbSettings(Base):
         env_prefix="DB",
     )
 
-    path: str = Field(default="database.sqlite3")
-    dialect: str = Field("sqlite")
-    engine: str = Field("aiosqlite")
+    host: str = Field(...)
+    port: int = Field(5432)
+    name: str = Field(...)
+    user: str = Field(...)
+    password: str = Field(...)
     echo: bool = Field(False)
     future: bool = Field(True)
+    sqlite_path: str = Field(
+        default="accounts.sqlite",
+        description="Путь к файлу SQLite относительно data/ для одноразового переноса",
+    )
 
     @property
-    def url(self):
-        db_path = BASE_DIR / "data" / self.path
-        return f"sqlite+aiosqlite:///{db_path}"
+    def url(self) -> str:
+        """Async URL для приложения (asyncpg)."""
+        return (
+            f"postgresql+asyncpg://{quote_plus(self.user)}:{quote_plus(self.password)}"
+            f"@{self.host}:{self.port}/{self.name}"
+        )
 
     @property
     def sync_url(self) -> str:
-        db_path = BASE_DIR / "data" / self.path
-        return f"sqlite:///{db_path}"
+        """Sync URL для Alembic (psycopg)."""
+        return (
+            f"postgresql+psycopg://{quote_plus(self.user)}:{quote_plus(self.password)}"
+            f"@{self.host}:{self.port}/{self.name}"
+        )
 
 
 class AppSettings(Base):

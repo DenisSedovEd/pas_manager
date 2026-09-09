@@ -1,26 +1,21 @@
 from typing import AsyncGenerator
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.pool import StaticPool
-from backend.models.category import CategoryTable
 
-from sqlalchemy import select
 from backend.core.config import settings
+from backend.models.category import CategoryTable
 
 async_engine: AsyncEngine = create_async_engine(
     settings.db.url,
     echo=settings.db.echo,
     future=settings.db.future,
-    poolclass=StaticPool,
-    connect_args={
-        "timeout": 30,
-        "check_same_thread": False,
-    },
+    pool_pre_ping=True,
 )
 
 async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
@@ -36,14 +31,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db():
-    """Инициализировать БД и создать дефолтные данные"""
-    # async with async_engine.begin() as conn:
-    #     from src.models.base import Base
-    #     await conn.run_sync(Base.metadata.create_all)
-
-    # Создаём дефолтную платформу
+    """Инициализировать БД и создать дефолтные данные."""
     async with async_session() as session:
-
         result = await session.execute(
             select(CategoryTable).where(
                 CategoryTable.category_name == "Other",

@@ -55,7 +55,7 @@ pas_manage/
 ```
 
 **Стек:**
-- 🐍 Python 3.11+ · FastAPI · SQLAlchemy · Alembic · aiosqlite
+- 🐍 Python 3.11+ · FastAPI · SQLAlchemy · Alembic · PostgreSQL (asyncpg)
 - 🎨 Vue 3 · Vite
 - 🐳 Docker · Cloudflare Tunnel
 - 📦 `uv` для управления зависимостями
@@ -74,6 +74,13 @@ cd pas_manage
 ### 2. Создать `.env` файл
 
 ```env
+# PostgreSQL
+DB__HOST=127.0.0.1
+DB__PORT=5432
+DB__NAME=pas_manage
+DB__USER=pas_user
+DB__PASSWORD=change_me
+
 # Telegram
 TG__USER_ID=123456789
 TG__TELEGRAM_TOKEN=your_bot_token_here
@@ -104,6 +111,12 @@ docker compose up -d
 
 | Переменная | Описание |
 |---|---|
+| `DB__HOST` | Хост PostgreSQL |
+| `DB__PORT` | Порт PostgreSQL (по умолчанию 5432) |
+| `DB__NAME` | Имя базы |
+| `DB__USER` | Пользователь БД |
+| `DB__PASSWORD` | Пароль БД |
+| `DB__SQLITE_PATH` | Файл SQLite в `data/` для одноразового переноса |
 | `TG__USER_ID` | Ваш Telegram user ID (только вы имеете доступ) |
 | `TG__TELEGRAM_TOKEN` | Токен бота от [@BotFather](https://t.me/BotFather) |
 | `APP__DELETE_TIMEOUT_SECONDS` | Через сколько секунд удаляются сообщения бота |
@@ -124,6 +137,9 @@ uv sync
 
 # Применить миграции
 uv run alembic upgrade head
+
+# (Опционально) одноразовый перенос данных из SQLite
+uv run python -m scripts.migrate_sqlite_to_postgres
 
 # Запустить API
 uv run python -m main
@@ -167,7 +183,7 @@ npm run dev
 - **Категории** — организация аккаунтов с поддержкой вложенности
 - **Ресурсы** — произвольные зашифрованные заметки
 
-Все чувствительные поля хранятся в зашифрованном виде в SQLite.
+Все чувствительные поля хранятся в зашифрованном виде в PostgreSQL.
 
 ---
 
