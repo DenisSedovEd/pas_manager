@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, ForeignKey, Text
+from sqlalchemy import ForeignKey, Identity, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.models.category import CategoryTable
@@ -11,8 +11,8 @@ class Account(Base):
 
     id: Mapped[int] = mapped_column(
         Integer,
+        Identity(),
         primary_key=True,
-        autoincrement=True,
     )
     category_id: Mapped[str] = mapped_column(
         Text,

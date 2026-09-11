@@ -66,7 +66,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "accounts",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.Integer(), sa.Identity(), nullable=False),
         sa.Column("category_id", sa.Text(), nullable=False),
         sa.Column("resource_id", sa.Text(), nullable=True),
         sa.Column("login", sa.String(), nullable=False),
