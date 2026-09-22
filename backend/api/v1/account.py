@@ -96,7 +96,7 @@ async def create_account(
 
 @router.put("/reorder", response_model=SuccessResponse)
 async def reorder_accounts(
-    payload: list[str],
+    payload: list[int],
     user: dict = Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
 ):

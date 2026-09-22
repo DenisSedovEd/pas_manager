@@ -141,13 +141,13 @@ class AccountService:
 
         return detail
 
-    async def reorder_accounts(self, order_list: list[str]):
-        """Пересортируем список аккаунтов"""
+    async def reorder_accounts(self, order_list: list[int]) -> None:
+        """Пересортировать аккаунты по переданному порядку id."""
         for index, account_id in enumerate(order_list):
             await self.db_repo.update(
                 Account,
-                filters={"id": str(account_id)},
-                values={"order": int(index)},
+                filters={"id": account_id},
+                values={"order": index},
             )
 
     async def update_account(

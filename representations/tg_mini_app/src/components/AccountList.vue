@@ -68,7 +68,7 @@ const refreshAll = async () => {
 const persistOrder = async (categoryId) => {
   const list = getListByCategoryId(categoryId);
   if (!list.length) return;
-  const ids = list.map(a => String(a.id));
+  const ids = list.map(a => Number(a.id));
   await accountApi.reorder(initData, ids);
 };
 
