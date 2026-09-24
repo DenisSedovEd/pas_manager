@@ -80,7 +80,13 @@ const createAndAdd = async () => {
 }
 
 const removeItem = (index) => {
-  items.value.splice(index, 1)
+  const name = items.value[index]?.name || 'поле'
+  tg.showConfirm(
+    `Убрать поле «${name}»? Определение останется в каталоге.`,
+    (confirmed) => {
+      if (confirmed) items.value.splice(index, 1)
+    },
+  )
 }
 
 const toggleReveal = (key) => {
@@ -152,24 +158,42 @@ onMounted(async () => {
         {{ showCreate ? 'Отмена создания' : '+ Создать новое поле' }}
       </button>
       <div v-if="showCreate" class="create-form">
-        <input v-model="newField.name" type="text" class="main-input" placeholder="Название поля" />
-        <label class="check-label">
-          <input v-model="newField.is_required" type="checkbox" />
+        <div class="field-block">
+          <label class="field-label">Название поля</label>
+          <input
+            v-model="newField.name"
+            type="text"
+            class="field-input"
+            placeholder="Название поля"
+          />
+        </div>
+        <button
+          type="button"
+          class="check-chip"
+          :class="{ active: newField.is_required }"
+          @click="newField.is_required = !newField.is_required"
+        >
+          <span class="check-mark">{{ newField.is_required ? '✓' : '' }}</span>
           Обязательное
-        </label>
-        <label class="check-label">
-          <input v-model="newField.is_secret" type="checkbox" />
+        </button>
+        <button
+          type="button"
+          class="check-chip"
+          :class="{ active: newField.is_secret }"
+          @click="newField.is_secret = !newField.is_secret"
+        >
+          <span class="check-mark">{{ newField.is_secret ? '✓' : '' }}</span>
           Как пароль (шифрование и маскировка)
-        </label>
+        </button>
         <button type="button" class="btn-save-sm" @click="createAndAdd">Создать и добавить</button>
       </div>
     </div>
 
     <p v-if="!items.length" class="empty-hint">Кастомные поля не добавлены</p>
 
-    <div v-for="(item, index) in items" :key="item._key" class="input-group">
+    <div v-for="(item, index) in items" :key="item._key" class="field-block">
       <div class="field-label-row">
-        <label>
+        <label class="field-label">
           {{ item.name }}
           <span v-if="item.is_required">*</span>
           <span v-if="item.is_secret" class="secret-tag">секрет</span>
@@ -179,15 +203,21 @@ onMounted(async () => {
       <div v-if="item.is_secret" class="password-row">
         <input
           v-model="item.value"
+          class="field-input"
           :type="revealed[item._key] ? 'text' : 'password'"
-          class="main-input"
           :placeholder="item.name"
         />
         <button type="button" class="toggle-btn" @click="toggleReveal(item._key)">
           {{ revealed[item._key] ? '🔓' : '🔒' }}
         </button>
       </div>
-      <input v-else v-model="item.value" type="text" class="main-input" :placeholder="item.name" />
+      <input
+        v-else
+        v-model="item.value"
+        class="field-input"
+        type="text"
+        :placeholder="item.name"
+      />
     </div>
   </div>
 </template>
@@ -267,30 +297,22 @@ onMounted(async () => {
   flex-direction: column;
   gap: 8px;
 }
-.check-label {
+.field-block {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-label {
   font-size: 13px;
-  color: var(--tg-theme-text-color);
+  color: var(--tg-theme-hint-color);
+  padding-left: 4px;
 }
 .field-label-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
 }
-.field-label-row label {
-  margin: 0;
-  font-size: 13px;
-  color: var(--tg-theme-hint-color);
-}
-.password-row {
-  display: flex;
-  gap: 8px;
-}
-.password-row .main-input { flex: 1; }
-.main-input {
+.field-input {
   width: 100%;
   background: var(--tg-theme-secondary-bg-color);
   border: 1px solid rgba(128, 128, 128, 0.2);
@@ -301,4 +323,50 @@ onMounted(async () => {
   box-sizing: border-box;
   outline: none;
 }
+.field-input:focus {
+  border-color: var(--tg-theme-button-color);
+}
+.field-input::placeholder {
+  color: var(--tg-theme-hint-color);
+}
+.check-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid rgba(128, 128, 128, 0.25);
+  border-radius: 12px;
+  background: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  font-size: 14px;
+  cursor: pointer;
+}
+.check-chip.active {
+  border-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-color);
+}
+.check-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgba(128, 128, 128, 0.35);
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1;
+  flex-shrink: 0;
+  background: var(--tg-theme-secondary-bg-color);
+}
+.check-chip.active .check-mark {
+  border-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-color);
+}
+.password-row {
+  display: flex;
+  gap: 8px;
+}
+.password-row .field-input { flex: 1; }
 </style>

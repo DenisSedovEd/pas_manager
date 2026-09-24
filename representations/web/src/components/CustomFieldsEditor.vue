@@ -12,6 +12,7 @@ const items = ref([])
 const showPicker = ref(false)
 const showCreate = ref(false)
 const revealed = ref({})
+const pendingRemoveIndex = ref(null)
 const newField = ref({
   name: '',
   is_required: false,
@@ -22,6 +23,11 @@ const attachedIds = computed(() => new Set(items.value.map((i) => i.field_id).fi
 const availableCatalog = computed(() =>
   catalog.value.filter((f) => !attachedIds.value.has(f.id)),
 )
+const pendingRemoveName = computed(() => {
+  const idx = pendingRemoveIndex.value
+  if (idx === null || idx < 0 || idx >= items.value.length) return ''
+  return items.value[idx]?.name || ''
+})
 
 const loadCatalog = async () => {
   catalog.value = await customFieldApi.getList()
@@ -76,8 +82,20 @@ const createAndAdd = async () => {
   }
 }
 
-const removeItem = (index) => {
-  items.value.splice(index, 1)
+const requestRemoveItem = (index) => {
+  pendingRemoveIndex.value = index
+}
+
+const cancelRemoveItem = () => {
+  pendingRemoveIndex.value = null
+}
+
+const confirmRemoveItem = () => {
+  const index = pendingRemoveIndex.value
+  if (index !== null && index >= 0) {
+    items.value.splice(index, 1)
+  }
+  pendingRemoveIndex.value = null
 }
 
 const toggleReveal = (key) => {
@@ -149,33 +167,57 @@ onMounted(async () => {
         {{ showCreate ? 'Отмена создания' : '+ Создать новое поле' }}
       </button>
       <div v-if="showCreate" class="create-form">
-        <input v-model="newField.name" type="text" placeholder="Название поля" />
-        <label class="check-label">
-          <input v-model="newField.is_required" type="checkbox" />
+        <div class="field-block">
+          <label class="field-label">Название поля</label>
+          <input
+            v-model="newField.name"
+            type="text"
+            class="field-input"
+            placeholder="Название поля"
+          />
+        </div>
+        <button
+          type="button"
+          class="check-chip"
+          :class="{ active: newField.is_required }"
+          @click="newField.is_required = !newField.is_required"
+        >
+          <span class="check-mark">{{ newField.is_required ? '✓' : '' }}</span>
           Обязательное
-        </label>
-        <label class="check-label">
-          <input v-model="newField.is_secret" type="checkbox" />
+        </button>
+        <button
+          type="button"
+          class="check-chip"
+          :class="{ active: newField.is_secret }"
+          @click="newField.is_secret = !newField.is_secret"
+        >
+          <span class="check-mark">{{ newField.is_secret ? '✓' : '' }}</span>
           Как пароль (шифрование и маскировка)
-        </label>
+        </button>
         <button type="button" class="btn-primary-sm" @click="createAndAdd">Создать и добавить</button>
       </div>
     </div>
 
     <div v-if="!items.length" class="empty-hint">Кастомные поля не добавлены</div>
 
-    <div v-for="(item, index) in items" :key="item._key" class="form-group field-row">
+    <div v-for="(item, index) in items" :key="item._key" class="field-block field-row">
       <div class="field-label-row">
-        <label>
+        <label class="field-label">
           {{ item.name }}
           <span v-if="item.is_required">*</span>
           <span v-if="item.is_secret" class="secret-tag">секрет</span>
         </label>
-        <button type="button" class="remove-btn" title="Убрать" @click="removeItem(index)">✕</button>
+        <button
+          type="button"
+          class="remove-btn"
+          title="Убрать"
+          @click="requestRemoveItem(index)"
+        >✕</button>
       </div>
       <div v-if="item.is_secret" class="password-input-wrap">
         <input
           v-model="item.value"
+          class="field-input"
           :type="revealed[item._key] ? 'text' : 'password'"
           :placeholder="item.name"
         />
@@ -183,7 +225,31 @@ onMounted(async () => {
           {{ revealed[item._key] ? '🔓' : '🔒' }}
         </button>
       </div>
-      <input v-else v-model="item.value" type="text" :placeholder="item.name" />
+      <input
+        v-else
+        v-model="item.value"
+        class="field-input"
+        type="text"
+        :placeholder="item.name"
+      />
+    </div>
+
+    <div
+      v-if="pendingRemoveIndex !== null"
+      class="confirm-backdrop"
+      @click.self="cancelRemoveItem"
+    >
+      <div class="confirm-card" role="alertdialog" aria-labelledby="remove-field-title">
+        <h3 id="remove-field-title">Убрать поле?</h3>
+        <p>
+          Поле «{{ pendingRemoveName }}» будет отвязано от этой записи.
+          Определение останется в каталоге.
+        </p>
+        <div class="confirm-actions">
+          <button type="button" class="btn-danger-sm" @click="confirmRemoveItem">Убрать</button>
+          <button type="button" class="btn-secondary-sm" @click="cancelRemoveItem">Отмена</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -208,12 +274,15 @@ onMounted(async () => {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
+  color: var(--color-text);
 }
 
 .add-btn,
 .create-link,
 .remove-btn,
-.btn-primary-sm {
+.btn-primary-sm,
+.btn-secondary-sm,
+.btn-danger-sm {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
   border-radius: 10px;
@@ -223,13 +292,27 @@ onMounted(async () => {
   font-size: 0.9rem;
 }
 
+.btn-primary-sm:hover,
+.add-btn:hover,
+.create-link:hover,
+.btn-secondary-sm:hover {
+  background: var(--color-hover);
+}
+
+.btn-danger-sm {
+  border-color: var(--color-danger);
+  color: #fff;
+  background: var(--color-danger);
+}
+
 .remove-btn {
   padding: 0.2rem 0.5rem;
   font-size: 0.85rem;
 }
 
 .picker-panel {
-  background: var(--color-hover, rgba(128, 128, 128, 0.12));
+  background: var(--color-hover);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 0.75rem;
   display: flex;
@@ -259,6 +342,10 @@ onMounted(async () => {
   color: var(--color-text);
 }
 
+.catalog-item:hover {
+  background: var(--color-hover);
+}
+
 .badges {
   display: flex;
   gap: 0.35rem;
@@ -267,40 +354,104 @@ onMounted(async () => {
 .badge,
 .secret-tag {
   font-size: 0.7rem;
-  color: var(--color-hint, #888);
+  color: var(--color-hint);
   text-transform: lowercase;
 }
 
 .empty-hint {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--color-hint, #888);
+  color: var(--color-hint);
 }
 
 .create-form {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
-.check-label {
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field-label {
+  font-size: 0.8rem;
+  color: var(--color-hint);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.field-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+.field-input:focus {
+  border-color: var(--color-accent);
+}
+
+.field-input::placeholder {
+  color: var(--color-hint);
+}
+
+.check-chip {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  text-transform: none;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
   color: var(--color-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.check-chip:hover {
+  background: var(--color-hover);
+}
+
+.check-chip.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.check-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 5px;
+  font-size: 0.75rem;
+  line-height: 1;
+  flex-shrink: 0;
+  background: var(--color-hover);
+  color: var(--color-accent);
+}
+
+.check-chip.active .check-mark {
+  border-color: var(--color-accent);
+  background: rgba(97, 175, 239, 0.15);
 }
 
 .field-label-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.35rem;
-}
-
-.field-row label {
-  margin: 0;
 }
 
 .password-input-wrap {
@@ -308,7 +459,7 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
-.password-input-wrap input {
+.password-input-wrap .field-input {
   flex: 1;
 }
 
@@ -320,5 +471,43 @@ onMounted(async () => {
   font-size: 1.1rem;
   cursor: pointer;
   color: var(--color-text);
+}
+
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1100;
+}
+
+.confirm-card {
+  width: min(100%, 420px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.confirm-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: var(--color-text);
+}
+
+.confirm-card p {
+  margin: 0 0 1rem;
+  color: var(--color-hint);
+  line-height: 1.45;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 </style>
