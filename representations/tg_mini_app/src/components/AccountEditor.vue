@@ -5,12 +5,14 @@ import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
 import {iconDisplayLabel} from '../api/customIcon.js';
 import ResourceEditor from './ResourceEditor.vue';
+import CustomFieldsEditor from './CustomFieldsEditor.vue';
 
 const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions']);
 const emit = defineEmits(['save', 'cancel', 'resource-created']);
 const {tg, initData} = useTelegram();
 
 const isLoading = ref(false);
+const customFieldsRef = ref(null);
 const showPassword = ref(false);
 const categories = ref([]);
 const showResourceModal = ref(false);
@@ -164,19 +166,24 @@ const handleSave = async () => {
 };
 
 const executeSave = async () => {
+  if (customFieldsRef.value && !customFieldsRef.value.validate()) return;
   isLoading.value = true;
   tg.MainButton.showProgress(false);
   tg.MainButton.disable();
   try {
+    let saved;
     if (isEditing.value) {
-      await accountApi.update(initData, formData.value.id, formData.value);
+      saved = await accountApi.update(initData, formData.value.id, formData.value);
     } else {
-      await accountApi.create(initData, formData.value);
+      saved = await accountApi.create(initData, formData.value);
+    }
+    if (customFieldsRef.value) {
+      await customFieldsRef.value.save(saved.id);
     }
     tg.HapticFeedback.notificationOccurred('success');
     emit('save');
   } catch (e) {
-    tg.showAlert('Ошибка при сохранении');
+    if (e?.message !== 'validation') tg.showAlert('Ошибка при сохранении');
   } finally {
     isLoading.value = false;
     tg.MainButton.hideProgress();
@@ -336,6 +343,12 @@ const generatePassword = () => {
           </div>
         </div>
       </div>
+
+      <CustomFieldsEditor
+        ref="customFieldsRef"
+        entity-type="account"
+        :entity-id="formData.id"
+      />
 
       <!-- 7. Категория -->
       <div class="input-group" :class="{ 'input-group-error': categoryError }">

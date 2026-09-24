@@ -8,6 +8,7 @@ import {
   isCustomIcon,
 } from '../api/customIcon.js'
 import CategoryIcon from './CategoryIcon.vue'
+import CustomFieldsEditor from './CustomFieldsEditor.vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
 
@@ -15,6 +16,7 @@ const props = defineProps(['category', 'parentCategoryId'])
 const emit = defineEmits(['save', 'cancel'])
 
 const isLoading = ref(false)
+const customFieldsRef = ref(null)
 const showPicker = ref(false)
 const pickerTab = ref('emoji')
 const isEditing = !!props.category?.id
@@ -90,16 +92,22 @@ const parentOptionLabel = (cat) =>
 
 const handleSave = async () => {
   if (!formData.value.name.trim()) { alert('Введи название категории'); return }
+  if (customFieldsRef.value && !customFieldsRef.value.validate()) return
   isLoading.value = true
   try {
+    let saved
     if (isEditing) {
-      await categoryApi.update(formData.value.id, formData.value)
+      saved = await categoryApi.update(formData.value.id, formData.value)
     } else {
-      await categoryApi.create(formData.value)
+      saved = await categoryApi.create(formData.value)
+    }
+    const entityId = saved?.id || formData.value.id
+    if (customFieldsRef.value && entityId) {
+      await customFieldsRef.value.save(entityId)
     }
     emit('save')
-  } catch {
-    alert('Ошибка при сохранении')
+  } catch (err) {
+    if (err?.message !== 'validation') alert('Ошибка при сохранении')
   } finally {
     isLoading.value = false
   }
@@ -225,6 +233,12 @@ onMounted(async () => {
           </option>
         </select>
       </div>
+
+      <CustomFieldsEditor
+        ref="customFieldsRef"
+        entity-type="category"
+        :entity-id="formData.id"
+      />
 
       <div class="form-actions">
         <button class="btn-primary" :disabled="isLoading" @click="handleSave">

@@ -4,6 +4,7 @@ import {useTelegram} from '../composables/useTelegram';
 import {categoryApi} from '../api/category.js';
 import {iconDisplayLabel} from '../api/customIcon.js';
 import CategoryIcon from './CategoryIcon.vue';
+import CustomFieldsEditor from './CustomFieldsEditor.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
 
@@ -13,6 +14,7 @@ const {tg, initData} = useTelegram();
 
 const showPicker = ref(false);
 const isLoading = ref(false);
+const customFieldsRef = ref(null);
 const rootCategories = ref([]);
 
 const formData = ref({
@@ -35,19 +37,25 @@ const handleSave = async () => {
     tg.showAlert("Введите название категории");
     return;
   }
+  if (customFieldsRef.value && !customFieldsRef.value.validate()) return;
   isLoading.value = true;
   tg.MainButton.showProgress(false);
   tg.MainButton.disable();
   try {
+    let saved;
     if (isEditing) {
-      await categoryApi.update(initData, formData.value.id, formData.value);
+      saved = await categoryApi.update(initData, formData.value.id, formData.value);
     } else {
-      await categoryApi.create(initData, formData.value);
+      saved = await categoryApi.create(initData, formData.value);
+    }
+    const entityId = saved?.id || formData.value.id;
+    if (customFieldsRef.value && entityId) {
+      await customFieldsRef.value.save(entityId);
     }
     tg.HapticFeedback.notificationOccurred('success');
     emit('save');
   } catch (e) {
-    tg.showAlert("Ошибка при сохранении");
+    if (e?.message !== 'validation') tg.showAlert("Ошибка при сохранении");
   } finally {
     isLoading.value = false;
     tg.MainButton.hideProgress();
@@ -135,6 +143,12 @@ onUnmounted(() => {
           </option>
         </select>
       </div>
+
+      <CustomFieldsEditor
+        ref="customFieldsRef"
+        entity-type="category"
+        :entity-id="formData.id"
+      />
     </div>
   </div>
 </template>

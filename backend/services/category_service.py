@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.orm import selectinload
 
 from backend.models.category import CategoryTable
+from backend.models.custom_field import CustomFieldValueTable
 from backend.repositories import DatabaseRepository
 from backend.schemas.category import CategoryResponseSchema, CategoryRequestSchema
 
@@ -182,4 +183,12 @@ class CategoryService:
                 values={"category_id": str(other_category.id)},
             )
 
+        await self.db_repo.session.execute(
+            delete(CustomFieldValueTable).where(
+                and_(
+                    CustomFieldValueTable.entity_type == "category",
+                    CustomFieldValueTable.entity_id == category_id,
+                )
+            )
+        )
         await self.db_repo.delete(category)

@@ -4,12 +4,16 @@ import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
 import { resourceApi } from '../api/resource.js'
 import { iconDisplayLabel } from '../api/customIcon.js'
+import CustomFieldsEditor from './CustomFieldsEditor.vue'
+import ResourceEditor from './ResourceEditor.vue'
 
 const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions'])
 const emit = defineEmits(['save', 'cancel', 'resource-created'])
 
 const isLoading = ref(false)
 const showPassword = ref(false)
+const customFieldsRef = ref(null)
+const showResourceModal = ref(false)
 const showCategoryWarning = ref(false)
 const categoryError = ref(false)
 const activeSuggestion = ref(null)
@@ -46,18 +50,16 @@ const handleResourceChange = (e) => {
   }
 }
 
-const addNewResource = async () => {
-  const name = prompt('Название новой площадки:')
-  if (!name?.trim()) return
-  try {
-    const created = await resourceApi.create({ resource_name: name.trim() })
-    localResources.value.push(created)
-    formData.value.resource_id = created.id
-    prevResourceId.value = created.id
-    emit('resource-created', created)
-  } catch {
-    alert('Ошибка создания площадки')
-  }
+const addNewResource = () => {
+  showResourceModal.value = true
+}
+
+const onResourceCreated = (created) => {
+  localResources.value.push(created)
+  formData.value.resource_id = created.id
+  prevResourceId.value = created.id
+  showResourceModal.value = false
+  emit('resource-created', created)
 }
 
 const generatePassword = () => {
@@ -87,16 +89,21 @@ const handleSave = async () => {
     return
   }
   categoryError.value = false
+  if (customFieldsRef.value && !customFieldsRef.value.validate()) return
   isLoading.value = true
   try {
+    let saved
     if (isEditing.value) {
-      await accountApi.update(formData.value.id, formData.value)
+      saved = await accountApi.update(formData.value.id, formData.value)
     } else {
-      await accountApi.create(formData.value)
+      saved = await accountApi.create(formData.value)
+    }
+    if (customFieldsRef.value) {
+      await customFieldsRef.value.save(saved.id)
     }
     emit('save')
-  } catch {
-    alert('Ошибка при сохранении')
+  } catch (err) {
+    if (err?.message !== 'validation') alert('Ошибка при сохранении')
   } finally {
     isLoading.value = false
   }
@@ -275,6 +282,12 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <CustomFieldsEditor
+        ref="customFieldsRef"
+        entity-type="account"
+        :entity-id="formData.id"
+      />
+
       <div class="form-actions">
         <button class="btn-primary" :disabled="isLoading" @click="handleSave">
           {{ isLoading ? 'Сохранение...' : (isEditing ? 'Обновить' : 'Сохранить') }}
@@ -283,6 +296,12 @@ onUnmounted(() => {
         <button class="btn-secondary" @click="$emit('cancel')">Отмена</button>
       </div>
     </div>
+
+    <ResourceEditor
+      v-if="showResourceModal"
+      @save="onResourceCreated"
+      @cancel="showResourceModal = false"
+    />
 
     <div v-if="showCategoryWarning" class="warning-backdrop" @click.self="dismissCategoryWarning">
       <div class="warning-card" role="alertdialog" aria-labelledby="category-warning-title">

@@ -2,11 +2,13 @@
 import {ref} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {resourceApi} from '../api/resource.js';
+import CustomFieldsEditor from './CustomFieldsEditor.vue';
 
 const emit = defineEmits(['save', 'cancel']);
 const {tg, initData} = useTelegram();
 
 const isLoading = ref(false);
+const customFieldsRef = ref(null);
 const formData = ref({
   resource_name: '',
   description: ''
@@ -17,13 +19,17 @@ const handleSave = async () => {
     tg.showAlert('Введите название площадки');
     return;
   }
+  if (customFieldsRef.value && !customFieldsRef.value.validate()) return;
   isLoading.value = true;
   try {
     const created = await resourceApi.create(initData, formData.value);
+    if (customFieldsRef.value) {
+      await customFieldsRef.value.save(created.id);
+    }
     tg.HapticFeedback.notificationOccurred('success');
     emit('save', created);
   } catch (e) {
-    tg.showAlert('Ошибка при сохранении');
+    if (e?.message !== 'validation') tg.showAlert('Ошибка при сохранении');
   } finally {
     isLoading.value = false;
   }
@@ -62,6 +68,12 @@ const handleSave = async () => {
           />
         </div>
       </div>
+
+        <CustomFieldsEditor
+          ref="customFieldsRef"
+          entity-type="resource"
+          :entity-id="null"
+        />
 
       <div class="modal-footer">
         <button class="btn-cancel" @click="emit('cancel')" :disabled="isLoading">

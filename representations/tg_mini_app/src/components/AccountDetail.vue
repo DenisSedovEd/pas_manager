@@ -2,6 +2,7 @@
 import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
+import {customFieldApi} from '../api/customField.js';
 import CategoryIcon from './CategoryIcon.vue';
 
 const props = defineProps(['account', 'resources', 'category']);
@@ -10,6 +11,8 @@ const emit = defineEmits(['edit', 'deleted']);
 const {tg, initData} = useTelegram();
 
 const fullAccount = ref(null);
+const customFields = ref([]);
+const showCustomSecret = ref({});
 
 const resourceName = computed(() => {
   const resourceId = fullAccount.value?.resource_id || props.account?.resource_id;
@@ -27,6 +30,7 @@ const copyStatus = ref({});
 onMounted(async () => {
   try {
     fullAccount.value = await accountApi.getDetail(initData, props.account.id);
+    customFields.value = await customFieldApi.getValues(initData, 'account', props.account.id);
   } catch (error) {
     tg.showAlert("Не удалось загрузить данные");
   } finally {
@@ -162,6 +166,32 @@ const copyToClipboard = async (text, field) => {
             {{ copyStatus['phone'] ? '✅' : '📋' }}
           </div>
         </div>
+
+        <template v-for="field in customFields" :key="field.field_id">
+          <div v-if="field.is_secret" class="info-card password-card">
+            <div class="card-content" @click="copyToClipboard(field.value, field.field_id)">
+              <label>{{ field.name }}</label>
+              <div class="value">{{ showCustomSecret[field.field_id] ? field.value : '••••••••••' }}</div>
+            </div>
+            <div class="card-actions">
+              <button class="toggle-btn" @click.stop="showCustomSecret[field.field_id] = !showCustomSecret[field.field_id]">
+                {{ showCustomSecret[field.field_id] ? '🔓' : '🔒' }}
+              </button>
+              <div class="copy-icon" :class="{ 'copied': copyStatus[field.field_id] }" @click.stop="copyToClipboard(field.value, field.field_id)">
+                {{ copyStatus[field.field_id] ? '✅' : '📋' }}
+              </div>
+            </div>
+          </div>
+          <div v-else class="info-card" @click="copyToClipboard(field.value, field.field_id)">
+            <div class="card-content">
+              <label>{{ field.name }}</label>
+              <div class="value">{{ field.value || '—' }}</div>
+            </div>
+            <div class="copy-icon" :class="{ 'copied': copyStatus[field.field_id] }">
+              {{ copyStatus[field.field_id] ? '✅' : '📋' }}
+            </div>
+          </div>
+        </template>
 
       </div>
     </template>

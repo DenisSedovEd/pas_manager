@@ -8,6 +8,7 @@ from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
 from backend.services.account_service import AccountService
 from backend.services.category_service import CategoryService
+from backend.services.custom_field_service import CustomFieldService
 from backend.services.custom_icon_service import CustomIconService
 from backend.services.resource_service import ResourceService
 
@@ -32,6 +33,14 @@ def get_custom_icon_service(
 ) -> CustomIconService:
     db_repo = DatabaseRepository(session)
     return CustomIconService(db_repo)
+
+
+def get_custom_field_service(
+    session: AsyncSession = Depends(get_session),
+) -> CustomFieldService:
+    db_repo = DatabaseRepository(session)
+    encrypt_repo = EncryptionRepository()
+    return CustomFieldService(db_repo, encrypt_repo)
 
 
 def get_resource_service(

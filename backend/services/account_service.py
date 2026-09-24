@@ -1,4 +1,5 @@
-from sqlalchemy import select, or_
+from sqlalchemy import and_, delete, select, or_
+from cryptography.exceptions import InvalidTag as CryptoInvalidTag
 
 from backend.schemas.account_schema import (
     AccountRequestSchema,
@@ -9,10 +10,10 @@ from backend.schemas.account_schema import (
 )
 from backend.models.account import Account
 from backend.models.category import CategoryTable
+from backend.models.custom_field import CustomFieldValueTable
 from backend.models.resource import ResourceTable
 from backend.repositories import DatabaseRepository
 from backend.repositories.encryption_repository import EncryptionRepository
-from cryptography.exceptions import InvalidTag as CryptoInvalidTag
 
 
 class AccountService:
@@ -205,6 +206,14 @@ class AccountService:
         if not account:
             raise ValueError(f"Account with id {account_id} not found")
 
+        await self.db_repo.session.execute(
+            delete(CustomFieldValueTable).where(
+                and_(
+                    CustomFieldValueTable.entity_type == "account",
+                    CustomFieldValueTable.entity_id == str(account_id),
+                )
+            )
+        )
         await self.db_repo.delete(account)
 
     async def search(self, query: str) -> list[SearchResultItemSchema]:
