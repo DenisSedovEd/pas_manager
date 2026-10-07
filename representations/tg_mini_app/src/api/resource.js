@@ -38,4 +38,20 @@ export const resourceApi = {
         if (!response.ok) throw new Error('Failed to create resource');
         return response.json();
     },
+
+    async update(initData, resourceId, resource) {
+        const response = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': initData,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(resource)
+        });
+        if (!response.ok) {
+            const detail = await response.json().catch(() => null);
+            throw new Error(detail?.detail || 'Failed to update resource');
+        }
+        return response.json();
+    },
 };

@@ -7,7 +7,7 @@ class CustomIconResponseSchema(BaseModel):
     """Метаданные пользовательской иконки."""
 
     id: str
-    key: str = Field(description="Значение для category.icon, например custom:{id}")
+    key: str = Field(description="Значение для category.icon / resource.icon, например custom:{id}")
     label: str | None = None
     content_type: str
     fallback_emoji: str = "📁"

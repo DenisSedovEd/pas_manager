@@ -3,6 +3,7 @@ import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {customFieldApi} from '../api/customField.js';
+import {resolveAccountIcon} from '../api/customIcon.js';
 import CategoryIcon from './CategoryIcon.vue';
 
 const props = defineProps(['account', 'resources', 'category']);
@@ -14,11 +15,17 @@ const fullAccount = ref(null);
 const customFields = ref([]);
 const showCustomSecret = ref({});
 
-const resourceName = computed(() => {
+const currentResource = computed(() => {
   const resourceId = fullAccount.value?.resource_id || props.account?.resource_id;
-  if (!props.resources?.length || !resourceId) return 'Без площадки';
-  return props.resources.find(r => r.id === resourceId)?.resource_name || 'Без площадки';
+  if (!props.resources?.length || !resourceId) return null;
+  return props.resources.find(r => r.id === resourceId) || null;
 });
+
+const resourceName = computed(() => currentResource.value?.resource_name || 'Без площадки');
+
+const displayIcon = computed(() =>
+  resolveAccountIcon(currentResource.value?.icon, props.category?.icon)
+);
 
 const categoryName = computed(() => {
   return props.category?.name || props.category?.category_name || '';
@@ -111,7 +118,7 @@ const copyToClipboard = async (text, field) => {
     <template v-else-if="fullAccount">
       <div class="header-section">
         <div class="account-avatar">
-          <CategoryIcon :icon="props.category?.icon" fallback="👤" size="xl" />
+          <CategoryIcon :icon="displayIcon" fallback="👤" size="xl" />
         </div>
         <h2 class="account-title">{{ resourceName }}<span v-if="categoryName" class="category-tag"> ({{ categoryName }})</span></h2>
         <p class="account-subtitle">{{ fullAccount.label || fullAccount.login }}</p>

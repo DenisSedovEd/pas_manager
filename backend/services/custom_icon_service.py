@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 
 from backend.models.category import CategoryTable
 from backend.models.custom_icon import CustomIconTable
+from backend.models.resource import ResourceTable
 from backend.repositories import DatabaseRepository
 from backend.schemas.custom_icon import CustomIconResponseSchema
 
@@ -20,7 +21,7 @@ DEFAULT_FALLBACK = "📁"
 
 
 class CustomIconService:
-    """CRUD пользовательских иконок категорий."""
+    """CRUD пользовательских иконок (категории и площадки)."""
 
     def __init__(self, db_repo: DatabaseRepository):
         self.db_repo = db_repo
@@ -97,7 +98,7 @@ class CustomIconService:
         return self._to_schema(icon)
 
     async def delete_icon(self, icon_id: str) -> None:
-        """Удалить иконку и заменить её в категориях на fallback."""
+        """Удалить иконку; в категориях — fallback, у площадок — сброс."""
         icon = await self.get_icon(icon_id)
         fallback = icon.fallback_emoji or DEFAULT_FALLBACK
         key = f"custom:{icon_id}"
@@ -107,6 +108,11 @@ class CustomIconService:
             update(CategoryTable)
             .where(CategoryTable.icon == key)
             .values(icon=fallback)
+        )
+        await self.db_repo.session.execute(
+            update(ResourceTable)
+            .where(ResourceTable.icon == key)
+            .values(icon=None)
         )
         await self.db_repo.session.delete(icon)
         await self.db_repo.session.commit()

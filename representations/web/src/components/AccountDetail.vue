@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { accountApi } from '../api/account.js'
 import { customFieldApi } from '../api/customField.js'
+import { resolveAccountIcon } from '../api/customIcon.js'
 import CategoryIcon from './CategoryIcon.vue'
 
 const props = defineProps(['account', 'resources', 'category'])
@@ -14,10 +15,16 @@ const showPassword = ref(false)
 const showCustomSecret = ref({})
 const copyStatus = ref({})
 
-const resourceName = computed(() => {
+const currentResource = computed(() => {
   const rid = fullAccount.value?.resource_id || props.account?.resource_id
-  return props.resources?.find(r => r.id === rid)?.resource_name || '-'
+  return props.resources?.find(r => r.id === rid) || null
 })
+
+const resourceName = computed(() => currentResource.value?.resource_name || '-')
+
+const displayIcon = computed(() =>
+  resolveAccountIcon(currentResource.value?.icon, props.category?.icon)
+)
 
 const copyToClipboard = async (text, field) => {
   if (!text) return
@@ -53,7 +60,7 @@ onMounted(async () => {
 
     <template v-else-if="fullAccount">
       <div class="header-section">
-        <div class="account-avatar"><CategoryIcon :icon="props.category?.icon" fallback="👤" size="xl" /></div>
+        <div class="account-avatar"><CategoryIcon :icon="displayIcon" fallback="👤" size="xl" /></div>
         <h2 class="account-title">
           {{ resourceName }}
           <span v-if="props.category?.name" class="category-tag"> ({{ props.category.name }})</span>

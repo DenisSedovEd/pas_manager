@@ -11,6 +11,7 @@ const AccountList = defineAsyncComponent(() => import('./components/AccountList.
 const AccountDetail = defineAsyncComponent(() => import('./components/AccountDetail.vue'))
 const AccountEditor = defineAsyncComponent(() => import('./components/AccountEditor.vue'))
 const CategoryEditor = defineAsyncComponent(() => import('./components/CategoryEditor.vue'))
+const Settings = defineAsyncComponent(() => import('./components/Settings.vue'))
 
 const {tg, bio, initApp, initData} = useTelegram()
 const resources = ref([])
@@ -24,7 +25,7 @@ const currentProps = computed(() => screenStack.value[screenStack.value.length -
 const loadResources = async () => {
   resources.value = await resourceApi.getList(initData)
   const def = resources.value.find(r => r.resource_name === 'Без площадки')
-  if (def) defaultResourceId.value = def.id
+  defaultResourceId.value = def?.id || resources.value[0]?.id || null
   try {
     suggestions.value = await accountApi.getSuggestions(initData)
   } catch (e) {
@@ -32,6 +33,11 @@ const loadResources = async () => {
   }
 }
 
+const onResourcesUpdated = (updated) => {
+  resources.value = updated
+  const def = updated.find(r => r.resource_name === 'Без площадки')
+  defaultResourceId.value = def?.id || updated[0]?.id || null
+}
 
 const pushScreen = (name, props = {}) => {
   screenStack.value.push({name, props})
@@ -260,6 +266,7 @@ onMounted(async () => {
             }
           }"
           @add-category="pushScreen('category_edit')"
+          @open-settings="pushScreen('settings')"
       />
       <AccountList
           v-if="currentScreen === 'accounts'"
@@ -285,6 +292,11 @@ onMounted(async () => {
           :parentCategoryId="currentProps.parentCategoryId || null"
           @save="popScreen"
           @cancel="popScreen"
+      />
+      <Settings
+          v-if="currentScreen === 'settings'"
+          :resources="resources"
+          @resources-updated="onResourcesUpdated"
       />
     </div>
   </div>

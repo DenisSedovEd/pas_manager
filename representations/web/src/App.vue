@@ -10,6 +10,7 @@ import AccountList from './components/AccountList.vue'
 import AccountDetail from './components/AccountDetail.vue'
 import AccountEditor from './components/AccountEditor.vue'
 import CategoryEditor from './components/CategoryEditor.vue'
+import Settings from './components/Settings.vue'
 
 const { isAuthenticated, logout, checkStatus } = useWebAuth()
 
@@ -18,6 +19,7 @@ const defaultResourceId = ref(null)
 const suggestions = ref({ login: [], email: [], phone: [], label: [] })
 const isAppReady = ref(false)
 const loadError = ref('')
+const showSettings = ref(false)
 
 const selectedCategory = ref(null)
 const selectedAccount = ref(null)
@@ -53,7 +55,23 @@ const loadResources = async () => {
   suggestions.value = loadedSuggestions
 
   const def = loadedResources.find(r => r.resource_name === 'Без площадки')
-  defaultResourceId.value = def?.id || null
+  defaultResourceId.value = def?.id || loadedResources[0]?.id || null
+}
+
+const openSettings = () => {
+  showSettings.value = true
+}
+
+const closeSettings = () => {
+  showSettings.value = false
+}
+
+const onResourcesUpdated = (updated) => {
+  resources.value = updated
+  const def = updated.find(r => r.resource_name === 'Без площадки')
+  defaultResourceId.value = def?.id || updated[0]?.id || null
+  accountListKey.value += 1
+  accountDetailKey.value += 1
 }
 
 const initializeApp = async () => {
@@ -80,6 +98,7 @@ const resetNavigation = () => {
   col2Mode.value = 'list'
   categoryEditorProps.value = {}
   accountEditorProps.value = {}
+  showSettings.value = false
 }
 
 const handleLogout = async () => {
@@ -254,10 +273,25 @@ watch(
           <span class="app-title">🔐 Safe Manager</span>
           <a class="local-link" href="http://192.168.10.1:8000" target="_blank" rel="noopener">local</a>
         </div>
-        <button class="logout-btn" @click="handleLogout">Выйти</button>
+        <div class="header-actions">
+          <button
+            class="settings-btn"
+            title="Настройки"
+            @click="showSettings ? closeSettings() : openSettings()"
+          >⚙️</button>
+          <button class="logout-btn" @click="handleLogout">Выйти</button>
+        </div>
       </header>
 
-      <main class="app-columns-shell">
+      <main v-if="showSettings" class="app-settings-shell">
+        <Settings
+          :resources="resources"
+          @back="closeSettings"
+          @resources-updated="onResourcesUpdated"
+        />
+      </main>
+
+      <main v-else class="app-columns-shell">
         <div class="app-columns">
           <!-- Колонка 1: категории -->
           <section class="app-column">
@@ -395,6 +429,13 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
   background: var(--color-hover);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-btn,
 .logout-btn {
   background: none;
   border: 1.5px solid var(--color-border);
@@ -405,7 +446,22 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
   color: var(--color-text);
 }
 
+.settings-btn {
+  padding: 0.4rem 0.65rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.settings-btn:hover,
 .logout-btn:hover { background: var(--color-hover); }
+
+.app-settings-shell {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
 
 .app-columns-shell {
   flex: 1;

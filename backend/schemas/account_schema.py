@@ -71,3 +71,4 @@ class SearchResultItemSchema(BaseModel):
     parent_category_name: Optional[str] = None
     resource_id: Optional[str] = None
     resource_name: Optional[str] = None
+    resource_icon: Optional[str] = None

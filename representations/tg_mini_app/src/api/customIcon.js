@@ -22,6 +22,10 @@ export const iconDisplayLabel = (icon, fallback = '📁') => {
   return icon
 }
 
+/** Иконка площадки важнее иконки категории. */
+export const resolveAccountIcon = (resourceIcon, categoryIcon) =>
+  resourceIcon || categoryIcon || null
+
 export const customIconApi = {
   async getList(initData) {
     const res = await fetch(`${BASE_URL}/custom-icon/list`, {

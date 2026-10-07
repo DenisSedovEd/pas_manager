@@ -267,6 +267,7 @@ class AccountService:
                     parent_category_name=parent_name,
                     resource_id=resource.id if resource else None,
                     resource_name=resource.resource_name if resource else None,
+                    resource_icon=resource.icon if resource else None,
                 )
             )
 

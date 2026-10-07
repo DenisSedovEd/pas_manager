@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { categoryApi } from '../api/category.js'
 import { accountApi } from '../api/account.js'
-import { iconDisplayLabel } from '../api/customIcon.js'
+import { iconDisplayLabel, resolveAccountIcon } from '../api/customIcon.js'
 import AddItemMenu from './AddItemMenu.vue'
 import CategoryIcon from './CategoryIcon.vue'
 
@@ -115,7 +115,7 @@ onMounted(fetchCategories)
           class="list-item search-item"
           @click="$emit('select-category', { id: result.category_id, name: result.category_name, icon: result.category_icon, _searchAccount: result })"
         >
-          <CategoryIcon class="item-icon" :icon="result.category_icon" fallback="🌐" />
+          <CategoryIcon class="item-icon" :icon="resolveAccountIcon(result.resource_icon, result.category_icon)" fallback="🌐" />
           <div class="item-info">
             <div class="search-breadcrumb">
               <span v-if="result.parent_category_name" class="breadcrumb-part">{{ result.parent_category_name }}</span>

@@ -4,6 +4,7 @@ import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {accountApi} from '../api/account.js';
 import {categoryApi} from '../api/category.js';
+import {resolveAccountIcon} from '../api/customIcon.js';
 import CategoryIcon from './CategoryIcon.vue';
 
 const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
@@ -40,6 +41,9 @@ const onSettingsClick = () => {
 const resourceMap = computed(() =>
     Object.fromEntries(props.resources.map(r => [r.id, r]))
 );
+
+const accountIcon = (account, categoryIcon) =>
+  resolveAccountIcon(resourceMap.value[account.resource_id]?.icon, categoryIcon);
 
 const dragGroup = computed(() => (
     isEditMode.value ? 'accounts' : {name: 'accounts', pull: false, put: false}
@@ -465,7 +469,7 @@ onUnmounted(() => {
                       @mousedown="onMouseDown($event, account)"
                   >
                     <div class="icon-box">
-                      <CategoryIcon :icon="sub.icon" fallback="👤" size="fill" />
+                      <CategoryIcon :icon="accountIcon(account, sub.icon)" fallback="👤" size="fill" />
                     </div>
                     <div class="main-content">
                       <div class="top-row">
@@ -543,7 +547,7 @@ onUnmounted(() => {
                 @mousedown="onMouseDown($event, account)"
             >
               <div class="icon-box">
-                <CategoryIcon :icon="props.category?.icon" fallback="👤" size="fill" />
+                <CategoryIcon :icon="accountIcon(account, props.category?.icon)" fallback="👤" size="fill" />
               </div>
 
               <div class="main-content">

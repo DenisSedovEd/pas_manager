@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import draggable from 'vuedraggable'
 import { accountApi } from '../api/account.js'
 import { categoryApi } from '../api/category.js'
-import { iconDisplayLabel } from '../api/customIcon.js'
+import { iconDisplayLabel, resolveAccountIcon } from '../api/customIcon.js'
 import AddItemMenu from './AddItemMenu.vue'
 import CategoryIcon from './CategoryIcon.vue'
 
@@ -178,6 +178,9 @@ const getResourceName = (account) => {
   return resourceMap.value[account.resource_id]?.resource_name || '-'
 }
 
+const accountIcon = (account, categoryIcon) =>
+  resolveAccountIcon(resourceMap.value[account.resource_id]?.icon, categoryIcon)
+
 const selectAccount = (account, subCategory = null) => {
   if (isEditMode.value) return
   emit('select-account', account, subCategory)
@@ -257,7 +260,7 @@ onMounted(fetchAccounts)
                   @click="selectAccount(acc, sub)"
                 >
                   <span v-if="isEditMode" class="drag-handle">☰</span>
-                  <div class="item-icon-box"><CategoryIcon :icon="sub.icon" fallback="👤" size="lg" /></div>
+                  <div class="item-icon-box"><CategoryIcon :icon="accountIcon(acc, sub.icon)" fallback="👤" size="lg" /></div>
                   <div class="item-info">
                     <div class="item-top-row">
                       <span class="item-resource">{{ getResourceName(acc) }}</span>
@@ -303,7 +306,7 @@ onMounted(fetchAccounts)
             @click="selectAccount(acc)"
           >
             <span v-if="isEditMode" class="drag-handle">☰</span>
-            <div class="item-icon-box"><CategoryIcon :icon="category?.icon" fallback="👤" size="lg" /></div>
+            <div class="item-icon-box"><CategoryIcon :icon="accountIcon(acc, category?.icon)" fallback="👤" size="lg" /></div>
             <div class="item-info">
               <div class="item-top-row">
                 <span class="item-resource">{{ getResourceName(acc) }}</span>

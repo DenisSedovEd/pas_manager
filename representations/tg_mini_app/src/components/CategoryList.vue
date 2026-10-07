@@ -4,10 +4,10 @@ import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import {categoryApi} from '../api/category.js';
 import {accountApi} from '../api/account.js';
-import {iconDisplayLabel} from '../api/customIcon.js';
+import {iconDisplayLabel, resolveAccountIcon} from '../api/customIcon.js';
 import CategoryIcon from './CategoryIcon.vue';
 
-const emit = defineEmits(['select-category', 'add-category']);
+const emit = defineEmits(['select-category', 'add-category', 'open-settings']);
 const {tg, initData} = useTelegram();
 const categories = ref([]);
 const isLoading = ref(true);
@@ -253,6 +253,7 @@ onUnmounted(() => {
   <div class="categories-container">
     <div class="header-actions">
       <h2 class="title">Категории</h2>
+      <button type="button" class="settings-gear" title="Настройки" @click="$emit('open-settings')">⚙️</button>
     </div>
 
     <!-- Поиск -->
@@ -285,7 +286,7 @@ onUnmounted(() => {
             @click="selectSearchResult(result)"
         >
           <div class="icon-box">
-            <CategoryIcon :icon="result.category_icon" fallback="🌐" size="fill" />
+            <CategoryIcon :icon="resolveAccountIcon(result.resource_icon, result.category_icon)" fallback="🌐" size="fill" />
           </div>
           <div class="main-content">
             <div class="search-breadcrumb">
@@ -555,5 +556,14 @@ onUnmounted(() => {
   font-size: 18px;
   font-weight: 700;
   color: var(--tg-theme-text-color);
+}
+
+.settings-gear {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  line-height: 1;
 }
 </style>

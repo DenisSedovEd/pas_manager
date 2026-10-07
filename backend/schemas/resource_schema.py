@@ -11,7 +11,7 @@ class ResourceBaseSchema(BaseModel):
     )
     icon: Optional[str] = Field(
         default=None,
-        description="Icon",
+        description="Иконка площадки (эмодзи или custom:{id}); приоритетнее иконки категории",
     )
 
 
