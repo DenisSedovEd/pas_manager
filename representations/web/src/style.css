@@ -101,6 +101,11 @@
     background: var(--color-hover);
 }
 
+.list-item.active {
+    background: var(--color-hover);
+    box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
 .drag-handle {
     cursor: grab;
     color: var(--color-muted);

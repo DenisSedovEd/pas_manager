@@ -19,19 +19,29 @@ const suggestions = ref({ login: [], email: [], phone: [], label: [] })
 const isAppReady = ref(false)
 const loadError = ref('')
 
-const screenStack = ref([{ name: 'categories' }])
-const currentScreen = computed(() => screenStack.value[screenStack.value.length - 1].name)
-const currentProps = computed(() => screenStack.value[screenStack.value.length - 1].props || {})
+const selectedCategory = ref(null)
+const selectedAccount = ref(null)
+const selectedAccountCategory = ref(null)
+
+const col1Mode = ref('list')
+const col2Mode = ref('list')
+const categoryEditorProps = ref({})
+const accountEditorProps = ref({})
+
+const categoryListKey = ref(0)
+const accountListKey = ref(0)
+const accountDetailKey = ref(0)
+
+const showAccountsColumn = computed(() =>
+  !!selectedCategory.value || col2Mode.value !== 'list'
+)
+const showDetailColumn = computed(() =>
+  !!selectedAccount.value
+  && col2Mode.value === 'list'
+  && !!selectedCategory.value
+)
 
 let initRequestId = 0
-const pushScreen = (name, props = {}) => {
-  screenStack.value.push({ name, props })
-  window.scrollTo(0, 0)
-}
-
-const popScreen = () => {
-  if (screenStack.value.length > 1) screenStack.value.pop()
-}
 
 const loadResources = async () => {
   const [loadedResources, loadedSuggestions] = await Promise.all([
@@ -62,6 +72,16 @@ const initializeApp = async () => {
   }
 }
 
+const resetNavigation = () => {
+  selectedCategory.value = null
+  selectedAccount.value = null
+  selectedAccountCategory.value = null
+  col1Mode.value = 'list'
+  col2Mode.value = 'list'
+  categoryEditorProps.value = {}
+  accountEditorProps.value = {}
+}
+
 const handleLogout = async () => {
   await logout()
   isAppReady.value = false
@@ -69,7 +89,132 @@ const handleLogout = async () => {
   resources.value = []
   defaultResourceId.value = null
   suggestions.value = { login: [], email: [], phone: [], label: [] }
-  screenStack.value = [{ name: 'categories' }]
+  resetNavigation()
+}
+
+const selectCategory = (cat) => {
+  if (col1Mode.value !== 'list') return
+  if (cat._searchAccount) {
+    const category = {
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+    }
+    selectedCategory.value = category
+    selectedAccount.value = { id: cat._searchAccount.account_id }
+    selectedAccountCategory.value = category
+    col2Mode.value = 'list'
+    accountDetailKey.value += 1
+    return
+  }
+  selectedCategory.value = cat
+  selectedAccount.value = null
+  selectedAccountCategory.value = null
+  col2Mode.value = 'list'
+}
+
+const closeAccountsColumn = () => {
+  selectedCategory.value = null
+  selectedAccount.value = null
+  selectedAccountCategory.value = null
+  col2Mode.value = 'list'
+  accountEditorProps.value = {}
+}
+
+const selectAccount = (acc, cat = null) => {
+  if (col2Mode.value !== 'list') return
+  selectedAccount.value = acc
+  selectedAccountCategory.value = cat || selectedCategory.value
+  accountDetailKey.value += 1
+}
+
+const closeDetailColumn = () => {
+  selectedAccount.value = null
+  selectedAccountCategory.value = null
+}
+
+const openCategoryEditorInCol1 = (props = {}) => {
+  categoryEditorProps.value = props
+  col1Mode.value = 'category-editor'
+}
+
+const openCategoryEditorInCol2 = (props = {}) => {
+  categoryEditorProps.value = props
+  col2Mode.value = 'category-editor'
+  selectedAccount.value = null
+  selectedAccountCategory.value = null
+}
+
+const openAccountEditor = (props = {}) => {
+  accountEditorProps.value = props
+  col2Mode.value = 'account-editor'
+  if (!selectedCategory.value && props.currentCategory) {
+    selectedCategory.value = props.currentCategory
+  }
+}
+
+const cancelCategoryEditorCol1 = () => {
+  col1Mode.value = 'list'
+  categoryEditorProps.value = {}
+}
+
+const cancelCategoryEditorCol2 = () => {
+  col2Mode.value = 'list'
+  categoryEditorProps.value = {}
+}
+
+const cancelAccountEditor = () => {
+  col2Mode.value = 'list'
+  accountEditorProps.value = {}
+}
+
+const syncSelectedCategory = (saved) => {
+  if (!saved?.id || !selectedCategory.value) return
+  if (String(saved.id) !== String(selectedCategory.value.id)) return
+  selectedCategory.value = {
+    ...selectedCategory.value,
+    ...saved,
+    name: saved.name ?? selectedCategory.value.name,
+    icon: saved.icon ?? selectedCategory.value.icon,
+    description: saved.description ?? selectedCategory.value.description,
+  }
+}
+
+const onCategorySavedCol1 = (saved) => {
+  syncSelectedCategory(saved)
+  col1Mode.value = 'list'
+  categoryEditorProps.value = {}
+  categoryListKey.value += 1
+  if (selectedCategory.value) {
+    accountListKey.value += 1
+  }
+}
+
+const onCategorySavedCol2 = (saved) => {
+  syncSelectedCategory(saved)
+  col2Mode.value = 'list'
+  categoryEditorProps.value = {}
+  categoryListKey.value += 1
+  accountListKey.value += 1
+}
+
+const onAccountSaved = (payload = {}) => {
+  const editedId = accountEditorProps.value.account?.id || null
+  const wasSelected = editedId && selectedAccount.value?.id === editedId
+  col2Mode.value = 'list'
+  accountEditorProps.value = {}
+  accountListKey.value += 1
+  categoryListKey.value += 1
+  if (payload.deleted || !editedId) {
+    if (wasSelected || !editedId) {
+      selectedAccount.value = null
+      selectedAccountCategory.value = null
+    }
+    return
+  }
+  if (wasSelected) {
+    accountDetailKey.value += 1
+  }
 }
 
 onMounted(async () => {
@@ -112,63 +257,90 @@ watch(
         <button class="logout-btn" @click="handleLogout">Выйти</button>
       </header>
 
-      <main class="app-content">
-        <CategoryList
-          v-if="currentScreen === 'categories'"
-          @select-category="cat => {
-            if (cat._searchAccount) {
-              pushScreen('accounts', { category: cat, categoryId: cat.id })
-              pushScreen('account-detail', { account: { id: cat._searchAccount.account_id }, category: cat })
-            } else {
-              pushScreen('accounts', { category: cat, categoryId: cat.id })
-            }
-          }"
-          @add-category="pushScreen('category-editor', {})"
-          @add-account="pushScreen('account-editor', { resources, defaultResourceId, suggestions })"
-        />
+      <main class="app-columns-shell">
+        <div class="app-columns">
+          <!-- Колонка 1: категории -->
+          <section class="app-column">
+            <CategoryEditor
+              v-if="col1Mode === 'category-editor'"
+              :key="'cat-ed-1-' + (categoryEditorProps.category?.id || 'new')"
+              :category="categoryEditorProps.category"
+              :parent-category-id="categoryEditorProps.parentCategoryId || null"
+              @save="onCategorySavedCol1"
+              @cancel="cancelCategoryEditorCol1"
+            />
+            <CategoryList
+              v-else
+              :key="'cats-' + categoryListKey"
+              :selected-category-id="selectedCategory?.id"
+              @select-category="selectCategory"
+              @add-category="openCategoryEditorInCol1({})"
+              @add-account="openAccountEditor({ resources, defaultResourceId, suggestions })"
+              @category-deleted="id => {
+                if (String(selectedCategory?.id) === String(id)) closeAccountsColumn()
+              }"
+            />
+          </section>
 
-        <AccountList
-          v-else-if="currentScreen === 'accounts'"
-          :key="currentProps.categoryId"
-          :category-id="currentProps.categoryId"
-          :category="currentProps.category"
-          :resources="resources"
-          @go-back="popScreen"
-          @select-account="(acc, cat) => pushScreen('account-detail', { account: acc, category: cat || currentProps.category })"
-          @add-account="pushScreen('account-editor', { currentCategory: currentProps.category, resources, defaultResourceId, suggestions })"
-          @add-category="pushScreen('category-editor', { parentCategoryId: currentProps.categoryId })"
-          @edit-category="cat => pushScreen('category-editor', { category: cat })"
-        />
+          <!-- Колонка 2: аккаунты / редакторы -->
+          <section v-if="showAccountsColumn" class="app-column" :key="'col2-' + (selectedCategory?.id || 'editor')">
+            <AccountEditor
+              v-if="col2Mode === 'account-editor'"
+              :key="'acc-ed-' + (accountEditorProps.account?.id || 'new')"
+              :account="accountEditorProps.account"
+              :current-category="accountEditorProps.currentCategory"
+              :resources="resources"
+              :default-resource-id="defaultResourceId"
+              :suggestions="suggestions"
+              @save="onAccountSaved"
+              @cancel="cancelAccountEditor"
+              @resource-created="r => resources.push(r)"
+            />
+            <CategoryEditor
+              v-else-if="col2Mode === 'category-editor'"
+              :key="'cat-ed-2-' + (categoryEditorProps.category?.id || 'new') + '-' + (categoryEditorProps.parentCategoryId || '')"
+              :category="categoryEditorProps.category"
+              :parent-category-id="categoryEditorProps.parentCategoryId || null"
+              @save="onCategorySavedCol2"
+              @cancel="cancelCategoryEditorCol2"
+            />
+            <AccountList
+              v-else-if="selectedCategory"
+              :key="'accs-' + accountListKey + '-' + selectedCategory.id"
+              :category-id="selectedCategory.id"
+              :category="selectedCategory"
+              :resources="resources"
+              :selected-account-id="selectedAccount?.id"
+              @go-back="closeAccountsColumn"
+              @select-account="selectAccount"
+              @add-account="openAccountEditor({ currentCategory: selectedCategory, resources, defaultResourceId, suggestions })"
+              @add-category="openCategoryEditorInCol2({ parentCategoryId: selectedCategory.id })"
+              @edit-category="cat => {
+                if (String(cat.id) === String(selectedCategory.id)) {
+                  openCategoryEditorInCol1({ category: cat })
+                } else {
+                  openCategoryEditorInCol2({ category: cat })
+                }
+              }"
+              @account-deleted="id => {
+                if (String(selectedAccount?.id) === String(id)) closeDetailColumn()
+              }"
+            />
+          </section>
 
-        <AccountDetail
-          v-else-if="currentScreen === 'account-detail'"
-          :account="currentProps.account"
-          :resources="resources"
-          :category="currentProps.category"
-          @go-back="popScreen"
-          @edit="acc => pushScreen('account-editor', { account: acc, currentCategory: currentProps.category, resources, defaultResourceId, suggestions })"
-          @deleted="popScreen"
-        />
-
-        <AccountEditor
-          v-else-if="currentScreen === 'account-editor'"
-          :account="currentProps.account"
-          :current-category="currentProps.currentCategory"
-          :resources="resources"
-          :default-resource-id="defaultResourceId"
-          :suggestions="suggestions"
-          @save="popScreen"
-          @cancel="popScreen"
-          @resource-created="r => resources.push(r)"
-        />
-
-        <CategoryEditor
-          v-else-if="currentScreen === 'category-editor'"
-          :category="currentProps.category"
-          :parent-category-id="currentProps.parentCategoryId || null"
-          @save="popScreen"
-          @cancel="popScreen"
-        />
+          <!-- Колонка 3: деталь аккаунта -->
+          <section v-if="showDetailColumn" class="app-column">
+            <AccountDetail
+              :key="'det-' + accountDetailKey + '-' + selectedAccount.id"
+              :account="selectedAccount"
+              :resources="resources"
+              :category="selectedAccountCategory || selectedCategory"
+              @go-back="closeDetailColumn"
+              @edit="acc => openAccountEditor({ account: acc, currentCategory: selectedAccountCategory || selectedCategory, resources, defaultResourceId, suggestions })"
+              @deleted="() => { closeDetailColumn(); accountListKey += 1; categoryListKey += 1 }"
+            />
+          </section>
+        </div>
       </main>
     </template>
   </div>
@@ -235,16 +407,47 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 
 .logout-btn:hover { background: var(--color-hover); }
 
-.app-content {
-  background: var(--color-surface);
+.app-columns-shell {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 1rem;
+  overflow-x: auto;
+  min-height: 0;
+}
+
+.app-columns {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  margin: 0 auto;
+}
+
+.app-column {
+  width: 420px;
+  min-width: 320px;
   max-width: 420px;
-  width: 100%;
-  margin: 1rem auto;
+  background: var(--color-surface);
   border: 1px solid var(--color-border-deep);
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 5.5rem);
+  animation: column-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-column > .screen {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@keyframes column-in {
+  from { opacity: 0; transform: translateX(24px) scale(0.98); }
+  to { opacity: 1; transform: none; }
 }
 
 .app-loading {
@@ -281,14 +484,26 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 }
 
 @media (max-width: 720px) {
-  .app-content { margin: 0.5rem; border-radius: 14px; box-shadow: none; }
+  .app-columns-shell { padding: 0.5rem; }
+  .app-column {
+    width: min(92vw, 420px);
+    min-width: min(92vw, 320px);
+    border-radius: 14px;
+    box-shadow: none;
+    max-height: calc(100vh - 4.5rem);
+  }
 }
 </style>
 
 <style scoped>
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 @media (max-width: 640px) {
-  .app-content { margin: 0; border-radius: 0; box-shadow: none; }
+  .app-columns-shell { padding: 0; }
+  .app-columns { gap: 0; }
+  .app-column {
+    border-radius: 0;
+    box-shadow: none;
+    max-height: calc(100vh - 3.5rem);
+  }
 }
 </style>
-

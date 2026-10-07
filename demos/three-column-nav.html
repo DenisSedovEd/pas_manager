@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3-column nav demo — Safe Manager</title>
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+  <style>
+    :root {
+      --color-bg: #282c34;
+      --color-surface: #21252b;
+      --color-hover: #2c313c;
+      --color-border: #3e4451;
+      --color-border-deep: #181a1f;
+      --color-separator: #2c313c;
+      --color-text: #abb2bf;
+      --color-hint: #8f919d;
+      --color-muted: #5c6370;
+      --color-accent: #61afef;
+      --color-title: #e6c07b;
+      --color-danger: #ff3b30;
+      --col-w: 360px;
+      --gap: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+    }
+
+    .demo-banner {
+      text-align: center;
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+      color: var(--color-hint);
+      border-bottom: 1px solid var(--color-border-deep);
+      background: var(--color-surface);
+    }
+    .demo-banner strong { color: var(--color-title); }
+
+    .shell {
+      min-height: calc(100vh - 36px);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 1.25rem;
+      overflow-x: auto;
+    }
+
+    .columns {
+      display: flex;
+      gap: var(--gap);
+      align-items: stretch;
+      justify-content: center;
+      margin: auto 0;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .column {
+      width: var(--col-w);
+      min-width: var(--col-w);
+      max-width: var(--col-w);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-deep);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 90px);
+      overflow: hidden;
+      animation: col-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes col-in {
+      from { opacity: 0; transform: translateX(28px) scale(0.98); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 1rem 1rem 0.75rem;
+      border-bottom: 1px solid var(--color-separator);
+      flex-shrink: 0;
+    }
+    .col-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .col-header .sub {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--color-hint);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    .header-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+    .btn {
+      background: none;
+      border: 1.5px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0.3rem 0.65rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--color-text);
+      transition: background 0.15s;
+    }
+    .btn:hover { background: var(--color-hover); }
+    .btn.primary {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+    .btn.danger {
+      border-color: var(--color-danger);
+      color: var(--color-danger);
+    }
+    .btn.ghost {
+      border: none;
+      color: var(--color-accent);
+      padding: 0.3rem 0.4rem;
+    }
+
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.12s;
+    }
+    .list-item:hover { background: var(--color-hover); }
+    .list-item.active {
+      background: var(--color-hover);
+      border-left-color: var(--color-accent);
+    }
+    .list-item .icon { font-size: 1.4rem; flex-shrink: 0; }
+    .list-item .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .list-item .name { font-size: 0.95rem; font-weight: 500; color: var(--color-text); }
+    .list-item .meta { font-size: 0.75rem; color: var(--color-hint); }
+    .chevron { color: var(--color-muted); font-size: 1.2rem; }
+
+    .empty {
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--color-hint);
+      font-size: 0.9rem;
+    }
+
+    /* ── Редактор внутри колонки ── */
+    .editor {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      animation: fade-in 0.2s ease;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--color-hint);
+      margin-bottom: 0.3rem;
+    }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      color: var(--color-text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      border-color: var(--color-accent);
+    }
+    .field textarea { min-height: 72px; resize: vertical; }
+
+    .editor-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: auto;
+      padding-top: 0.5rem;
+    }
+    .editor-actions .btn { flex: 1; padding: 0.55rem; }
+
+    /* ── Деталь аккаунта ── */
+    .detail {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .detail-card {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+    }
+    .detail-card .label {
+      font-size: 0.7rem;
+      color: var(--color-hint);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+    }
+    .detail-card .value {
+      font-size: 0.95rem;
+      color: var(--color-text);
+      word-break: break-all;
+    }
+    .detail-card .value.secret {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .hint-bar {
+      padding: 0.6rem 1rem;
+      font-size: 0.75rem;
+      color: var(--color-muted);
+      border-top: 1px solid var(--color-separator);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 780px) {
+      :root { --col-w: min(92vw, 360px); }
+      .shell { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="demo-banner">
+      <strong>Demo</strong> — 3 колонки · редактирование внутри колонки элемента · моковые данные · не связано с приложением
+    </div>
+
+    <div class="shell">
+      <div class="columns">
+        <!-- 1. Категории -->
+        <section class="column">
+          <div class="col-header">
+            <h2>Категории</h2>
+            <div class="header-actions">
+              <button
+                v-if="!editingCategory"
+                class="btn primary"
+                @click="startEditCategory(null)"
+                title="Добавить"
+              >+</button>
+            </div>
+          </div>
+
+          <div v-if="editingCategory !== null" class="editor">
+            <div class="field">
+              <label>Иконка</label>
+              <input v-model="catForm.icon" maxlength="4" />
+            </div>
+            <div class="field">
+              <label>Название</label>
+              <input v-model="catForm.name" placeholder="Название категории" autofocus />
+            </div>
+            <div class="field">
+              <label>Описание</label>
+              <textarea v-model="catForm.description" placeholder="Необязательно"></textarea>
+            </div>
+            <div class="editor-actions">
+              <button class="btn" @click="cancelEditCategory">Отмена</button>
+              <button class="btn primary" @click="saveCategory">Сохранить</button>
+            </div>
+          </div>
+
+          <template v-else>
+            <div class="list">
+              <div
+                v-for="cat in categories"
+                :key="cat.id"
+                class="list-item"
+                :class="{ active: selectedCategoryId === cat.id }"
+                @click="selectCategory(cat.id)"
+              >
+                <span class="icon">{{ cat.icon }}</span>
+                <div class="info">
+                  <span class="name">{{ cat.name }}</span>
+                  <span class="meta">{{ accountsOf(cat.id).length }} акк.</span>
+                </div>
+                <button class="btn ghost" @click.stop="startEditCategory(cat)" title="Редактировать">✎</button>
+                <span class="chevron">›</span>
+              </div>
+            </div>
+            <div class="hint-bar">Клик — открыть · ✎ — править в этой колонке</div>
+          </template>
+        </section>
+
+        <!-- 2. Аккаунты -->
+        <section v-if="selectedCategory" class="column" :key="'acc-' + selectedCategoryId">
+          <div class="col-header">
+            <div style="min-width: 0">
+              <h2>
+                <button class="btn ghost" @click="closeAccounts" title="Закрыть">‹</button>
+                {{ selectedCategory.icon }} {{ selectedCategory.name }}
+              </h2>
+              <span class="sub" v-if="selectedCategory.description">{{ selectedCategory.description }}</span>
+            </div>
+            <div class="header-actions" v-if="editingAccount === null">
+              <button class="btn primary" @click="startEditAccount(null)" title="Добавить">+</button>
+            </div>
+          </div>
+
+          <div v-if="editingAccount !== null" class="editor">
+            <div class="field">
+              <label>Логин</label>
+              <input v-model="accForm.login" placeholder="login" autofocus />
+            </div>
+            <div class="field">
+              <label>Пароль</label>
+              <input v-model="accForm.password" type="text" placeholder="••••••••" />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input v-model="accForm.email" placeholder="mail@example.com" />
+            </div>
+            <div class="field">
+              <label>Метка</label>
+              <input v-model="accForm.label" placeholder="например: основной" />
+            </div>
+            <div class="editor-actions">
+              <button class="btn" @click="cancelEditAccount">Отмена</button>
+              <button class="btn primary" @click="saveAccount">Сохранить</button>
+            </div>
+          </div>
+
+          <template v-else>
+            <div v-if="!accountsOf(selectedCategoryId).length" class="empty">
+              Нет аккаунтов. Добавьте первый.
+            </div>
+            <div v-else class="list">
+              <div
+                v-for="acc in accountsOf(selectedCategoryId)"
+                :key="acc.id"
+                class="list-item"
+                :class="{ active: selectedAccountId === acc.id }"
+                @click="selectAccount(acc.id)"
+              >
+                <span class="icon">🔑</span>
+                <div class="info">
+                  <span class="name">{{ acc.login }}</span>
+                  <span class="meta">{{ [acc.label, acc.email].filter(Boolean).join(' · ') || 'без метки' }}</span>
+                </div>
+                <button class="btn ghost" @click.stop="startEditAccount(acc)" title="Редактировать">✎</button>
+                <span class="chevron">›</span>
+              </div>
+            </div>
+            <div class="hint-bar">Редактирование аккаунта — в этой колонке</div>
+          </template>
+        </section>
+
+        <!-- 3. Деталь аккаунта -->
+        <section v-if="selectedAccount && editingAccount === null" class="column" :key="'det-' + selectedAccountId">
+          <div class="col-header">
+            <div style="min-width: 0">
+              <h2>
+                <button class="btn ghost" @click="closeDetail" title="Закрыть">‹</button>
+                Аккаунт
+              </h2>
+              <span class="sub">{{ selectedAccount.login }}</span>
+            </div>
+            <div class="header-actions">
+              <button class="btn" @click="startEditAccount(selectedAccount)">✎ Править</button>
+            </div>
+          </div>
+
+          <div class="detail">
+            <div class="detail-card">
+              <div class="label">Логин</div>
+              <div class="value">{{ selectedAccount.login }}</div>
+            </div>
+            <div class="detail-card">
+              <div class="label">Пароль</div>
+              <div class="value secret">{{ showPassword ? selectedAccount.password : '••••••••••••' }}</div>
+              <button class="btn ghost" style="margin-top: 0.4rem; padding-left: 0" @click="showPassword = !showPassword">
+                {{ showPassword ? 'Скрыть' : 'Показать' }}
+              </button>
+            </div>
+            <div class="detail-card" v-if="selectedAccount.email">
+              <div class="label">Email</div>
+              <div class="value">{{ selectedAccount.email }}</div>
+            </div>
+            <div class="detail-card" v-if="selectedAccount.label">
+              <div class="label">Метка</div>
+              <div class="value">{{ selectedAccount.label }}</div>
+            </div>
+            <div class="detail-card">
+              <div class="label">Категория</div>
+              <div class="value">{{ selectedCategory?.icon }} {{ selectedCategory?.name }}</div>
+            </div>
+          </div>
+          <div class="hint-bar">«Править» откроет форму во 2-й колонке</div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue
+
+    const MOCK_CATEGORIES = [
+      { id: 'c1', icon: '🏦', name: 'Банки', description: 'Карты и онлайн-банки' },
+      { id: 'c2', icon: '🎮', name: 'Игры', description: 'Steam, Epic и т.д.' },
+      { id: 'c3', icon: '📧', name: 'Почта', description: '' },
+      { id: 'c4', icon: '☁️', name: 'Облака', description: 'Google, Dropbox…' },
+      { id: 'c5', icon: '🛒', name: 'Магазины', description: '' },
+    ]
+
+    const MOCK_ACCOUNTS = [
+      { id: 'a1', categoryId: 'c1', login: 'ivan.petrov', password: 'Sber$2024!', email: 'ivan@mail.ru', label: 'основной' },
+      { id: 'a2', categoryId: 'c1', login: 'i.petrov.work', password: 'Tinkoff#88', email: 'ivan@corp.ru', label: 'рабочий' },
+      { id: 'a3', categoryId: 'c2', login: 'gamer_ivan', password: 'steamPass9', email: '', label: 'Steam' },
+      { id: 'a4', categoryId: 'c2', login: 'ivan.epic', password: 'Epic!42', email: 'ivan@mail.ru', label: '' },
+      { id: 'a5', categoryId: 'c3', login: 'ivan@gmail.com', password: 'Gmail*secure', email: 'ivan@gmail.com', label: 'Gmail' },
+      { id: 'a6', categoryId: 'c3', login: 'ivan@yandex.ru', password: 'YaPass11', email: 'ivan@yandex.ru', label: '' },
+      { id: 'a7', categoryId: 'c4', login: 'ivan.drive', password: 'Cloud#77', email: 'ivan@gmail.com', label: 'Google Drive' },
+      { id: 'a8', categoryId: 'c5', login: 'ivan_shop', password: 'Shop2024!', email: 'ivan@mail.ru', label: 'Ozon' },
+    ]
+
+    createApp({
+      setup() {
+        const categories = ref(structuredClone(MOCK_CATEGORIES))
+        const accounts = ref(structuredClone(MOCK_ACCOUNTS))
+
+        const selectedCategoryId = ref(null)
+        const selectedAccountId = ref(null)
+        const showPassword = ref(false)
+
+        // null = не редактируем; объект / { isNew: true } = форма открыта
+        const editingCategory = ref(null)
+        const editingAccount = ref(null)
+        const catForm = ref({ icon: '📁', name: '', description: '' })
+        const accForm = ref({ login: '', password: '', email: '', label: '' })
+
+        const selectedCategory = computed(() =>
+          categories.value.find(c => c.id === selectedCategoryId.value) || null
+        )
+        const selectedAccount = computed(() =>
+          accounts.value.find(a => a.id === selectedAccountId.value) || null
+        )
+
+        const accountsOf = (categoryId) =>
+          accounts.value.filter(a => a.categoryId === categoryId)
+
+        const selectCategory = (id) => {
+          if (editingCategory.value) return
+          selectedCategoryId.value = id
+          selectedAccountId.value = null
+          editingAccount.value = null
+          showPassword.value = false
+        }
+
+        const closeAccounts = () => {
+          selectedCategoryId.value = null
+          selectedAccountId.value = null
+          editingAccount.value = null
+        }
+
+        const selectAccount = (id) => {
+          if (editingAccount.value) return
+          selectedAccountId.value = id
+          showPassword.value = false
+        }
+
+        const closeDetail = () => {
+          selectedAccountId.value = null
+        }
+
+        // ── Category edit ──
+        const startEditCategory = (cat) => {
+          if (cat) {
+            editingCategory.value = cat
+            catForm.value = { icon: cat.icon, name: cat.name, description: cat.description || '' }
+          } else {
+            editingCategory.value = { isNew: true }
+            catForm.value = { icon: '📁', name: '', description: '' }
+          }
+        }
+
+        const cancelEditCategory = () => { editingCategory.value = null }
+
+        const saveCategory = () => {
+          if (!catForm.value.name.trim()) return
+          if (editingCategory.value?.isNew) {
+            const id = 'c' + Date.now()
+            categories.value.push({
+              id,
+              icon: catForm.value.icon || '📁',
+              name: catForm.value.name.trim(),
+              description: catForm.value.description.trim(),
+            })
+            selectedCategoryId.value = id
+            selectedAccountId.value = null
+          } else {
+            const cat = editingCategory.value
+            cat.icon = catForm.value.icon || '📁'
+            cat.name = catForm.value.name.trim()
+            cat.description = catForm.value.description.trim()
+          }
+          editingCategory.value = null
+        }
+
+        // ── Account edit (всегда во 2-й колонке) ──
+        const startEditAccount = (acc) => {
+          if (acc) {
+            editingAccount.value = acc
+            accForm.value = {
+              login: acc.login,
+              password: acc.password,
+              email: acc.email || '',
+              label: acc.label || '',
+            }
+            // деталь скрывается, пока идёт правка (v-if на 3-й колонке)
+          } else {
+            editingAccount.value = { isNew: true }
+            accForm.value = { login: '', password: '', email: '', label: '' }
+            selectedAccountId.value = null
+          }
+        }
+
+        const cancelEditAccount = () => { editingAccount.value = null }
+
+        const saveAccount = () => {
+          if (!accForm.value.login.trim()) return
+          if (editingAccount.value?.isNew) {
+            const id = 'a' + Date.now()
+            const created = {
+              id,
+              categoryId: selectedCategoryId.value,
+              login: accForm.value.login.trim(),
+              password: accForm.value.password,
+              email: accForm.value.email.trim(),
+              label: accForm.value.label.trim(),
+            }
+            accounts.value.push(created)
+            selectedAccountId.value = id
+          } else {
+            const acc = editingAccount.value
+            acc.login = accForm.value.login.trim()
+            acc.password = accForm.value.password
+            acc.email = accForm.value.email.trim()
+            acc.label = accForm.value.label.trim()
+            selectedAccountId.value = acc.id
+          }
+          editingAccount.value = null
+        }
+
+        return {
+          categories,
+          selectedCategoryId,
+          selectedAccountId,
+          selectedCategory,
+          selectedAccount,
+          showPassword,
+          editingCategory,
+          editingAccount,
+          catForm,
+          accForm,
+          accountsOf,
+          selectCategory,
+          closeAccounts,
+          selectAccount,
+          closeDetail,
+          startEditCategory,
+          cancelEditCategory,
+          saveCategory,
+          startEditAccount,
+          cancelEditAccount,
+          saveAccount,
+        }
+      },
+    }).mount('#app')
+  </script>
+</body>
+</html>

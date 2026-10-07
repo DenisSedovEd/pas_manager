@@ -105,7 +105,7 @@ const handleSave = async () => {
     if (customFieldsRef.value && entityId) {
       await customFieldsRef.value.save(entityId)
     }
-    emit('save')
+    emit('save', saved || formData.value)
   } catch (err) {
     if (err?.message !== 'validation') alert('Ошибка при сохранении')
   } finally {

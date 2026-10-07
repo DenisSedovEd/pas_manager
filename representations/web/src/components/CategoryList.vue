@@ -7,7 +7,10 @@ import { iconDisplayLabel } from '../api/customIcon.js'
 import AddItemMenu from './AddItemMenu.vue'
 import CategoryIcon from './CategoryIcon.vue'
 
-const emit = defineEmits(['select-category', 'add-category', 'add-account'])
+const props = defineProps({
+  selectedCategoryId: { type: [String, Number], default: null },
+})
+const emit = defineEmits(['select-category', 'add-category', 'add-account', 'category-deleted'])
 const categories = ref([])
 const isLoading = ref(true)
 const isEditMode = ref(false)
@@ -65,6 +68,7 @@ const deleteCategory = async (category) => {
   try {
     await categoryApi.delete(category.id)
     categories.value = categories.value.filter(c => c.id !== category.id)
+    emit('category-deleted', category.id)
   } catch {
     alert('Ошибка удаления')
   }
@@ -144,7 +148,11 @@ onMounted(fetchCategories)
         class="list"
       >
         <template #item="{ element: cat }">
-          <div class="list-item" @click="!isEditMode && $emit('select-category', cat)">
+          <div
+            class="list-item"
+            :class="{ active: String(props.selectedCategoryId) === String(cat.id) }"
+            @click="!isEditMode && $emit('select-category', cat)"
+          >
             <span v-if="isEditMode" class="drag-handle">☰</span>
             <CategoryIcon class="item-icon" :icon="cat.icon" fallback="📁" />
             <div class="item-info">

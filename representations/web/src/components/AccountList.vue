@@ -11,8 +11,9 @@ const props = defineProps({
   categoryId: String,
   category: Object,
   resources: { type: Array, default: () => [] },
+  selectedAccountId: { type: [String, Number], default: null },
 })
-const emit = defineEmits(['select-account', 'add-account', 'add-category', 'edit-category', 'go-back'])
+const emit = defineEmits(['select-account', 'add-account', 'add-category', 'edit-category', 'go-back', 'account-deleted'])
 
 const accounts = ref([])
 const subcategories = ref([])
@@ -151,6 +152,7 @@ const deleteAccount = async (account, subId = null) => {
     } else {
       accounts.value = accounts.value.filter(a => a.id !== account.id)
     }
+    emit('account-deleted', account.id)
   } catch {
     alert('Ошибка удаления')
   }
@@ -249,7 +251,11 @@ onMounted(fetchAccounts)
               @change="(event) => handleListChange(event, sub.id)"
             >
               <template #item="{ element: acc }">
-                <div class="list-item sub-account-item" @click="selectAccount(acc, sub)">
+                <div
+                  class="list-item sub-account-item"
+                  :class="{ active: String(props.selectedAccountId) === String(acc.id) }"
+                  @click="selectAccount(acc, sub)"
+                >
                   <span v-if="isEditMode" class="drag-handle">☰</span>
                   <div class="item-icon-box"><CategoryIcon :icon="sub.icon" fallback="👤" size="lg" /></div>
                   <div class="item-info">
@@ -291,7 +297,11 @@ onMounted(fetchAccounts)
         @change="(event) => handleListChange(event, categoryId)"
       >
         <template #item="{ element: acc }">
-          <div class="list-item" @click="selectAccount(acc)">
+          <div
+            class="list-item"
+            :class="{ active: String(props.selectedAccountId) === String(acc.id) }"
+            @click="selectAccount(acc)"
+          >
             <span v-if="isEditMode" class="drag-handle">☰</span>
             <div class="item-icon-box"><CategoryIcon :icon="category?.icon" fallback="👤" size="lg" /></div>
             <div class="item-info">

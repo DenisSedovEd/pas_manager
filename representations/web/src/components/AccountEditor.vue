@@ -101,7 +101,7 @@ const handleSave = async () => {
     if (customFieldsRef.value) {
       await customFieldsRef.value.save(saved.id)
     }
-    emit('save')
+    emit('save', { deleted: false })
   } catch (err) {
     if (err?.message !== 'validation') alert('Ошибка при сохранении')
   } finally {
@@ -113,7 +113,7 @@ const handleDelete = async () => {
   if (!confirm('Удалить этот аккаунт?')) return
   try {
     await accountApi.delete(formData.value.id)
-    emit('save')
+    emit('save', { deleted: true })
   } catch {
     alert('Ошибка удаления')
   }
