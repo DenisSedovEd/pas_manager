@@ -20,19 +20,19 @@ RUN npm run build
 
 # --- СТАДИЯ 3: СБОРКА (PYTHON) ---
 FROM docker.io/python:3.14-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:0.12.11 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_CACHE_DIR=/root/.cache/pip
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
 
-RUN python -m venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
+COPY pyproject.toml uv.lock ./
 
-COPY pyproject.toml ./
-
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -c "import subprocess, tomllib; deps=tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']; subprocess.check_call(['pip', 'install', *deps])"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project \
+    && /app/.venv/bin/python -c "import greenlet; from sqlalchemy.ext.asyncio import AsyncSession"
 
 
 # --- СТАДИЯ 4: ВЫПОЛНЕНИЕ (RUNTIME) ---
@@ -40,7 +40,6 @@ FROM docker.io/python:3.14-slim AS runtime
 WORKDIR /app
 RUN mkdir -p /app/data
 
-#COPY --from=builder /src/.venv/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /app/.venv /app/.venv
 COPY . .
 
