@@ -54,4 +54,16 @@ export const resourceApi = {
         }
         return response.json();
     },
+
+    async delete(initData, resourceId) {
+        const response = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+            method: 'DELETE',
+            headers: {'Authorization': initData}
+        });
+        if (!response.ok) {
+            const detail = await response.json().catch(() => null);
+            throw new Error(detail?.detail || 'Failed to delete resource');
+        }
+        return response.json();
+    },
 };

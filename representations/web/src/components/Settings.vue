@@ -117,6 +117,10 @@ const deleteCustom = async (icon, event) => {
   }
 }
 
+const isDefaultResource = computed(
+  () => editing.value?.resource_name === 'Без площадки'
+)
+
 const handleSave = async () => {
   if (!formData.value.resource_name.trim()) {
     alert('Введи название площадки')
@@ -143,6 +147,27 @@ const handleSave = async () => {
   }
 }
 
+const handleDelete = async () => {
+  if (isDefaultResource.value) {
+    alert('Нельзя удалить системную площадку «Без площадки»')
+    return
+  }
+  if (!confirm(
+    `Удалить площадку «${formData.value.resource_name}»?\nАккаунты будут перенесены на «Без площадки».`
+  )) return
+  isLoading.value = true
+  try {
+    await resourceApi.delete(formData.value.id)
+    localResources.value = localResources.value.filter((r) => r.id !== formData.value.id)
+    emit('resources-updated', localResources.value)
+    editing.value = null
+  } catch (err) {
+    alert(err.message || 'Ошибка при удалении')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 watch(() => props.resources, syncLocal, { deep: true })
 
 onMounted(async () => {
@@ -163,7 +188,7 @@ onMounted(async () => {
     </div>
 
     <template v-if="!editing">
-      <p class="section-hint">Площадки — переименование и иконка. Аккаунты остаются привязанными.</p>
+      <p class="section-hint">Площадки — переименование, иконка и удаление. При удалении аккаунты переносятся на «Без площадки».</p>
       <div v-if="!localResources.length" class="empty">Нет площадок</div>
       <div v-else class="list">
         <div
@@ -277,6 +302,15 @@ onMounted(async () => {
         </button>
         <button class="btn-secondary" @click="cancelEdit">Отмена</button>
       </div>
+      <button
+        v-if="!isDefaultResource"
+        type="button"
+        class="btn-danger"
+        :disabled="isLoading"
+        @click="handleDelete"
+      >
+        Удалить площадку
+      </button>
     </div>
   </div>
 </template>
@@ -603,5 +637,22 @@ onMounted(async () => {
   background: var(--color-hover);
   color: var(--color-text);
   border: 1px solid var(--color-border);
+}
+
+.btn-danger {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid var(--color-danger, #e5484d);
+  background: transparent;
+  color: var(--color-danger, #e5484d);
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 </style>

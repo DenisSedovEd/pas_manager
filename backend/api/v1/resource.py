@@ -6,6 +6,7 @@ from backend.schemas.resource_schema import (
     ResourceResponseSchema,
     ResourceRequestSchema,
 )
+from backend.schemas.response_schema import MessageResponse
 from backend.services.resource_service import ResourceService
 
 router = APIRouter(prefix="/resource")
@@ -58,6 +59,20 @@ async def update_resource(
     _require_open_locker(user)
     try:
         return await service.update_resource(resource_id, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.delete("/{resource_id}", response_model=MessageResponse)
+async def delete_resource(
+    resource_id: str,
+    user: dict = Depends(get_current_user),
+    service: ResourceService = Depends(get_resource_service),
+) -> MessageResponse:
+    _require_open_locker(user)
+    try:
+        await service.delete_resource(resource_id)
+        return MessageResponse(message="Resource deleted")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 

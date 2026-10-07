@@ -1,11 +1,17 @@
 import uuid
 
+from sqlalchemy import and_, delete, update
+
+from backend.models.account import Account
+from backend.models.custom_field import CustomFieldValueTable
 from backend.models.resource import ResourceTable
 from backend.repositories import DatabaseRepository
 from backend.schemas.resource_schema import (
     ResourceResponseSchema,
     ResourceRequestSchema,
 )
+
+DEFAULT_RESOURCE_NAME = "Без площадки"
 
 
 class ResourceService:
@@ -101,3 +107,57 @@ class ResourceService:
             description=data.description,
             icon=data.icon,
         )
+
+    async def _get_or_create_default(self) -> ResourceTable:
+        """Системная площадка для аккаунтов без явной привязки."""
+        default = await self.db_repo.get(
+            ResourceTable,
+            filters={"resource_name": DEFAULT_RESOURCE_NAME},
+        )
+        if default:
+            return default
+        default = ResourceTable(
+            id=str(uuid.uuid4()),
+            resource_name=DEFAULT_RESOURCE_NAME,
+            description="По умолчанию",
+            icon=None,
+        )
+        await self.db_repo.add(default)
+        return default
+
+    async def delete_resource(self, resource_id: str) -> None:
+        """Удалить площадку; аккаунты переносятся на «Без площадки»."""
+        resource = await self.db_repo.get(
+            ResourceTable,
+            filters={"id": resource_id},
+        )
+        if not resource:
+            raise ValueError(f"Resource with id {resource_id} not found")
+
+        if resource.resource_name == DEFAULT_RESOURCE_NAME:
+            raise ValueError("Нельзя удалить системную площадку «Без площадки»")
+
+        default = await self._get_or_create_default()
+        if default.id == resource_id:
+            raise ValueError("Нельзя удалить системную площадку «Без площадки»")
+
+        session = self.db_repo.session
+        await session.execute(
+            update(Account)
+            .where(Account.resource_id == resource_id)
+            .values(resource_id=default.id)
+        )
+        await session.execute(
+            delete(CustomFieldValueTable).where(
+                and_(
+                    CustomFieldValueTable.entity_type == "resource",
+                    CustomFieldValueTable.entity_id == resource_id,
+                )
+            )
+        )
+        # SQL-delete, чтобы cascade ORM не затронул аккаунты в сессии
+        await session.execute(
+            delete(ResourceTable).where(ResourceTable.id == resource_id)
+        )
+        await session.commit()
+        await session.expire_all()

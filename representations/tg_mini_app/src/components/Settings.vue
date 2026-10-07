@@ -38,6 +38,10 @@ const selectedCustomId = computed(() => {
   return formData.value.icon.slice('custom:'.length);
 });
 
+const isDefaultResource = computed(
+  () => editing.value?.resource_name === 'Без площадки'
+);
+
 const syncLocal = () => {
   localResources.value = [...props.resources].sort((a, b) =>
     (a.resource_name || '').localeCompare(b.resource_name || '', 'ru')
@@ -156,6 +160,34 @@ const handleSave = async () => {
   }
 };
 
+const handleDelete = () => {
+  if (!editing.value || isDefaultResource.value) {
+    tg.showAlert('Нельзя удалить системную площадку «Без площадки»');
+    return;
+  }
+  const name = formData.value.resource_name;
+  tg.showConfirm(
+    `Удалить площадку «${name}»? Аккаунты будут перенесены на «Без площадки».`,
+    async (ok) => {
+      if (!ok) return;
+      isLoading.value = true;
+      try {
+        await resourceApi.delete(initData, formData.value.id);
+        localResources.value = localResources.value.filter(
+          (r) => r.id !== formData.value.id
+        );
+        emit('resources-updated', localResources.value);
+        tg.HapticFeedback.notificationOccurred('success');
+        cancelEdit();
+      } catch (err) {
+        tg.showAlert(err.message || 'Ошибка при удалении');
+      } finally {
+        isLoading.value = false;
+      }
+    }
+  );
+};
+
 onMounted(async () => {
   syncLocal();
   tg.MainButton.hide();
@@ -177,7 +209,7 @@ onUnmounted(() => {
   <div class="settings-container">
     <template v-if="!editing">
       <h2 class="title">Площадки</h2>
-      <p class="section-hint">Переименование и иконка. Аккаунты остаются привязанными.</p>
+      <p class="section-hint">Переименование, иконка и удаление. При удалении аккаунты переносятся на «Без площадки».</p>
       <div v-if="!localResources.length" class="empty-state">Нет площадок</div>
       <div v-else class="list">
         <div
@@ -281,6 +313,15 @@ onUnmounted(() => {
         <input v-model="formData.description" type="text" class="main-input" placeholder="Краткое описание"/>
       </div>
       <button type="button" class="cancel-btn" @click="cancelEdit">Отмена</button>
+      <button
+          v-if="!isDefaultResource"
+          type="button"
+          class="delete-btn"
+          :disabled="isLoading"
+          @click="handleDelete"
+      >
+        Удалить площадку
+      </button>
     </div>
   </div>
 </template>
@@ -536,5 +577,22 @@ onUnmounted(() => {
   color: var(--tg-theme-text-color);
   font-size: 0.95rem;
   cursor: pointer;
+}
+
+.delete-btn {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.7rem;
+  border-radius: 10px;
+  border: 1px solid #e5484d;
+  background: transparent;
+  color: #e5484d;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.delete-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 </style>
