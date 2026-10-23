@@ -1,28 +1,49 @@
-import { createApp, defineAsyncComponent } from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
 
 const app = createApp(App)
 
-app.config.errorHandler = (error) => {
-  console.error('Mini app error:', error)
-  const root = document.getElementById('app')
-  if (root) {
-    root.innerHTML = `
-      <div style="padding:24px;font-family:sans-serif;text-align:center">
-        <p style="font-size:32px;margin:0 0 12px">⚠️</p>
-        <p style="margin:0 0 8px;font-weight:600">Ошибка загрузки</p>
-        <p style="margin:0;color:#888;font-size:14px">${error?.message || error}</p>
-      </div>
-    `
-  }
+// Экран ошибки имеет смысл только до того, как приложение отрисовалось.
+// После монтирования единичная асинхронная ошибка не должна стирать рабочий UI
+// (иначе, например, сбой биометрии уносит с собой и вход по паролю).
+let isMounted = false
+
+const showBootstrapError = (error) => {
+    console.error('Mini app error:', error)
+    if (isMounted) return
+
+    const root = document.getElementById('app')
+    if (!root) return
+
+    root.replaceChildren()
+    const box = document.createElement('div')
+    box.style.cssText = 'padding:24px;font-family:sans-serif;text-align:center'
+
+    const icon = document.createElement('p')
+    icon.style.cssText = 'font-size:32px;margin:0 0 12px'
+    icon.textContent = '⚠️'
+
+    const title = document.createElement('p')
+    title.style.cssText = 'margin:0 0 8px;font-weight:600'
+    title.textContent = 'Ошибка загрузки'
+
+    const detail = document.createElement('p')
+    detail.style.cssText = 'margin:0;color:#888;font-size:14px'
+    detail.textContent = error?.message || String(error)
+
+    box.append(icon, title, detail)
+    root.append(box)
 }
 
+app.config.errorHandler = showBootstrapError
+
 window.addEventListener('error', (event) => {
-  app.config.errorHandler(event.error || new Error(event.message))
+    showBootstrapError(event.error || new Error(event.message))
 })
 
 window.addEventListener('unhandledrejection', (event) => {
-  app.config.errorHandler(event.reason || new Error('Unhandled promise rejection'))
+    showBootstrapError(event.reason || new Error('Unhandled promise rejection'))
 })
 
 app.mount('#app')
+isMounted = true

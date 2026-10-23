@@ -79,20 +79,41 @@ const authenticateWithBio = async () => {
     return
   }
 
-  bio.authenticate({reason: 'Вход в Safe Manager'}, async (success, token) => {
-    if (success) {
-      try {
-        const res = await authApi.unlockWithBiometric(token)
-        if (res.ok || res.status === 'success') {
-          isUnlocked.value = true
-          await loadResources()
-          tg?.HapticFeedback?.notificationOccurred('success')
+  // Telegram бросает BiometricAccessNotGranted, если доступ не выдан или отозван.
+  // Любая ошибка здесь — не повод ронять приложение: остаёмся на экране пароля.
+  const runAuthenticate = () => {
+    try {
+      bio.authenticate({reason: 'Вход в Safe Manager'}, async (success, token) => {
+        if (!success) return
+        try {
+          const res = await authApi.unlockWithBiometric(token)
+          if (res.ok || res.status === 'success') {
+            isUnlocked.value = true
+            await loadResources()
+            tg?.HapticFeedback?.notificationOccurred('success')
+          }
+        } catch (e) {
+          console.error('Bio unlock error:', e)
         }
-      } catch (e) {
-        console.error(e)
-      }
+      })
+    } catch (e) {
+      console.error('Bio authenticate error:', e)
     }
-  })
+  }
+
+  if (bio.isAccessGranted) {
+    runAuthenticate()
+    return
+  }
+
+  // Доступа нет — просим его; откажут, значит просто вход по паролю
+  try {
+    bio.requestAccess({reason: 'Вход в Safe Manager'}, (granted) => {
+      if (granted) runAuthenticate()
+    })
+  } catch (e) {
+    console.error('Bio access request error:', e)
+  }
 }
 
 const offerBiometricSetup = () => {
