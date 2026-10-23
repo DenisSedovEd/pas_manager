@@ -1,15 +1,15 @@
-const BASE_URL = '/pas-manager/v1';
+import { BASE_URL, apiFetch } from './client.js';
 
 export const authApi = {
   async getStatus(initData) {
-    const response = await fetch(`${BASE_URL}/main/auth/status`, {
+    const response = await apiFetch(`${BASE_URL}/main/auth/status`, {
       headers: { 'Authorization': initData }
     });
     return response.json();
   },
 
   async unlockWithPassword(initData, masterPassword) {
-    const response = await fetch(`${BASE_URL}/main/auth/unlock`, {
+    const response = await apiFetch(`${BASE_URL}/main/auth/unlock`, {
       method: 'POST',
       headers: {
         'Authorization': initData,
@@ -21,7 +21,7 @@ export const authApi = {
   },
 
   async unlockWithBiometric(initData, bioToken) {
-    const response = await fetch(`${BASE_URL}/main/auth/unlock-biometric`, {
+    const response = await apiFetch(`${BASE_URL}/main/auth/unlock-biometric`, {
       method: 'POST',
       headers: {
         'Authorization': initData,
@@ -33,7 +33,7 @@ export const authApi = {
   },
 
   async logout(initData) {
-    const response = await fetch(`${BASE_URL}/main/auth/logout`, {
+    const response = await apiFetch(`${BASE_URL}/main/auth/logout`, {
       method: 'POST',
       headers: { 'Authorization': initData }
     });
@@ -41,14 +41,14 @@ export const authApi = {
   },
 
   async getBioSettings(initData) {
-    const response = await fetch(`${BASE_URL}/main/auth/bio-settings`, {
+    const response = await apiFetch(`${BASE_URL}/main/auth/bio-settings`, {
       headers: { 'Authorization': initData }
     });
     return response.json();
   },
 
   async enableBiometric(initData, payload) {
-    const response = await fetch(`${BASE_URL}/main/auth/enable-biometric`, {
+    const response = await apiFetch(`${BASE_URL}/main/auth/enable-biometric`, {
       method: 'POST',
       headers: {
         'Authorization': initData,

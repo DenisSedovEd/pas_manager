@@ -1,8 +1,8 @@
-const BASE_URL = '/pas-manager/v1'
+import { BASE_URL, apiFetch } from './client.js';
 
 export const customFieldApi = {
   async getList(initData) {
-    const response = await fetch(`${BASE_URL}/custom-field/list`, {
+    const response = await apiFetch(`${BASE_URL}/custom-field/list`, {
       headers: { Authorization: initData },
     })
     if (!response.ok) throw new Error('Failed to fetch custom fields')
@@ -10,7 +10,7 @@ export const customFieldApi = {
   },
 
   async create(initData, field) {
-    const response = await fetch(`${BASE_URL}/custom-field`, {
+    const response = await apiFetch(`${BASE_URL}/custom-field`, {
       method: 'POST',
       headers: {
         Authorization: initData,
@@ -26,7 +26,7 @@ export const customFieldApi = {
   },
 
   async getValues(initData, entityType, entityId) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${BASE_URL}/custom-field/values/${entityType}/${entityId}`,
       { headers: { Authorization: initData } },
     )
@@ -35,7 +35,7 @@ export const customFieldApi = {
   },
 
   async replaceValues(initData, entityType, entityId, fields) {
-    const response = await fetch(
+    const response = await apiFetch(
       `${BASE_URL}/custom-field/values/${entityType}/${entityId}`,
       {
         method: 'PUT',

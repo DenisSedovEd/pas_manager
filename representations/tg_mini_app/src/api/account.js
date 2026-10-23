@@ -1,8 +1,8 @@
-const BASE_URL = '/pas-manager/v1';
+import { BASE_URL, apiFetch } from './client.js';
 
 export const accountApi = {
     async getList(initData, categoryId) {
-        const response = await fetch(`${BASE_URL}/account/list/${categoryId}`, {
+        const response = await apiFetch(`${BASE_URL}/account/list/${categoryId}`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch accounts');
@@ -10,7 +10,7 @@ export const accountApi = {
     },
 
     async getDetail(initData, accountId) {
-        const response = await fetch(`${BASE_URL}/account/${accountId}`, {
+        const response = await apiFetch(`${BASE_URL}/account/${accountId}`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch account');
@@ -18,7 +18,7 @@ export const accountApi = {
     },
 
     async create(initData, account) {
-        const response = await fetch(`${BASE_URL}/account`, {
+        const response = await apiFetch(`${BASE_URL}/account`, {
             method: 'POST',
             headers: {
                 'Authorization': initData,
@@ -39,7 +39,7 @@ export const accountApi = {
     },
 
     async reorder(initData, orderList) {
-        const response = await fetch(`${BASE_URL}/account/reorder`, {
+        const response = await apiFetch(`${BASE_URL}/account/reorder`, {
             method: 'PUT',
             headers: {
                 'Authorization': initData,
@@ -57,7 +57,7 @@ export const accountApi = {
 
 
     async update(initData, accountId, account) {
-        const response = await fetch(`${BASE_URL}/account/${accountId}`, {
+        const response = await apiFetch(`${BASE_URL}/account/${accountId}`, {
             method: 'PUT',
             headers: {
                 'Authorization': initData,
@@ -78,7 +78,7 @@ export const accountApi = {
     },
 
     async delete(initData, accountId) {
-        const response = await fetch(`${BASE_URL}/account/${accountId}`, {
+        const response = await apiFetch(`${BASE_URL}/account/${accountId}`, {
             method: 'DELETE',
             headers: {'Authorization': initData}
         });
@@ -87,7 +87,7 @@ export const accountApi = {
     },
 
     async getSuggestions(initData) {
-        const response = await fetch(`${BASE_URL}/account/suggestions`, {
+        const response = await apiFetch(`${BASE_URL}/account/suggestions`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch suggestions');
@@ -95,7 +95,7 @@ export const accountApi = {
     },
 
     async search(initData, query) {
-        const response = await fetch(`${BASE_URL}/account/search?q=${encodeURIComponent(query)}`, {
+        const response = await apiFetch(`${BASE_URL}/account/search?q=${encodeURIComponent(query)}`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to search');

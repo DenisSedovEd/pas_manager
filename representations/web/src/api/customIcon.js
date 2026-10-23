@@ -1,4 +1,4 @@
-import { BASE_URL } from './client.js'
+import { BASE_URL, apiFetch } from './client.js'
 
 const CUSTOM_PREFIX = 'custom:'
 
@@ -28,7 +28,7 @@ export const resolveAccountIcon = (resourceIcon, categoryIcon) =>
 
 export const customIconApi = {
   async getList() {
-    const res = await fetch(`${BASE_URL}/custom-icon/list`, {
+    const res = await apiFetch(`${BASE_URL}/custom-icon/list`, {
       credentials: 'include',
     })
     if (!res.ok) throw new Error('Failed to fetch custom icons')
@@ -40,7 +40,7 @@ export const customIconApi = {
     body.append('file', file)
     if (label) body.append('label', label)
     body.append('fallback_emoji', fallbackEmoji)
-    const res = await fetch(`${BASE_URL}/custom-icon`, {
+    const res = await apiFetch(`${BASE_URL}/custom-icon`, {
       method: 'POST',
       credentials: 'include',
       body,
@@ -53,7 +53,7 @@ export const customIconApi = {
   },
 
   async delete(iconId) {
-    const res = await fetch(`${BASE_URL}/custom-icon/${iconId}`, {
+    const res = await apiFetch(`${BASE_URL}/custom-icon/${iconId}`, {
       method: 'DELETE',
       credentials: 'include',
     })

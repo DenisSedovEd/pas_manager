@@ -1,8 +1,8 @@
-import { BASE_URL } from './client.js'
+import { BASE_URL, apiFetch } from './client.js'
 
 export const accountApi = {
     async getList(categoryId) {
-        const res = await fetch(`${BASE_URL}/account/list/${categoryId}`, {
+        const res = await apiFetch(`${BASE_URL}/account/list/${categoryId}`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch accounts')
@@ -10,7 +10,7 @@ export const accountApi = {
     },
 
     async getDetail(accountId) {
-        const res = await fetch(`${BASE_URL}/account/${accountId}`, {
+        const res = await apiFetch(`${BASE_URL}/account/${accountId}`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch account')
@@ -18,7 +18,7 @@ export const accountApi = {
     },
 
     async create(account) {
-        const res = await fetch(`${BASE_URL}/account`, {
+        const res = await apiFetch(`${BASE_URL}/account`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -37,7 +37,7 @@ export const accountApi = {
     },
 
     async update(accountId, account) {
-        const res = await fetch(`${BASE_URL}/account/${accountId}`, {
+        const res = await apiFetch(`${BASE_URL}/account/${accountId}`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -56,7 +56,7 @@ export const accountApi = {
     },
 
     async delete(accountId) {
-        const res = await fetch(`${BASE_URL}/account/${accountId}`, {
+        const res = await apiFetch(`${BASE_URL}/account/${accountId}`, {
             method: 'DELETE',
             credentials: 'include',
         })
@@ -65,7 +65,7 @@ export const accountApi = {
     },
 
     async reorder(orderList) {
-        const res = await fetch(`${BASE_URL}/account/reorder`, {
+        const res = await apiFetch(`${BASE_URL}/account/reorder`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -76,7 +76,7 @@ export const accountApi = {
     },
 
     async getSuggestions() {
-        const res = await fetch(`${BASE_URL}/account/suggestions`, {
+        const res = await apiFetch(`${BASE_URL}/account/suggestions`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch suggestions')
@@ -84,7 +84,7 @@ export const accountApi = {
     },
 
     async search(query) {
-        const res = await fetch(`${BASE_URL}/account/search?q=${encodeURIComponent(query)}`, {
+        const res = await apiFetch(`${BASE_URL}/account/search?q=${encodeURIComponent(query)}`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to search')

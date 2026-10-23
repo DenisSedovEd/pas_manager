@@ -5,6 +5,7 @@ import {useTelegram} from './composables/useTelegram'
 import {authApi} from './api/auth.js'
 import {resourceApi} from './api/resource.js'
 import {accountApi} from './api/account.js'
+import {setSessionExpiredHandler} from './api/client.js'
 
 const CategoryList = defineAsyncComponent(() => import('./components/CategoryList.vue'))
 const AccountList = defineAsyncComponent(() => import('./components/AccountList.vue'))
@@ -62,6 +63,12 @@ const password = ref('')
 const isBioSupported = ref(false)
 const isAuthLoading = ref(false)
 const isBootstrapping = ref(!!tg)
+
+setSessionExpiredHandler(() => {
+  isUnlocked.value = false
+  password.value = ''
+  screenStack.value = [{name: 'menu'}]
+})
 
 const authenticateWithBio = async () => {
   if (!bio) return

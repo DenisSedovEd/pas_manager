@@ -1,8 +1,8 @@
-import { BASE_URL } from './client.js'
+import { BASE_URL, apiFetch } from './client.js'
 
 export const resourceApi = {
     async getList() {
-        const res = await fetch(`${BASE_URL}/resource/list`, {
+        const res = await apiFetch(`${BASE_URL}/resource/list`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch resources')
@@ -10,7 +10,7 @@ export const resourceApi = {
     },
 
     async getDetail(resourceId) {
-        const res = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+        const res = await apiFetch(`${BASE_URL}/resource/${resourceId}`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch resource')
@@ -18,7 +18,7 @@ export const resourceApi = {
     },
 
     async create(resource) {
-        const res = await fetch(`${BASE_URL}/resource`, {
+        const res = await apiFetch(`${BASE_URL}/resource`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -29,7 +29,7 @@ export const resourceApi = {
     },
 
     async update(resourceId, resource) {
-        const res = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+        const res = await apiFetch(`${BASE_URL}/resource/${resourceId}`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -43,7 +43,7 @@ export const resourceApi = {
     },
 
     async delete(resourceId) {
-        const res = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+        const res = await apiFetch(`${BASE_URL}/resource/${resourceId}`, {
             method: 'DELETE',
             credentials: 'include',
         })

@@ -1,8 +1,8 @@
-import { BASE_URL } from './client.js'
+import { BASE_URL, apiFetch } from './client.js'
 
 export const customFieldApi = {
   async getList() {
-    const res = await fetch(`${BASE_URL}/custom-field/list`, {
+    const res = await apiFetch(`${BASE_URL}/custom-field/list`, {
       credentials: 'include',
     })
     if (!res.ok) throw new Error('Failed to fetch custom fields')
@@ -10,7 +10,7 @@ export const customFieldApi = {
   },
 
   async create(field) {
-    const res = await fetch(`${BASE_URL}/custom-field`, {
+    const res = await apiFetch(`${BASE_URL}/custom-field`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -24,7 +24,7 @@ export const customFieldApi = {
   },
 
   async getValues(entityType, entityId) {
-    const res = await fetch(
+    const res = await apiFetch(
       `${BASE_URL}/custom-field/values/${entityType}/${entityId}`,
       { credentials: 'include' },
     )
@@ -33,7 +33,7 @@ export const customFieldApi = {
   },
 
   async replaceValues(entityType, entityId, fields) {
-    const res = await fetch(
+    const res = await apiFetch(
       `${BASE_URL}/custom-field/values/${entityType}/${entityId}`,
       {
         method: 'PUT',

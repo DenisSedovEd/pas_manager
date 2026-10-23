@@ -1,6 +1,11 @@
 import { ref, computed } from 'vue'
+import { setSessionExpiredHandler } from '../api/client.js'
 
 const authenticated = ref(false)
+
+setSessionExpiredHandler(() => {
+    authenticated.value = false
+})
 
 export function useWebAuth() {
     const isAuthenticated = computed(() => authenticated.value)

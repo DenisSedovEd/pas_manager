@@ -1,4 +1,4 @@
-const BASE_URL = '/pas-manager/v1';
+import { BASE_URL, apiFetch } from './client.js';
 
 const asList = (payload) => (Array.isArray(payload) ? payload : payload?.data || []);
 
@@ -18,7 +18,7 @@ const flattenCategories = async (getRoots, getChildren) => {
 
 export const categoryApi = {
     async getList(initData) {
-        const response = await fetch(`${BASE_URL}/category/list`, {
+        const response = await apiFetch(`${BASE_URL}/category/list`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch categories');
@@ -26,7 +26,7 @@ export const categoryApi = {
     },
 
     async getAll(initData) {
-        const response = await fetch(`${BASE_URL}/category/all`, {
+        const response = await apiFetch(`${BASE_URL}/category/all`, {
             headers: {'Authorization': initData}
         });
         if (response.ok) return response.json();
@@ -38,7 +38,7 @@ export const categoryApi = {
     },
 
     async getChildren(initData, categoryId) {
-        const response = await fetch(`${BASE_URL}/category/${categoryId}/children`, {
+        const response = await apiFetch(`${BASE_URL}/category/${categoryId}/children`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch children');
@@ -46,7 +46,7 @@ export const categoryApi = {
     },
 
     async getDetail(initData, categoryId) {
-        const response = await fetch(`${BASE_URL}/category/${categoryId}`, {
+        const response = await apiFetch(`${BASE_URL}/category/${categoryId}`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch category');
@@ -54,7 +54,7 @@ export const categoryApi = {
     },
 
     async create(initData, category) {
-        const response = await fetch(`${BASE_URL}/category`, {
+        const response = await apiFetch(`${BASE_URL}/category`, {
             method: 'POST',
             headers: {
                 'Authorization': initData,
@@ -67,7 +67,7 @@ export const categoryApi = {
     },
 
     async update(initData, categoryId, category) {
-        const response = await fetch(`${BASE_URL}/category/${categoryId}`, {
+        const response = await apiFetch(`${BASE_URL}/category/${categoryId}`, {
             method: 'PUT',
             headers: {
                 'Authorization': initData,
@@ -80,7 +80,7 @@ export const categoryApi = {
     },
 
     async reorder(initData, orderList) {
-        const response = await fetch(`${BASE_URL}/category/reorder`, {
+        const response = await apiFetch(`${BASE_URL}/category/reorder`, {
             method: 'PUT',
             headers: {
                 'Authorization': initData,
@@ -93,7 +93,7 @@ export const categoryApi = {
     },
 
     async delete(initData, categoryId, transfer = true) {
-        const response = await fetch(`${BASE_URL}/category/${categoryId}?transfer=${transfer}`, {
+        const response = await apiFetch(`${BASE_URL}/category/${categoryId}?transfer=${transfer}`, {
             method: 'DELETE',
             headers: {'Authorization': initData}
         });

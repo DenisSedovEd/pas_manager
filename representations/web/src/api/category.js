@@ -1,4 +1,4 @@
-import { BASE_URL } from './client.js'
+import { BASE_URL, apiFetch } from './client.js'
 
 const asList = (payload) => (Array.isArray(payload) ? payload : payload?.data || [])
 
@@ -18,7 +18,7 @@ const flattenCategories = async (getRoots, getChildren) => {
 
 export const categoryApi = {
     async getList() {
-        const res = await fetch(`${BASE_URL}/category/list`, {
+        const res = await apiFetch(`${BASE_URL}/category/list`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch categories')
@@ -26,7 +26,7 @@ export const categoryApi = {
     },
 
     async getAll() {
-        const res = await fetch(`${BASE_URL}/category/all`, {
+        const res = await apiFetch(`${BASE_URL}/category/all`, {
             credentials: 'include',
         })
         if (res.ok) return res.json()
@@ -38,7 +38,7 @@ export const categoryApi = {
     },
 
     async getDetail(categoryId) {
-        const res = await fetch(`${BASE_URL}/category/${categoryId}`, {
+        const res = await apiFetch(`${BASE_URL}/category/${categoryId}`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch category')
@@ -46,7 +46,7 @@ export const categoryApi = {
     },
 
     async create(category) {
-        const res = await fetch(`${BASE_URL}/category`, {
+        const res = await apiFetch(`${BASE_URL}/category`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -57,7 +57,7 @@ export const categoryApi = {
     },
 
     async update(categoryId, category) {
-        const res = await fetch(`${BASE_URL}/category/${categoryId}`, {
+        const res = await apiFetch(`${BASE_URL}/category/${categoryId}`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -68,7 +68,7 @@ export const categoryApi = {
     },
 
     async reorder(orderList) {
-        const res = await fetch(`${BASE_URL}/category/reorder`, {
+        const res = await apiFetch(`${BASE_URL}/category/reorder`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -79,7 +79,7 @@ export const categoryApi = {
     },
 
     async getChildren(categoryId) {
-        const res = await fetch(`${BASE_URL}/category/${categoryId}/children`, {
+        const res = await apiFetch(`${BASE_URL}/category/${categoryId}/children`, {
             credentials: 'include',
         })
         if (!res.ok) throw new Error('Failed to fetch children')
@@ -87,7 +87,7 @@ export const categoryApi = {
     },
 
     async delete(categoryId, transfer = true) {
-        const res = await fetch(`${BASE_URL}/category/${categoryId}?transfer=${transfer}`, {
+        const res = await apiFetch(`${BASE_URL}/category/${categoryId}?transfer=${transfer}`, {
             method: 'DELETE',
             credentials: 'include',
         })

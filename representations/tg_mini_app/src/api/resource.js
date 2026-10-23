@@ -1,8 +1,8 @@
-const BASE_URL = '/pas-manager/v1';
+import { BASE_URL, apiFetch } from './client.js';
 
 export const resourceApi = {
     async getList(initData) {
-        const response = await fetch(`${BASE_URL}/resource/list`, {
+        const response = await apiFetch(`${BASE_URL}/resource/list`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch resources');
@@ -10,7 +10,7 @@ export const resourceApi = {
     },
 
     async getByName(initData, name) {
-        const response = await fetch(
+        const response = await apiFetch(
             `${BASE_URL}/resource/by-name/${encodeURIComponent(name)}`,
             {headers: {'Authorization': initData}}
         );
@@ -19,7 +19,7 @@ export const resourceApi = {
     },
 
     async getDetail(initData, resourceId) {
-        const response = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+        const response = await apiFetch(`${BASE_URL}/resource/${resourceId}`, {
             headers: {'Authorization': initData}
         });
         if (!response.ok) throw new Error('Failed to fetch resource');
@@ -27,7 +27,7 @@ export const resourceApi = {
     },
 
     async create(initData, resource) {
-        const response = await fetch(`${BASE_URL}/resource`, {
+        const response = await apiFetch(`${BASE_URL}/resource`, {
             method: 'POST',
             headers: {
                 'Authorization': initData,
@@ -40,7 +40,7 @@ export const resourceApi = {
     },
 
     async update(initData, resourceId, resource) {
-        const response = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+        const response = await apiFetch(`${BASE_URL}/resource/${resourceId}`, {
             method: 'PUT',
             headers: {
                 'Authorization': initData,
@@ -56,7 +56,7 @@ export const resourceApi = {
     },
 
     async delete(initData, resourceId) {
-        const response = await fetch(`${BASE_URL}/resource/${resourceId}`, {
+        const response = await apiFetch(`${BASE_URL}/resource/${resourceId}`, {
             method: 'DELETE',
             headers: {'Authorization': initData}
         });
