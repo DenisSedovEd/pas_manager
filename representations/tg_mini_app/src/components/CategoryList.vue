@@ -2,13 +2,11 @@
 import {ref, watch, onMounted, onUnmounted, computed} from 'vue';
 import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
-import {categoryApi} from '../api/category.js';
-import {accountApi} from '../api/account.js';
-import {iconDisplayLabel, resolveAccountIcon} from '../api/customIcon.js';
+import { accountApi, categoryApi, iconDisplayLabel, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 
 const emit = defineEmits(['select-category', 'add-category', 'open-settings']);
-const {tg, initData} = useTelegram();
+const { tg } = useTelegram();
 const categories = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
@@ -34,7 +32,7 @@ const runSearch = async () => {
   if (!searchQuery.value.trim()) return;
   isSearching.value = true;
   try {
-    searchResults.value = await accountApi.search(initData, searchQuery.value.trim());
+    searchResults.value = await accountApi.search(searchQuery.value.trim());
   } catch (e) {
     tg.showAlert('Ошибка поиска');
   } finally {
@@ -89,9 +87,7 @@ watch(searchMode, (val) => {
 });
 
 // ── Swipe logic ───────────────────────────────────────────────────────────────
-const mouseSwipeCategory = ref(null);
-
-const swipeStart = (clientX, clientY, category, target) => {
+const swipeStart =(clientX, clientY, category, target) => {
   if (!isEditMode.value) return;
   if (target.closest('.drag-handle')) return;
   const wrapper = target.closest('.swipe-wrapper');
@@ -153,11 +149,9 @@ const onTouchEnd = (e, category) => swipeEnd(category);
 const onMouseDown = (e, category) => {
   if (e.button !== 0) return;
   swipeStart(e.clientX, e.clientY, category, e.target);
-  mouseSwipeCategory.value = category;
   const onMMove = (ev) => swipeMove(ev.clientX, ev.clientY, category, ev);
   const onMUp = () => {
     swipeEnd(category);
-    mouseSwipeCategory.value = null;
     document.removeEventListener('mousemove', onMMove);
     document.removeEventListener('mouseup', onMUp);
   };
@@ -186,7 +180,7 @@ const onDragStart = () => {
 // ── API ───────────────────────────────────────────────────────────────────────
 const fetchCategories = async () => {
   try {
-    const response = await categoryApi.getList(initData);
+    const response = await categoryApi.getList();
     categories.value = response.data || response;
   } catch (e) {
     tg.showAlert('Ошибка загрузки');
@@ -197,7 +191,7 @@ const handleReorder = async () => {
   tg.HapticFeedback.impactOccurred('medium');
   try {
     const ids = categories.value.map(p => String(p.id));
-    await categoryApi.reorder(initData, ids);
+    await categoryApi.reorder(ids);
   } catch (e) {
     tg.showAlert('Ошибка сохранения порядка');
     await fetchCategories();
@@ -206,7 +200,7 @@ const handleReorder = async () => {
 
 const deleteCategory = async (category) => {
   try {
-    await categoryApi.delete(initData, category.id);
+    await categoryApi.delete(category.id);
     categories.value = categories.value.filter(p => p.id !== category.id);
     tg.HapticFeedback.notificationOccurred('success');
   } catch (e) {

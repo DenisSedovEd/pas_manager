@@ -11,8 +11,11 @@ ENV
 .env
 
 # Exclude local Node.js dependencies from build context
+# (воркспейс поднимает зависимости в representations/node_modules)
+representations/node_modules
 representations/web/node_modules
 representations/tg_mini_app/node_modules
+representations/*/dist
 
 # Exclude local frontend builds (built inside Docker via multi-stage)
 static/

@@ -1,15 +1,13 @@
 <script setup>
 import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import {accountApi} from '../api/account.js';
-import {customFieldApi} from '../api/customField.js';
-import {resolveAccountIcon} from '../api/customIcon.js';
+import { accountApi, customFieldApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 
 const props = defineProps(['account', 'resources', 'category']);
-const emit = defineEmits(['edit', 'deleted']);
+const emit = defineEmits(['edit']);
 
-const {tg, initData} = useTelegram();
+const { tg } = useTelegram();
 
 const fullAccount = ref(null);
 const customFields = ref([]);
@@ -36,8 +34,8 @@ const copyStatus = ref({});
 
 onMounted(async () => {
   try {
-    fullAccount.value = await accountApi.getDetail(initData, props.account.id);
-    customFields.value = await customFieldApi.getValues(initData, 'account', props.account.id);
+    fullAccount.value = await accountApi.getDetail(props.account.id);
+    customFields.value = await customFieldApi.getValues('account', props.account.id);
   } catch (error) {
     tg.showAlert("Не удалось загрузить данные");
   } finally {

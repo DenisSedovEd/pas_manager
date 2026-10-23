@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { resourceApi } from '../api/resource.js'
+import { resourceApi } from '../api.js'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
 
 const emit = defineEmits(['save', 'cancel'])

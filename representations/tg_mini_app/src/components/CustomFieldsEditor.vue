@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useTelegram } from '../composables/useTelegram'
-import { customFieldApi } from '../api/customField.js'
+import { customFieldApi } from '../api.js'
 
 const props = defineProps({
   entityType: { type: String, required: true },
   entityId: { type: [String, Number], default: null },
 })
 
-const { tg, initData } = useTelegram()
+const { tg } = useTelegram()
 
 const catalog = ref([])
 const items = ref([])
@@ -27,7 +27,7 @@ const availableCatalog = computed(() =>
 )
 
 const loadCatalog = async () => {
-  catalog.value = await customFieldApi.getList(initData)
+  catalog.value = await customFieldApi.getList()
 }
 
 const loadValues = async () => {
@@ -35,7 +35,7 @@ const loadValues = async () => {
     items.value = []
     return
   }
-  const values = await customFieldApi.getValues(initData, props.entityType, props.entityId)
+  const values = await customFieldApi.getValues(props.entityType, props.entityId)
   items.value = values.map((v) => ({
     field_id: v.field_id,
     name: v.name,
@@ -65,7 +65,7 @@ const createAndAdd = async () => {
     return
   }
   try {
-    const created = await customFieldApi.create(initData, {
+    const created = await customFieldApi.create({
       name,
       is_required: newField.value.is_required,
       is_secret: newField.value.is_secret,
@@ -113,7 +113,7 @@ const save = async (entityId) => {
   if (!validate()) throw new Error('validation')
   const id = entityId ?? props.entityId
   if (!id) throw new Error('entityId required')
-  return customFieldApi.replaceValues(initData, props.entityType, id, buildPayload())
+  return customFieldApi.replaceValues(props.entityType, id, buildPayload())
 }
 
 defineExpose({ save, validate, buildPayload })

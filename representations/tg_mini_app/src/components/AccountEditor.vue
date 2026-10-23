@@ -1,15 +1,13 @@
 <script setup>
 import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import {accountApi} from '../api/account.js';
-import {categoryApi} from '../api/category.js';
-import {iconDisplayLabel} from '../api/customIcon.js';
+import { accountApi, categoryApi, iconDisplayLabel } from '../api.js'
 import ResourceEditor from './ResourceEditor.vue';
 import CustomFieldsEditor from './CustomFieldsEditor.vue';
 
 const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions']);
 const emit = defineEmits(['save', 'cancel', 'resource-created']);
-const {tg, initData} = useTelegram();
+const { tg } = useTelegram();
 
 const isLoading = ref(false);
 const customFieldsRef = ref(null);
@@ -91,7 +89,7 @@ const categoryLabel = (category) => {
 
 onMounted(async () => {
   try {
-    const response = await categoryApi.getAll(initData);
+    const response = await categoryApi.getAll();
     categories.value = (response.data || response).map(c => ({ ...c, id: String(c.id) }));
   } catch (e) {
     tg.showAlert('Ошибка загрузки категорий');
@@ -173,9 +171,9 @@ const executeSave = async () => {
   try {
     let saved;
     if (isEditing.value) {
-      saved = await accountApi.update(initData, formData.value.id, formData.value);
+      saved = await accountApi.update(formData.value.id, formData.value);
     } else {
-      saved = await accountApi.create(initData, formData.value);
+      saved = await accountApi.create(formData.value);
     }
     if (customFieldsRef.value) {
       await customFieldsRef.value.save(saved.id);
@@ -197,7 +195,7 @@ const handleDelete = () => {
       async (confirmed) => {
         if (!confirmed) return;
         try {
-          await accountApi.delete(initData, formData.value.id);
+          await accountApi.delete(formData.value.id);
           tg.HapticFeedback.notificationOccurred('success');
           emit('save');
         } catch (e) {

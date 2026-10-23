@@ -1,12 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { accountApi } from '../api/account.js'
-import { customFieldApi } from '../api/customField.js'
-import { resolveAccountIcon } from '../api/customIcon.js'
+import { accountApi, customFieldApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue'
 
 const props = defineProps(['account', 'resources', 'category'])
-const emit = defineEmits(['edit', 'deleted', 'go-back'])
+defineEmits(['edit', 'go-back'])
 
 const fullAccount = ref(null)
 const customFields = ref([])

@@ -2,10 +2,8 @@
 import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import {initTelegramClipboard} from "./utils/clipboard"
 import {useTelegram} from './composables/useTelegram'
-import {authApi} from './api/auth.js'
-import {resourceApi} from './api/resource.js'
-import {accountApi} from './api/account.js'
-import {setSessionExpiredHandler} from './api/client.js'
+import { accountApi, pickDefaultResource, resourceApi, setSessionExpiredHandler } from './api.js'
+import { authApi } from './auth.js'
 
 const CategoryList = defineAsyncComponent(() => import('./components/CategoryList.vue'))
 const AccountList = defineAsyncComponent(() => import('./components/AccountList.vue'))
@@ -24,11 +22,10 @@ const currentScreen = computed(() => screenStack.value[screenStack.value.length 
 const currentProps = computed(() => screenStack.value[screenStack.value.length - 1].props || {})
 
 const loadResources = async () => {
-  resources.value = await resourceApi.getList(initData)
-  const def = resources.value.find(r => r.resource_name === 'Без площадки')
-  defaultResourceId.value = def?.id || resources.value[0]?.id || null
+  resources.value = await resourceApi.getList()
+  defaultResourceId.value = pickDefaultResource(resources.value)?.id || null
   try {
-    suggestions.value = await accountApi.getSuggestions(initData)
+    suggestions.value = await accountApi.getSuggestions()
   } catch (e) {
     console.error('Ошибка загрузки suggestions', e)
   }
@@ -36,8 +33,7 @@ const loadResources = async () => {
 
 const onResourcesUpdated = (updated) => {
   resources.value = updated
-  const def = updated.find(r => r.resource_name === 'Без площадки')
-  defaultResourceId.value = def?.id || updated[0]?.id || null
+  defaultResourceId.value = pickDefaultResource(updated)?.id || null
 }
 
 const pushScreen = (name, props = {}) => {
@@ -73,7 +69,7 @@ setSessionExpiredHandler(() => {
 const authenticateWithBio = async () => {
   if (!bio) return
   try {
-    const settings = await authApi.getBioSettings(initData)
+    const settings = await authApi.getBioSettings()
     if (!settings.is_enabled) {
       tg.showAlert('Биометрия ещё не привязана. Войдите по паролю — после входа будет предложена привязка Face ID / Touch ID.')
       return
@@ -86,7 +82,7 @@ const authenticateWithBio = async () => {
   bio.authenticate({reason: 'Вход в Safe Manager'}, async (success, token) => {
     if (success) {
       try {
-        const res = await authApi.unlockWithBiometric(initData, token)
+        const res = await authApi.unlockWithBiometric(token)
         if (res.ok || res.status === 'success') {
           isUnlocked.value = true
           await loadResources()
@@ -112,7 +108,7 @@ const offerBiometricSetup = () => {
         if (!updated) return
         try {
           // Бэкенд шифрует master_password этим токеном
-          await authApi.enableBiometric(initData, {bio_token: bioToken})
+          await authApi.enableBiometric({bio_token: bioToken})
           tg?.HapticFeedback?.notificationOccurred('success')
           tg.showAlert('Биометрия привязана!')
         } catch (e) {
@@ -129,14 +125,14 @@ const handleUnlock = async () => {
   if (!password.value || isAuthLoading.value) return
   isAuthLoading.value = true
   try {
-    const res = await authApi.unlockWithPassword(initData, password.value)
+    const res = await authApi.unlockWithPassword(password.value)
     if (res.ok === true) {
       isUnlocked.value = true
       tg?.HapticFeedback?.notificationOccurred('success')
       await loadResources()
 
       if (isBioSupported.value) {
-        const settings = await authApi.getBioSettings(initData)
+        const settings = await authApi.getBioSettings()
         if (!settings.is_enabled) offerBiometricSetup()
       }
     } else {
@@ -151,11 +147,11 @@ const handleUnlock = async () => {
 
 const initAuth = async () => {
   try {
-    const status = await authApi.getStatus(initData)
+    const status = await authApi.getStatus()
     isUnlocked.value = status.is_unlocked
     if (isUnlocked.value) await loadResources()
     if (!isUnlocked.value && isBioSupported.value) {
-      const settings = await authApi.getBioSettings(initData)
+      const settings = await authApi.getBioSettings()
       if (settings.is_enabled) authenticateWithBio()
     }
   } catch (e) {
@@ -287,8 +283,7 @@ onMounted(async () => {
       <AccountDetail v-if="currentScreen === 'account_detail'" :account="currentProps.account"
                      :resources="resources"
                      :category="currentProps.category"
-                     @edit="(fullAcc) => pushScreen('account_edit', { account: fullAcc, currentCategory: currentProps.category })"
-                     @deleted="popScreen"/>
+                     @edit="(fullAcc) => pushScreen('account_edit', { account: fullAcc, currentCategory: currentProps.category })"/>
       <AccountEditor v-if="currentScreen === 'account_edit'" :account="currentProps.account" :resources="resources"
                      :defaultResourceId="defaultResourceId" :suggestions="suggestions"
                      :currentCategory="currentProps.currentCategory" @save="popScreen" @cancel="popScreen"

@@ -203,6 +203,7 @@ cython_debug/
 
 # Node.js (frontend)
 node_modules/
+representations/node_modules/
 representations/web/node_modules/
 representations/tg_mini_app/node_modules/
 representations/web/dist/

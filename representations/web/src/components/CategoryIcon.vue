@@ -1,10 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import {
-  customIconFileUrl,
-  iconDisplayLabel,
-  isCustomIcon,
-} from '../api/customIcon.js'
+import { customIconFileUrl, iconDisplayLabel, isCustomIcon } from '../api.js'
 
 const props = defineProps({
   icon: { type: String, default: null },

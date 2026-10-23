@@ -1,11 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { resourceApi } from '../api/resource.js'
-import {
-  customIconApi,
-  customIconFileUrl,
-  isCustomIcon,
-} from '../api/customIcon.js'
+import { customIconApi, customIconFileUrl, isCustomIcon, resourceApi } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'

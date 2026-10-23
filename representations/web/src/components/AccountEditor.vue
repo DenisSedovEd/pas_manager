@@ -1,9 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { accountApi } from '../api/account.js'
-import { categoryApi } from '../api/category.js'
-import { resourceApi } from '../api/resource.js'
-import { iconDisplayLabel } from '../api/customIcon.js'
+import { accountApi, categoryApi, iconDisplayLabel, resourceApi } from '../api.js'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
 import ResourceEditor from './ResourceEditor.vue'
 

@@ -1,0 +1,21 @@
+{
+  "name": "pas-manage-representations",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "web",
+    "tg_mini_app"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w web",
+    "dev:tg": "npm run dev -w tg_mini_app",
+    "build": "npm run build -w web && npm run build -w tg_mini_app",
+    "build:web": "npm run build -w web",
+    "build:tg": "npm run build -w tg_mini_app"
+  },
+  "overrides": {
+    "vite": "^8.0.0-beta.13"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@pas/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.25",
+    "vue3-emoji-picker": "^1.1.8"
+  }
+}

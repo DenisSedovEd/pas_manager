@@ -2,13 +2,11 @@
 import {ref, watch, onMounted, onUnmounted, computed} from 'vue';
 import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
-import {accountApi} from '../api/account.js';
-import {categoryApi} from '../api/category.js';
-import {resolveAccountIcon} from '../api/customIcon.js';
+import { accountApi, categoryApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 
 const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
-const {tg, initData} = useTelegram();
+const { tg } = useTelegram();
 
 const accounts = ref([]);
 const subcategories = ref([]);
@@ -73,14 +71,14 @@ const persistOrder = async (categoryId) => {
   const list = getListByCategoryId(categoryId);
   if (!list.length) return;
   const ids = list.map(a => Number(a.id));
-  await accountApi.reorder(initData, ids);
+  await accountApi.reorder(ids);
 };
 
 const moveAccountToCategory = async (account, targetCategoryId) => {
   if (String(account.category_id) === String(targetCategoryId)) return;
 
-  const detail = await accountApi.getDetail(initData, account.id);
-  await accountApi.update(initData, account.id, {
+  const detail = await accountApi.getDetail(account.id);
+  await accountApi.update(account.id, {
     ...detail,
     category_id: String(targetCategoryId),
   });
@@ -136,9 +134,7 @@ watch(isEditMode, async (val) => {
 });
 
 // ── Общая логика свайпа (touch + mouse) ─────────────────────────────────────
-const mouseSwipeAccount = ref(null);
-
-const swipeStart = (clientX, clientY, account, target) => {
+const swipeStart =(clientX, clientY, account, target) => {
   if (!isEditMode.value || isDragging.value) return;
   if (target.closest('.drag-handle')) return;
   const wrapper = target.closest('.swipe-wrapper');
@@ -233,14 +229,12 @@ const onTouchEnd = (e, account) => {
 const onMouseDown = (e, account) => {
   if (e.button !== 0) return;
   swipeStart(e.clientX, e.clientY, account, e.target);
-  mouseSwipeAccount.value = account;
 
   const onMMove = (ev) => {
     swipeMove(ev.clientX, ev.clientY, account, ev);
   };
   const onMUp = () => {
     swipeEnd(account);
-    mouseSwipeAccount.value = null;
     document.removeEventListener('mousemove', onMMove);
     document.removeEventListener('mouseup', onMUp);
   };
@@ -276,8 +270,8 @@ const onDragEnd = () => {
 const fetchAccounts = async () => {
   try {
     const [accountsResp, childrenResp] = await Promise.all([
-      accountApi.getList(initData, props.categoryId),
-      categoryApi.getChildren(initData, props.categoryId),
+      accountApi.getList(props.categoryId),
+      categoryApi.getChildren(props.categoryId),
     ]);
     accounts.value = accountsResp.data || accountsResp;
     subcategories.value = childrenResp.data || childrenResp;
@@ -298,7 +292,7 @@ const expandAllSubcategories = async () => {
 
 const deleteAccount = async (account, subId = null) => {
   try {
-    await accountApi.delete(initData, account.id);
+    await accountApi.delete(account.id);
     if (subId) {
       subAccounts.value = {
         ...subAccounts.value,
@@ -317,7 +311,7 @@ const loadSubAccounts = async (subId, force = false) => {
   if (!force && subAccounts.value[subId]) return;
   subLoadingIds.value = {...subLoadingIds.value, [subId]: true};
   try {
-    const resp = await accountApi.getList(initData, subId);
+    const resp = await accountApi.getList(subId);
     subAccounts.value = {...subAccounts.value, [subId]: resp.data || resp};
   } catch (e) {
     tg.showAlert('Ошибка загрузки аккаунтов подкатегории');

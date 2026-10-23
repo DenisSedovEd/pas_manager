@@ -1,12 +1,7 @@
 <script setup>
 import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import {resourceApi} from '../api/resource.js';
-import {
-  customIconApi,
-  customIconFileUrl,
-  isCustomIcon,
-} from '../api/customIcon.js';
+import { customIconApi, customIconFileUrl, isCustomIcon, resourceApi } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
@@ -15,7 +10,7 @@ const props = defineProps({
   resources: {type: Array, default: () => []},
 });
 const emit = defineEmits(['resources-updated']);
-const {tg, initData} = useTelegram();
+const { tg } = useTelegram();
 
 const localResources = ref([]);
 const editing = ref(null);
@@ -49,7 +44,7 @@ const syncLocal = () => {
 };
 
 const loadCustomIcons = async () => {
-  customIcons.value = await customIconApi.getList(initData);
+  customIcons.value = await customIconApi.getList();
 };
 
 const openEdit = (resource) => {
@@ -97,7 +92,7 @@ const onFileSelected = async (event) => {
   if (!file) return;
   isUploading.value = true;
   try {
-    const created = await customIconApi.upload(initData, file);
+    const created = await customIconApi.upload(file);
     customIcons.value = [created, ...customIcons.value];
     formData.value.icon = created.key;
     showPicker.value = false;
@@ -113,7 +108,7 @@ const deleteCustom = async (icon, event) => {
   tg.showConfirm('Удалить эту иконку?', async (ok) => {
     if (!ok) return;
     try {
-      await customIconApi.delete(initData, icon.id);
+      await customIconApi.delete(icon.id);
       customIcons.value = customIcons.value.filter((item) => item.id !== icon.id);
       if (formData.value.icon === icon.key) {
         formData.value.icon = null;
@@ -138,7 +133,7 @@ const handleSave = async () => {
   tg.MainButton.showProgress(false);
   tg.MainButton.disable();
   try {
-    const updated = await resourceApi.update(initData, formData.value.id, {
+    const updated = await resourceApi.update(formData.value.id, {
       resource_name: formData.value.resource_name.trim(),
       description: formData.value.description || null,
       icon: formData.value.icon || null,
@@ -172,7 +167,7 @@ const handleDelete = () => {
       if (!ok) return;
       isLoading.value = true;
       try {
-        await resourceApi.delete(initData, formData.value.id);
+        await resourceApi.delete(formData.value.id);
         localResources.value = localResources.value.filter(
           (r) => r.id !== formData.value.id
         );

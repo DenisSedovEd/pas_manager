@@ -4,6 +4,10 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: '/tg/',
+  // @pas/shared — воркспейс-пакет; страхуемся от двух копий Vue при hoisting
+  resolve: {
+    dedupe: ['vue'],
+  },
   build: {
     target: ['es2020', 'safari14', 'chrome87'],
   },

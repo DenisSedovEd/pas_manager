@@ -1,8 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useWebAuth } from './composables/useWebAuth.js'
-import { resourceApi } from './api/resource.js'
-import { accountApi } from './api/account.js'
+import { accountApi, pickDefaultResource, resourceApi } from './api.js'
 
 import Login from './components/Login.vue'
 import CategoryList from './components/CategoryList.vue'
@@ -53,9 +52,7 @@ const loadResources = async () => {
 
   resources.value = loadedResources
   suggestions.value = loadedSuggestions
-
-  const def = loadedResources.find(r => r.resource_name === 'Без площадки')
-  defaultResourceId.value = def?.id || loadedResources[0]?.id || null
+  defaultResourceId.value = pickDefaultResource(loadedResources)?.id || null
 }
 
 const openSettings = () => {
@@ -68,8 +65,7 @@ const closeSettings = () => {
 
 const onResourcesUpdated = (updated) => {
   resources.value = updated
-  const def = updated.find(r => r.resource_name === 'Без площадки')
-  defaultResourceId.value = def?.id || updated[0]?.id || null
+  defaultResourceId.value = pickDefaultResource(updated)?.id || null
   accountListKey.value += 1
   accountDetailKey.value += 1
 }
@@ -371,7 +367,6 @@ watch(
               :category="selectedAccountCategory || selectedCategory"
               @go-back="closeDetailColumn"
               @edit="acc => openAccountEditor({ account: acc, currentCategory: selectedAccountCategory || selectedCategory, resources, defaultResourceId, suggestions })"
-              @deleted="() => { closeDetailColumn(); accountListKey += 1; categoryListKey += 1 }"
             />
           </section>
         </div>

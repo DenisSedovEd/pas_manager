@@ -1,11 +1,11 @@
 <script setup>
 import {ref} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import {resourceApi} from '../api/resource.js';
+import { resourceApi } from '../api.js'
 import CustomFieldsEditor from './CustomFieldsEditor.vue';
 
 const emit = defineEmits(['save', 'cancel']);
-const {tg, initData} = useTelegram();
+const { tg } = useTelegram();
 
 const isLoading = ref(false);
 const customFieldsRef = ref(null);
@@ -22,7 +22,7 @@ const handleSave = async () => {
   if (customFieldsRef.value && !customFieldsRef.value.validate()) return;
   isLoading.value = true;
   try {
-    const created = await resourceApi.create(initData, formData.value);
+    const created = await resourceApi.create(formData.value);
     if (customFieldsRef.value) {
       await customFieldsRef.value.save(created.id);
     }

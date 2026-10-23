@@ -1,9 +1,9 @@
 import { ref, computed } from 'vue'
-import { setSessionExpiredHandler } from '../api/client.js'
+import { api } from '../api.js'
 
 const authenticated = ref(false)
 
-setSessionExpiredHandler(() => {
+api.setSessionExpiredHandler(() => {
     authenticated.value = false
 })
 
@@ -11,35 +11,26 @@ export function useWebAuth() {
     const isAuthenticated = computed(() => authenticated.value)
 
     async function login(masterPassword) {
-        const res = await fetch('/pas-manager/v1/web/auth/unlock', {
+        await api.client.request('/web/auth/unlock', {
             method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ master_password: masterPassword }),
+            body: { master_password: masterPassword },
+            errorMessage: 'Неверный пароль',
         })
-        if (!res.ok) {
-            const data = await res.json().catch(() => ({}))
-            throw new Error(data.detail || 'Неверный пароль')
-        }
         authenticated.value = true
     }
 
     async function logout() {
         try {
-            await fetch('/pas-manager/v1/web/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            })
+            await api.client.raw('/web/auth/logout', { method: 'POST' })
         } finally {
             authenticated.value = false
         }
     }
 
+    // До входа ручка отвечает 401 — это нормальный путь, а не ошибка
     async function checkStatus() {
         try {
-            const res = await fetch('/pas-manager/v1/web/auth/status', {
-                credentials: 'include',
-            })
+            const res = await api.client.raw('/web/auth/status')
             if (!res.ok) {
                 authenticated.value = false
                 return false

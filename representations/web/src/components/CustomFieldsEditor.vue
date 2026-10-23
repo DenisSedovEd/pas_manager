@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { customFieldApi } from '../api/customField.js'
+import { customFieldApi } from '../api.js'
 
 const props = defineProps({
   entityType: { type: String, required: true },

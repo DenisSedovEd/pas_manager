@@ -1,9 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import draggable from 'vuedraggable'
-import { accountApi } from '../api/account.js'
-import { categoryApi } from '../api/category.js'
-import { iconDisplayLabel, resolveAccountIcon } from '../api/customIcon.js'
+import { accountApi, categoryApi, iconDisplayLabel, resolveAccountIcon } from '../api.js'
 import AddItemMenu from './AddItemMenu.vue'
 import CategoryIcon from './CategoryIcon.vue'
 

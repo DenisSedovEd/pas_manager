@@ -1,8 +1,7 @@
 <script setup>
 import {ref, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import {categoryApi} from '../api/category.js';
-import {iconDisplayLabel} from '../api/customIcon.js';
+import { categoryApi, iconDisplayLabel } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 import CustomFieldsEditor from './CustomFieldsEditor.vue';
 import EmojiPicker from 'vue3-emoji-picker';
@@ -10,7 +9,7 @@ import 'vue3-emoji-picker/css';
 
 const props = defineProps(['category', 'parentCategoryId']);
 const emit = defineEmits(['save', 'cancel']);
-const {tg, initData} = useTelegram();
+const { tg } = useTelegram();
 
 const showPicker = ref(false);
 const isLoading = ref(false);
@@ -44,9 +43,9 @@ const handleSave = async () => {
   try {
     let saved;
     if (isEditing) {
-      saved = await categoryApi.update(initData, formData.value.id, formData.value);
+      saved = await categoryApi.update(formData.value.id, formData.value);
     } else {
-      saved = await categoryApi.create(initData, formData.value);
+      saved = await categoryApi.create(formData.value);
     }
     const entityId = saved?.id || formData.value.id;
     if (customFieldsRef.value && entityId) {
@@ -69,7 +68,7 @@ onMounted(async () => {
   tg.MainButton.show();
 
   try {
-    rootCategories.value = await categoryApi.getList(initData);
+    rootCategories.value = await categoryApi.getList();
     if (isEditing && formData.value.id) {
       rootCategories.value = rootCategories.value.filter(c => c.id !== formData.value.id);
     }
