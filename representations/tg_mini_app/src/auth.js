@@ -3,25 +3,29 @@ import { api } from './api.js'
 /**
  * Авторизация Mini App: /main/auth/*.
  *
- * Эти ручки намеренно идут через raw: бэкенд отвечает 403 на неверный пароль
- * и 401 на невалидный initData, а вызывающий код разбирает тело сам
- * (проверяет res.ok / res.is_unlocked), а не ловит исключение.
+ * Эти ручки отвечают не только двумя сотнями: 403 на неверный пароль и на
+ * непрошедший био-токен, 401 на невалидный initData. Поэтому возвращаем явный
+ * результат { ok, status, detail, data }, а не голое тело: иначе отказ выглядит
+ * как успех с пустыми полями, и вызывающий код молча ничего не делает.
  */
-const readJson = async (res) => {
+const call = async (path, options) => {
+    const res = await api.client.raw(path, options)
+    let data = {}
     try {
-        return await res.json()
+        data = (await res.json()) ?? {}
     } catch {
-        return {}
+        // пустое или не-JSON тело
     }
+    return { ok: res.ok, status: res.status, detail: data?.detail || null, data }
 }
 
-const post = async (path, body) =>
-    readJson(await api.client.raw(path, { method: 'POST', body }))
-
-const get = async (path) => readJson(await api.client.raw(path))
+const get = (path) => call(path)
+const post = (path, body) => call(path, { method: 'POST', body })
 
 export const authApi = {
     getStatus: () => get('/main/auth/status'),
+
+    getBioSettings: () => get('/main/auth/bio-settings'),
 
     unlockWithPassword: (masterPassword) =>
         post('/main/auth/unlock', { master_password: masterPassword }),
@@ -29,9 +33,6 @@ export const authApi = {
     unlockWithBiometric: (bioToken) =>
         post('/main/auth/unlock-biometric', { bio_token: bioToken }),
 
-    logout: () => post('/main/auth/logout'),
-
-    getBioSettings: () => get('/main/auth/bio-settings'),
-
-    enableBiometric: (payload) => post('/main/auth/enable-biometric', payload),
+    enableBiometric: (bioToken) =>
+        post('/main/auth/enable-biometric', { bio_token: bioToken }),
 }

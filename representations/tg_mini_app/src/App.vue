@@ -59,6 +59,9 @@ const password = ref('')
 const isBioSupported = ref(false)
 const isAuthLoading = ref(false)
 const isBootstrapping = ref(!!tg)
+// Сервер считает биометрию привязанной, но токен из Telegram к ней не подходит.
+// Само не починится — надо предложить привязку заново после входа по паролю.
+const bioNeedsRebind = ref(false)
 
 setSessionExpiredHandler(() => {
   isUnlocked.value = false
@@ -70,7 +73,7 @@ const authenticateWithBio = async () => {
   if (!bio) return
   try {
     const settings = await authApi.getBioSettings()
-    if (!settings.is_enabled) {
+    if (!settings.ok || !settings.data.is_enabled) {
       tg.showAlert('Биометрия ещё не привязана. Войдите по паролю — после входа будет предложена привязка Face ID / Touch ID.')
       return
     }
@@ -87,13 +90,19 @@ const authenticateWithBio = async () => {
         if (!success) return
         try {
           const res = await authApi.unlockWithBiometric(token)
-          if (res.ok || res.status === 'success') {
+          if (res.ok) {
             isUnlocked.value = true
             await loadResources()
             tg?.HapticFeedback?.notificationOccurred('success')
+            return
           }
+          // Face ID прошёл, но сервер не смог расшифровать мастер-пароль этим
+          // токеном — значит привязка на сервере от другого токена.
+          bioNeedsRebind.value = true
+          tg.showAlert('Не удалось войти по биометрии: привязка устарела. Войдите по паролю — предложим привязать заново.')
         } catch (e) {
           console.error('Bio unlock error:', e)
+          tg.showAlert('Ошибка связи с сервером')
         }
       })
     } catch (e) {
@@ -127,16 +136,23 @@ const offerBiometricSetup = () => {
       const bioToken = crypto.randomUUID()
       bio.updateBiometricToken(bioToken, async (updated) => {
         if (!updated) return
+        let res = null
         try {
           // Бэкенд шифрует master_password этим токеном
-          await authApi.enableBiometric({bio_token: bioToken})
-          tg?.HapticFeedback?.notificationOccurred('success')
-          tg.showAlert('Биометрия привязана!')
+          res = await authApi.enableBiometric(bioToken)
         } catch (e) {
           console.error('Bio enable error:', e)
-          // Откатываем токен из Telegram если бэкенд упал
-          bio.updateBiometricToken('')
         }
+        if (!res?.ok) {
+          // Не оставляем в Telegram токен, которого нет на сервере, —
+          // иначе вход по биометрии будет молча отказывать
+          bio.updateBiometricToken('')
+          tg.showAlert(res?.detail || 'Не удалось привязать биометрию')
+          return
+        }
+        bioNeedsRebind.value = false
+        tg?.HapticFeedback?.notificationOccurred('success')
+        tg.showAlert('Биометрия привязана!')
       })
     })
   })
@@ -147,17 +163,19 @@ const handleUnlock = async () => {
   isAuthLoading.value = true
   try {
     const res = await authApi.unlockWithPassword(password.value)
-    if (res.ok === true) {
+    if (res.ok) {
       isUnlocked.value = true
       tg?.HapticFeedback?.notificationOccurred('success')
       await loadResources()
 
       if (isBioSupported.value) {
         const settings = await authApi.getBioSettings()
-        if (!settings.is_enabled) offerBiometricSetup()
+        // Перепривязка нужна и когда биометрии ещё нет, и когда серверная
+        // привязка перестала подходить к токену из Telegram
+        if (!settings.data.is_enabled || bioNeedsRebind.value) offerBiometricSetup()
       }
     } else {
-      tg.showAlert("Неверный пароль")
+      tg.showAlert(res.status === 403 ? 'Неверный пароль' : 'Ошибка связи с сервером')
     }
   } catch (e) {
     tg.showAlert("Ошибка связи с сервером")
@@ -169,11 +187,11 @@ const handleUnlock = async () => {
 const initAuth = async () => {
   try {
     const status = await authApi.getStatus()
-    isUnlocked.value = status.is_unlocked
+    isUnlocked.value = !!status.data.is_unlocked
     if (isUnlocked.value) await loadResources()
     if (!isUnlocked.value && isBioSupported.value) {
       const settings = await authApi.getBioSettings()
-      if (settings.is_enabled) authenticateWithBio()
+      if (settings.data.is_enabled) authenticateWithBio()
     }
   } catch (e) {
     console.error('Auth init error:', e)
