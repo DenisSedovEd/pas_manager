@@ -1,7 +1,13 @@
 import { createApp } from 'vue'
+import { API_KEY } from '@pas/shared/composables/useApi.js'
+import { PLATFORM_KEY } from '@pas/shared/platform/index.js'
 import App from './App.vue'
+import { api } from './api.js'
+import { tgPlatform } from './platform.js'
 
 const app = createApp(App)
+app.provide(API_KEY, api)
+app.provide(PLATFORM_KEY, tgPlatform)
 
 // Экран ошибки имеет смысл только до того, как приложение отрисовалось.
 // После монтирования единичная асинхронная ошибка не должна стирать рабочий UI

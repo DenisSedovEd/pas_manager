@@ -4,10 +4,14 @@ import {useTelegram} from '../composables/useTelegram';
 import { accountApi, categoryApi, iconDisplayLabel } from '../api.js'
 import ResourceEditor from './ResourceEditor.vue';
 import CustomFieldsEditor from './CustomFieldsEditor.vue';
+import { usePlatform } from '@pas/shared/platform/index.js'
+import { generatePassword } from '@pas/shared/utils/password.js'
+import ConfirmDialog from '@pas/shared/components/ConfirmDialog.vue'
 
 const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions']);
 const emit = defineEmits(['save', 'cancel', 'resource-created']);
 const { tg } = useTelegram();
+const platform = usePlatform()
 
 const isLoading = ref(false);
 const customFieldsRef = ref(null);
@@ -92,7 +96,7 @@ onMounted(async () => {
     const response = await categoryApi.getAll();
     categories.value = (response.data || response).map(c => ({ ...c, id: String(c.id) }));
   } catch (e) {
-    tg.showAlert('Ошибка загрузки категорий');
+    platform.alert('Ошибка загрузки категорий');
   }
 
   tg.MainButton.setText(isEditing.value ? 'Обновить данные' : 'Сохранить аккаунт');
@@ -136,31 +140,26 @@ const cancelWithoutSave = () => {
 
 const handleSave = async () => {
   if (!formData.value.login.trim() || !formData.value.password.trim()) {
-    tg.showAlert('Логин и пароль обязательны');
+    platform.alert('Логин и пароль обязательны');
     return;
   }
 
   if (!formData.value.resource_id) {
-    tg.showAlert('Выберите площадку');
+    platform.alert('Выберите площадку');
     return;
   }
 
   if (!formData.value.category_id.trim()) {
     categoryError.value = true;
     showCategoryWarning.value = true;
-    tg.HapticFeedback.notificationOccurred('warning');
+    platform.haptic('warning');
     return;
   }
 
   categoryError.value = false;
 
-  if (isEditing.value) {
-    tg.showConfirm('Сохранить изменения?', (confirmed) => {
-      if (confirmed) executeSave();
-    });
-  } else {
-    executeSave();
-  }
+  if (isEditing.value && !(await platform.confirm('Сохранить изменения?'))) return;
+  executeSave();
 };
 
 const executeSave = async () => {
@@ -178,10 +177,10 @@ const executeSave = async () => {
     if (customFieldsRef.value) {
       await customFieldsRef.value.save(saved.id);
     }
-    tg.HapticFeedback.notificationOccurred('success');
+    platform.haptic('success');
     emit('save');
   } catch (e) {
-    if (e?.message !== 'validation') tg.showAlert('Ошибка при сохранении');
+    if (e?.message !== 'validation') platform.alert('Ошибка при сохранении');
   } finally {
     isLoading.value = false;
     tg.MainButton.hideProgress();
@@ -189,38 +188,24 @@ const executeSave = async () => {
   }
 };
 
-const handleDelete = () => {
-  tg.showConfirm(
-      'Удалить аккаунт? Вы потеряете доступ к сохраненным данным.',
-      async (confirmed) => {
-        if (!confirmed) return;
-        try {
-          await accountApi.delete(formData.value.id);
-          tg.HapticFeedback.notificationOccurred('success');
-          emit('save');
-        } catch (e) {
-          tg.showAlert('Ошибка при удалении');
-        }
-      }
+const handleDelete = async () => {
+  const confirmed = await platform.confirm(
+    'Удалить аккаунт? Вы потеряете доступ к сохраненным данным.'
   );
+  if (!confirmed) return;
+  try {
+    await accountApi.delete(formData.value.id);
+    platform.haptic('success');
+    emit('save');
+  } catch (e) {
+    platform.alert('Ошибка при удалении');
+  }
 };
 
-const generatePassword = () => {
-  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789-_.@%^+'
-  const length = 16;
-
-  const array = new Uint32Array(length);
-  window.crypto.getRandomValues(array);
-
-  let pass = '';
-  for (let i = 0; i < length; i++) {
-    pass += charset[array[i] % charset.length];
-  }
-
-  formData.value.password = pass;
+const handleGeneratePassword = () => {
+  formData.value.password = generatePassword();
   showPassword.value = true;
-
-  tg.HapticFeedback.impactOccurred('medium');
+  platform.haptic('medium');
 };
 </script>
 
@@ -256,7 +241,7 @@ const generatePassword = () => {
       <div class="input-group">
         <div class="label-row">
           <label>Пароль</label>
-          <span class="generate-btn" @click="generatePassword">Сгенерировать</span>
+          <span class="generate-btn" @click="handleGeneratePassword">Сгенерировать</span>
         </div>
         <div class="password-wrapper">
           <input
@@ -366,20 +351,15 @@ const generatePassword = () => {
     </div>
   </div>
 
-  <div v-if="showCategoryWarning" class="warning-backdrop" @click.self="dismissCategoryWarning">
-    <div class="warning-card" role="alertdialog">
-      <h3>Категория не выбрана</h3>
-      <p>Выберите категорию для аккаунта или отмените сохранение.</p>
-      <div class="warning-actions">
-        <button type="button" class="warning-btn-primary" @click="dismissCategoryWarning">
-          Вернуться к заполнению
-        </button>
-        <button type="button" class="warning-btn-secondary" @click="cancelWithoutSave">
-          Не сохранять
-        </button>
-      </div>
-    </div>
-  </div>
+  <ConfirmDialog
+      v-if="showCategoryWarning"
+      title="Категория не выбрана"
+      message="Выберите категорию для аккаунта или отмените сохранение."
+      confirm-text="Вернуться к заполнению"
+      cancel-text="Не сохранять"
+      @confirm="dismissCategoryWarning"
+      @cancel="cancelWithoutSave"
+  />
 
   <!-- Модальное окно добавления площадки -->
   <ResourceEditor
@@ -546,62 +526,11 @@ const generatePassword = () => {
   border-color: #ff3b30;
 }
 
-.warning-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 1100;
-}
 
-.warning-card {
-  width: min(100%, 360px);
-  background: var(--tg-theme-bg-color);
-  border: 1px solid rgba(128, 128, 128, 0.2);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-}
 
-.warning-card h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-  color: var(--tg-theme-text-color);
-}
 
-.warning-card p {
-  margin: 0 0 16px;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--tg-theme-hint-color);
-}
 
-.warning-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 
-.warning-btn-primary,
-.warning-btn-secondary {
-  width: 100%;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 16px;
-  cursor: pointer;
-}
 
-.warning-btn-primary {
-  background: var(--tg-theme-button-color);
-  color: var(--tg-theme-button-text-color);
-}
 
-.warning-btn-secondary {
-  background: var(--tg-theme-secondary-bg-color);
-  color: var(--tg-theme-text-color);
-}
 </style>

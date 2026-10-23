@@ -4,6 +4,9 @@ import { customIconApi, customIconFileUrl, isCustomIcon, resourceApi } from '../
 import CategoryIcon from './CategoryIcon.vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
+import { usePlatform } from '@pas/shared/platform/index.js'
+
+const platform = usePlatform()
 
 const props = defineProps({
   resources: { type: Array, default: () => [] },
@@ -88,7 +91,7 @@ const onFileSelected = async (event) => {
     formData.value.icon = created.key
     showPicker.value = false
   } catch (err) {
-    alert(err.message || 'Ошибка загрузки иконки')
+    platform.alert(err.message || 'Ошибка загрузки иконки')
   } finally {
     isUploading.value = false
   }
@@ -96,7 +99,7 @@ const onFileSelected = async (event) => {
 
 const deleteCustom = async (icon, event) => {
   event.stopPropagation()
-  if (!confirm('Удалить эту иконку?')) return
+  if (!(await platform.confirm('Удалить эту иконку?'))) return
   try {
     await customIconApi.delete(icon.id)
     customIcons.value = customIcons.value.filter((item) => item.id !== icon.id)
@@ -108,7 +111,7 @@ const deleteCustom = async (icon, event) => {
     )
     emit('resources-updated', localResources.value)
   } catch {
-    alert('Ошибка удаления иконки')
+    platform.alert('Ошибка удаления иконки')
   }
 }
 
@@ -118,7 +121,7 @@ const isDefaultResource = computed(
 
 const handleSave = async () => {
   if (!formData.value.resource_name.trim()) {
-    alert('Введи название площадки')
+    platform.alert('Введи название площадки')
     return
   }
   isLoading.value = true
@@ -136,7 +139,7 @@ const handleSave = async () => {
     emit('resources-updated', localResources.value)
     editing.value = null
   } catch (err) {
-    alert(err.message || 'Ошибка при сохранении')
+    platform.alert(err.message || 'Ошибка при сохранении')
   } finally {
     isLoading.value = false
   }
@@ -144,12 +147,13 @@ const handleSave = async () => {
 
 const handleDelete = async () => {
   if (isDefaultResource.value) {
-    alert('Нельзя удалить системную площадку «Без площадки»')
+    platform.alert('Нельзя удалить системную площадку «Без площадки»')
     return
   }
-  if (!confirm(
+  const confirmed = await platform.confirm(
     `Удалить площадку «${formData.value.resource_name}»?\nАккаунты будут перенесены на «Без площадки».`
-  )) return
+  )
+  if (!confirmed) return
   isLoading.value = true
   try {
     await resourceApi.delete(formData.value.id)
@@ -157,7 +161,7 @@ const handleDelete = async () => {
     emit('resources-updated', localResources.value)
     editing.value = null
   } catch (err) {
-    alert(err.message || 'Ошибка при удалении')
+    platform.alert(err.message || 'Ошибка при удалении')
   } finally {
     isLoading.value = false
   }

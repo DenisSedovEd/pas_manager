@@ -3,11 +3,14 @@ import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
 import { accountApi, customFieldApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
+import { usePlatform } from '@pas/shared/platform/index.js'
+import { writeClipboard } from '@pas/shared/utils/clipboard.js'
 
 const props = defineProps(['account', 'resources', 'category']);
 const emit = defineEmits(['edit']);
 
 const { tg } = useTelegram();
+const platform = usePlatform()
 
 const fullAccount = ref(null);
 const customFields = ref([]);
@@ -37,7 +40,7 @@ onMounted(async () => {
     fullAccount.value = await accountApi.getDetail(props.account.id);
     customFields.value = await customFieldApi.getValues('account', props.account.id);
   } catch (error) {
-    tg.showAlert("Не удалось загрузить данные");
+    platform.alert("Не удалось загрузить данные");
   } finally {
     isLoading.value = false;
   }
@@ -59,47 +62,12 @@ const onEditClick = () => {
 const copyToClipboard = async (text, field) => {
   if (!text) return;
 
-  const writeText = async (value) => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value);
-        return true;
-      }
-    } catch {}
-
-    try {
-      if (tg?.writeTextToClipboard) {
-        await tg.writeTextToClipboard(value);
-        return true;
-      }
-    } catch {}
-
-    const el = document.createElement('textarea');
-    el.value = value;
-    el.setAttribute('readonly', '');
-    el.style.position = 'fixed';
-    el.style.opacity = '0';
-    el.style.left = '-9999px';
-    document.body.appendChild(el);
-    el.focus();
-    el.select();
-
-    let success = false;
-    try {
-      success = document.execCommand('copy');
-    } catch {}
-
-    document.body.removeChild(el);
-    return success;
-  };
-
-  const copied = await writeText(text);
-  if (!copied) {
-    tg?.showAlert?.('Не удалось скопировать в буфер обмена');
+  if (!(await writeClipboard(text))) {
+    platform.alert('Не удалось скопировать в буфер обмена');
     return;
   }
 
-  tg.HapticFeedback.notificationOccurred('success');
+  platform.haptic('success');
   copyStatus.value[field] = true;
   setTimeout(() => {
     copyStatus.value[field] = false;

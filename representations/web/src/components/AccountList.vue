@@ -4,6 +4,9 @@ import draggable from 'vuedraggable'
 import { accountApi, categoryApi, iconDisplayLabel, resolveAccountIcon } from '../api.js'
 import AddItemMenu from './AddItemMenu.vue'
 import CategoryIcon from './CategoryIcon.vue'
+import { usePlatform } from '@pas/shared/platform/index.js'
+
+const platform = usePlatform()
 
 const props = defineProps({
   categoryId: String,
@@ -40,7 +43,7 @@ const fetchAccounts = async () => {
     accounts.value = accountsResp.data || accountsResp
     subcategories.value = childrenResp.data || childrenResp
   } catch {
-    alert('Ошибка загрузки аккаунтов')
+    platform.alert('Ошибка загрузки аккаунтов')
   } finally {
     isLoading.value = false
   }
@@ -53,7 +56,7 @@ const loadSubAccounts = async (subId, force = false) => {
     const resp = await accountApi.getList(subId)
     subAccounts.value = { ...subAccounts.value, [subId]: resp.data || resp }
   } catch {
-    alert('Ошибка загрузки аккаунтов подкатегории')
+    platform.alert('Ошибка загрузки аккаунтов подкатегории')
   } finally {
     const next = { ...subLoadingIds.value }
     delete next[subId]
@@ -120,7 +123,7 @@ const handleListChange = async (event, targetCategoryId) => {
       await persistOrder(targetCategoryId)
     }
   } catch {
-    alert('Ошибка сохранения')
+    platform.alert('Ошибка сохранения')
     await refreshAll()
   }
 }
@@ -139,7 +142,7 @@ watch(isEditMode, async (enabled) => {
 })
 
 const deleteAccount = async (account, subId = null) => {
-  if (!confirm(`Удалить аккаунт «${account.label || account.login}»?`)) return
+  if (!(await platform.confirm(`Удалить аккаунт «${account.label || account.login}»?`))) return
   try {
     await accountApi.delete(account.id)
     if (subId) {
@@ -152,12 +155,12 @@ const deleteAccount = async (account, subId = null) => {
     }
     emit('account-deleted', account.id)
   } catch {
-    alert('Ошибка удаления')
+    platform.alert('Ошибка удаления')
   }
 }
 
 const deleteSubcategory = async (sub) => {
-  if (!confirm(`Удалить категорию «${iconDisplayLabel(sub.icon)} ${sub.name}»?`)) return
+  if (!(await platform.confirm(`Удалить категорию «${iconDisplayLabel(sub.icon)} ${sub.name}»?`))) return
   try {
     await categoryApi.delete(sub.id)
     subcategories.value = subcategories.value.filter(s => s.id !== sub.id)
@@ -168,7 +171,7 @@ const deleteSubcategory = async (sub) => {
     delete nextExpanded[sub.id]
     expandedSubIds.value = nextExpanded
   } catch {
-    alert('Ошибка удаления категории')
+    platform.alert('Ошибка удаления категории')
   }
 }
 

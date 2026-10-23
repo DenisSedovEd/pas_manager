@@ -3,6 +3,11 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { accountApi, categoryApi, iconDisplayLabel, resourceApi } from '../api.js'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
 import ResourceEditor from './ResourceEditor.vue'
+import { usePlatform } from '@pas/shared/platform/index.js'
+import { generatePassword } from '@pas/shared/utils/password.js'
+import ConfirmDialog from '@pas/shared/components/ConfirmDialog.vue'
+
+const platform = usePlatform()
 
 const props = defineProps(['account', 'currentCategory', 'resources', 'defaultResourceId', 'suggestions'])
 const emit = defineEmits(['save', 'cancel', 'resource-created'])
@@ -59,12 +64,8 @@ const onResourceCreated = (created) => {
   emit('resource-created', created)
 }
 
-const generatePassword = () => {
-  const charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789-_.@%^+'
-  const length = 16
-  const values = new Uint32Array(length)
-  crypto.getRandomValues(values)
-  formData.value.password = Array.from(values, (v) => charset[v % charset.length]).join('')
+const handleGeneratePassword = () => {
+  formData.value.password = generatePassword()
   showPassword.value = true
 }
 
@@ -78,8 +79,8 @@ const cancelWithoutSave = () => {
 }
 
 const handleSave = async () => {
-  if (!formData.value.login.trim()) { alert('Введи логин'); return }
-  if (!formData.value.password.trim()) { alert('Введи пароль'); return }
+  if (!formData.value.login.trim()) { platform.alert('Введи логин'); return }
+  if (!formData.value.password.trim()) { platform.alert('Введи пароль'); return }
   if (!formData.value.category_id.trim()) {
     categoryError.value = true
     showCategoryWarning.value = true
@@ -100,19 +101,19 @@ const handleSave = async () => {
     }
     emit('save', { deleted: false })
   } catch (err) {
-    if (err?.message !== 'validation') alert('Ошибка при сохранении')
+    if (err?.message !== 'validation') platform.alert('Ошибка при сохранении')
   } finally {
     isLoading.value = false
   }
 }
 
 const handleDelete = async () => {
-  if (!confirm('Удалить этот аккаунт?')) return
+  if (!(await platform.confirm('Удалить этот аккаунт?'))) return
   try {
     await accountApi.delete(formData.value.id)
     emit('save', { deleted: true })
   } catch {
-    alert('Ошибка удаления')
+    platform.alert('Ошибка удаления')
   }
 }
 
@@ -149,7 +150,7 @@ onMounted(async () => {
     const response = await categoryApi.getAll()
     categories.value = (response.data || response).map(c => ({ ...c, id: String(c.id) }))
   } catch {
-    alert('Ошибка загрузки категорий')
+    platform.alert('Ошибка загрузки категорий')
   }
 })
 
@@ -227,7 +228,7 @@ onUnmounted(() => {
       <div class="form-group password-group">
         <div class="password-label-row">
           <label>Пароль *</label>
-          <button type="button" class="generate-btn" @click="generatePassword">Сгенерировать</button>
+          <button type="button" class="generate-btn" @click="handleGeneratePassword">Сгенерировать</button>
         </div>
         <div class="password-input-wrap">
           <input v-model="formData.password" :type="showPassword ? 'text' : 'password'" placeholder="Пароль" />
@@ -300,20 +301,15 @@ onUnmounted(() => {
       @cancel="showResourceModal = false"
     />
 
-    <div v-if="showCategoryWarning" class="warning-backdrop" @click.self="dismissCategoryWarning">
-      <div class="warning-card" role="alertdialog" aria-labelledby="category-warning-title">
-        <h3 id="category-warning-title">Категория не выбрана</h3>
-        <p>Выберите категорию для аккаунта или отмените сохранение.</p>
-        <div class="warning-actions">
-          <button type="button" class="btn-primary" @click="dismissCategoryWarning">
-            Вернуться к заполнению
-          </button>
-          <button type="button" class="btn-secondary" @click="cancelWithoutSave">
-            Не сохранять
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      v-if="showCategoryWarning"
+      title="Категория не выбрана"
+      message="Выберите категорию для аккаунта или отмените сохранение."
+      confirm-text="Вернуться к заполнению"
+      cancel-text="Не сохранять"
+      @confirm="dismissCategoryWarning"
+      @cancel="cancelWithoutSave"
+    />
   </div>
 </template>
 
@@ -322,42 +318,10 @@ onUnmounted(() => {
   border-color: #e74c3c;
 }
 
-.warning-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 1000;
-}
 
-.warning-card {
-  width: min(100%, 420px);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 1.25rem;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-}
 
-.warning-card h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-}
 
-.warning-card p {
-  margin: 0 0 1rem;
-  color: var(--color-text-muted, #888);
-  line-height: 1.45;
-}
 
-.warning-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
 .password-input-wrap { display: flex; gap: 0.5rem; }
 .password-input-wrap input { flex: 1; }
 

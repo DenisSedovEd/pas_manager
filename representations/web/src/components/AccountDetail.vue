@@ -2,6 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { accountApi, customFieldApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue'
+import { usePlatform } from '@pas/shared/platform/index.js'
+import { writeClipboard } from '@pas/shared/utils/clipboard.js'
+
+const platform = usePlatform()
 
 const props = defineProps(['account', 'resources', 'category'])
 defineEmits(['edit', 'go-back'])
@@ -26,13 +30,12 @@ const displayIcon = computed(() =>
 
 const copyToClipboard = async (text, field) => {
   if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
-    copyStatus.value[field] = true
-    setTimeout(() => { copyStatus.value[field] = false }, 2000)
-  } catch {
-    alert('Не удалось скопировать в буфер обмена')
+  if (!(await writeClipboard(text))) {
+    platform.alert('Не удалось скопировать в буфер обмена')
+    return
   }
+  copyStatus.value[field] = true
+  setTimeout(() => { copyStatus.value[field] = false }, 2000)
 }
 
 onMounted(async () => {
@@ -40,7 +43,7 @@ onMounted(async () => {
     fullAccount.value = await accountApi.getDetail(props.account.id)
     customFields.value = await customFieldApi.getValues('account', props.account.id)
   } catch {
-    alert('Не удалось загрузить данные аккаунта')
+    platform.alert('Не удалось загрузить данные аккаунта')
   } finally {
     isLoading.value = false
   }

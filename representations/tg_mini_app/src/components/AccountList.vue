@@ -4,9 +4,11 @@ import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import { accountApi, categoryApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
+import { usePlatform } from '@pas/shared/platform/index.js'
 
 const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
 const { tg } = useTelegram();
+const platform = usePlatform()
 
 const accounts = ref([]);
 const subcategories = ref([]);
@@ -91,16 +93,16 @@ const handleListChange = async (event, targetCategoryId) => {
   try {
     if (event.added) {
       await moveAccountToCategory(event.added.element, targetCategoryId);
-      tg.HapticFeedback.impactOccurred('medium');
+      platform.haptic('medium');
     } else if (event.moved) {
-      tg.HapticFeedback.impactOccurred('light');
+      platform.haptic('light');
     }
 
     if (event.added || event.moved || event.removed) {
       await persistOrder(targetCategoryId);
     }
   } catch (e) {
-    tg.showAlert('Ошибка сохранения');
+    platform.alert('Ошибка сохранения');
     await refreshAll();
   }
 };
@@ -174,7 +176,7 @@ const swipeMove = (clientX, clientY, account, e) => {
     // Хаптик когда упёрлись в край
     if (state.currentX <= -state.maxSwipe + 1 && !state.reachedLimit) {
       state.reachedLimit = true;
-      tg.HapticFeedback.impactOccurred('medium');
+      platform.haptic('medium');
     } else if (state.currentX > -state.maxSwipe + 1) {
       state.reachedLimit = false;
     }
@@ -188,7 +190,7 @@ const findSubcategoryId = (accountId) => {
   return null;
 };
 
-const swipeEnd = (account) => {
+const swipeEnd = async (account) => {
   if (!isEditMode.value) return;
   const state = swipeData.value[account.id];
   if (!state) return;
@@ -197,12 +199,10 @@ const swipeEnd = (account) => {
     state.currentX = 0;
     state.isSwiping = false;
     const subId = findSubcategoryId(account.id);
-    tg.showConfirm(
-        `Удалить аккаунт «${account.label || account.login}»?`,
-        async (confirmed) => {
-          if (confirmed) await deleteAccount(account, subId);
-        }
+    const confirmed = await platform.confirm(
+      `Удалить аккаунт «${account.label || account.login}»?`
     );
+    if (confirmed) await deleteAccount(account, subId);
   } else {
     state.currentX = 0;
     state.isSwiping = false;
@@ -255,7 +255,7 @@ const getItemStyle = (account) => {
 // ── Drag start — сбрасываем все swipe-состояния ───────────────────────────────
 const onDragStart = () => {
   isDragging.value = true;
-  tg.HapticFeedback.impactOccurred('light');
+  platform.haptic('light');
   for (const id in swipeData.value) {
     swipeData.value[id].currentX = 0;
     swipeData.value[id].isSwiping = false;
@@ -301,9 +301,9 @@ const deleteAccount = async (account, subId = null) => {
     } else {
       accounts.value = accounts.value.filter(a => a.id !== account.id);
     }
-    tg.HapticFeedback.notificationOccurred('success');
+    platform.haptic('success');
   } catch (e) {
-    tg.showAlert('Ошибка удаления');
+    platform.alert('Ошибка удаления');
   }
 };
 
@@ -314,7 +314,7 @@ const loadSubAccounts = async (subId, force = false) => {
     const resp = await accountApi.getList(subId);
     subAccounts.value = {...subAccounts.value, [subId]: resp.data || resp};
   } catch (e) {
-    tg.showAlert('Ошибка загрузки аккаунтов подкатегории');
+    platform.alert('Ошибка загрузки аккаунтов подкатегории');
   } finally {
     const next = {...subLoadingIds.value};
     delete next[subId];
@@ -329,7 +329,7 @@ const toggleSubcategory = async (sub) => {
     expandedSubIds.value = {...expandedSubIds.value, [subId]: false};
     return;
   }
-  tg.HapticFeedback.impactOccurred('light');
+  platform.haptic('light');
   expandedSubIds.value = {...expandedSubIds.value, [subId]: true};
   await loadSubAccounts(subId);
 };

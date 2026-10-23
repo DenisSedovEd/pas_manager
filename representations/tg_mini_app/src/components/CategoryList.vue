@@ -4,9 +4,11 @@ import draggable from 'vuedraggable';
 import {useTelegram} from '../composables/useTelegram';
 import { accountApi, categoryApi, iconDisplayLabel, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
+import { usePlatform } from '@pas/shared/platform/index.js'
 
 const emit = defineEmits(['select-category', 'add-category', 'open-settings']);
 const { tg } = useTelegram();
+const platform = usePlatform()
 const categories = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
@@ -34,7 +36,7 @@ const runSearch = async () => {
   try {
     searchResults.value = await accountApi.search(searchQuery.value.trim());
   } catch (e) {
-    tg.showAlert('Ошибка поиска');
+    platform.alert('Ошибка поиска');
   } finally {
     isSearching.value = false;
   }
@@ -118,24 +120,24 @@ const swipeMove = (clientX, clientY, category, e) => {
     state.currentX = Math.max(-state.maxSwipe, Math.min(0, dx));
     if (state.currentX <= -state.maxSwipe + 1 && !state.reachedLimit) {
       state.reachedLimit = true;
-      tg.HapticFeedback.impactOccurred('medium');
+      platform.haptic('medium');
     } else if (state.currentX > -state.maxSwipe + 1) {
       state.reachedLimit = false;
     }
   }
 };
 
-const swipeEnd = (category) => {
+const swipeEnd = async (category) => {
   if (!isEditMode.value) return;
   const state = swipeData.value[category.id];
   if (!state) return;
   if (state.isSwiping && state.reachedLimit) {
     state.currentX = 0;
     state.isSwiping = false;
-    tg.showConfirm(
-        `Удалить категорию «${iconDisplayLabel(category.icon)} ${category.name}»?`,
-        async (confirmed) => { if (confirmed) await deleteCategory(category); }
+    const confirmed = await platform.confirm(
+      `Удалить категорию «${iconDisplayLabel(category.icon)} ${category.name}»?`
     );
+    if (confirmed) await deleteCategory(category);
   } else {
     state.currentX = 0;
     state.isSwiping = false;
@@ -170,7 +172,7 @@ const getItemStyle = (category) => {
 };
 
 const onDragStart = () => {
-  tg.HapticFeedback.impactOccurred('light');
+  platform.haptic('light');
   for (const id in swipeData.value) {
     swipeData.value[id].currentX = 0;
     swipeData.value[id].isSwiping = false;
@@ -183,17 +185,17 @@ const fetchCategories = async () => {
     const response = await categoryApi.getList();
     categories.value = response.data || response;
   } catch (e) {
-    tg.showAlert('Ошибка загрузки');
+    platform.alert('Ошибка загрузки');
   }
 };
 
 const handleReorder = async () => {
-  tg.HapticFeedback.impactOccurred('medium');
+  platform.haptic('medium');
   try {
     const ids = categories.value.map(p => String(p.id));
     await categoryApi.reorder(ids);
   } catch (e) {
-    tg.showAlert('Ошибка сохранения порядка');
+    platform.alert('Ошибка сохранения порядка');
     await fetchCategories();
   }
 };
@@ -202,9 +204,9 @@ const deleteCategory = async (category) => {
   try {
     await categoryApi.delete(category.id);
     categories.value = categories.value.filter(p => p.id !== category.id);
-    tg.HapticFeedback.notificationOccurred('success');
+    platform.haptic('success');
   } catch (e) {
-    tg.showAlert('Ошибка удаления');
+    platform.alert('Ошибка удаления');
   }
 };
 

@@ -18,6 +18,15 @@
     --scrollbar-track: transparent;
     --scrollbar-thumb: #3e4451;
     --scrollbar-thumb-hover: #5c6370;
+
+    /* Палитра общих диалогов из @pas/shared */
+    --pas-dialog-surface: var(--color-surface);
+    --pas-dialog-border: var(--color-border);
+    --pas-dialog-text: var(--color-text);
+    --pas-dialog-muted: var(--color-hint);
+    --pas-dialog-accent: var(--color-accent);
+    --pas-dialog-accent-text: #fff;
+    --pas-dialog-danger: var(--color-danger);
 }
 
 * {

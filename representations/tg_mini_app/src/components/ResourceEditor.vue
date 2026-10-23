@@ -1,11 +1,11 @@
 <script setup>
 import {ref} from 'vue';
-import {useTelegram} from '../composables/useTelegram';
 import { resourceApi } from '../api.js'
 import CustomFieldsEditor from './CustomFieldsEditor.vue';
+import { usePlatform } from '@pas/shared/platform/index.js'
 
 const emit = defineEmits(['save', 'cancel']);
-const { tg } = useTelegram();
+const platform = usePlatform()
 
 const isLoading = ref(false);
 const customFieldsRef = ref(null);
@@ -16,7 +16,7 @@ const formData = ref({
 
 const handleSave = async () => {
   if (!formData.value.resource_name.trim()) {
-    tg.showAlert('Введите название площадки');
+    platform.alert('Введите название площадки');
     return;
   }
   if (customFieldsRef.value && !customFieldsRef.value.validate()) return;
@@ -26,10 +26,10 @@ const handleSave = async () => {
     if (customFieldsRef.value) {
       await customFieldsRef.value.save(created.id);
     }
-    tg.HapticFeedback.notificationOccurred('success');
+    platform.haptic('success');
     emit('save', created);
   } catch (e) {
-    if (e?.message !== 'validation') tg.showAlert('Ошибка при сохранении');
+    if (e?.message !== 'validation') platform.alert('Ошибка при сохранении');
   } finally {
     isLoading.value = false;
   }

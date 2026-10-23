@@ -4,6 +4,9 @@ import draggable from 'vuedraggable'
 import { accountApi, categoryApi, iconDisplayLabel, resolveAccountIcon } from '../api.js'
 import AddItemMenu from './AddItemMenu.vue'
 import CategoryIcon from './CategoryIcon.vue'
+import { usePlatform } from '@pas/shared/platform/index.js'
+
+const platform = usePlatform()
 
 const props = defineProps({
   selectedCategoryId: { type: [String, Number], default: null },
@@ -32,7 +35,7 @@ const runSearch = async () => {
   try {
     searchResults.value = await accountApi.search(searchQuery.value.trim())
   } catch {
-    alert('Ошибка поиска')
+    platform.alert('Ошибка поиска')
   } finally {
     isSearching.value = false
   }
@@ -46,7 +49,7 @@ const fetchCategories = async () => {
     const response = await categoryApi.getList()
     categories.value = response.data || response
   } catch {
-    alert('Ошибка загрузки категорий')
+    platform.alert('Ошибка загрузки категорий')
   } finally {
     isLoading.value = false
   }
@@ -62,13 +65,13 @@ const handleReorder = async () => {
 }
 
 const deleteCategory = async (category) => {
-  if (!confirm(`Удалить категорию «${iconDisplayLabel(category.icon)} ${category.name}»?`)) return
+  if (!(await platform.confirm(`Удалить категорию «${iconDisplayLabel(category.icon)} ${category.name}»?`))) return
   try {
     await categoryApi.delete(category.id)
     categories.value = categories.value.filter(c => c.id !== category.id)
     emit('category-deleted', category.id)
   } catch {
-    alert('Ошибка удаления')
+    platform.alert('Ошибка удаления')
   }
 }
 

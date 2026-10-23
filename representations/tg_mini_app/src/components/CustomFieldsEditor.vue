@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useTelegram } from '../composables/useTelegram'
 import { customFieldApi } from '../api.js'
+import { usePlatform } from '@pas/shared/platform/index.js'
 
 const props = defineProps({
   entityType: { type: String, required: true },
   entityId: { type: [String, Number], default: null },
 })
 
-const { tg } = useTelegram()
+const platform = usePlatform()
 
 const catalog = ref([])
 const items = ref([])
@@ -61,7 +61,7 @@ const addFromCatalog = (field) => {
 const createAndAdd = async () => {
   const name = newField.value.name.trim()
   if (!name) {
-    tg.showAlert('Введите название поля')
+    platform.alert('Введите название поля')
     return
   }
   try {
@@ -75,18 +75,16 @@ const createAndAdd = async () => {
     newField.value = { name: '', is_required: false, is_secret: false }
     showCreate.value = false
   } catch (err) {
-    tg.showAlert(err.message || 'Ошибка создания поля')
+    platform.alert(err.message || 'Ошибка создания поля')
   }
 }
 
-const removeItem = (index) => {
+const removeItem = async (index) => {
   const name = items.value[index]?.name || 'поле'
-  tg.showConfirm(
-    `Убрать поле «${name}»? Определение останется в каталоге.`,
-    (confirmed) => {
-      if (confirmed) items.value.splice(index, 1)
-    },
+  const confirmed = await platform.confirm(
+    `Убрать поле «${name}»? Оно будет отвязано от этой записи, определение останется в каталоге.`
   )
+  if (confirmed) items.value.splice(index, 1)
 }
 
 const toggleReveal = (key) => {
@@ -96,7 +94,7 @@ const toggleReveal = (key) => {
 const validate = () => {
   for (const item of items.value) {
     if (item.is_required && !String(item.value || '').trim()) {
-      tg.showAlert(`Поле «${item.name}» обязательно`)
+      platform.alert(`Поле «${item.name}» обязательно`)
       return false
     }
   }
@@ -123,7 +121,7 @@ onMounted(async () => {
     await loadCatalog()
     await loadValues()
   } catch {
-    tg.showAlert('Не удалось загрузить кастомные поля')
+    platform.alert('Не удалось загрузить кастомные поля')
   }
 })
 </script>

@@ -5,12 +5,14 @@ import { customIconApi, customIconFileUrl, isCustomIcon, resourceApi } from '../
 import CategoryIcon from './CategoryIcon.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
+import { usePlatform } from '@pas/shared/platform/index.js'
 
 const props = defineProps({
   resources: {type: Array, default: () => []},
 });
 const emit = defineEmits(['resources-updated']);
 const { tg } = useTelegram();
+const platform = usePlatform()
 
 const localResources = ref([]);
 const editing = ref(null);
@@ -97,7 +99,7 @@ const onFileSelected = async (event) => {
     formData.value.icon = created.key;
     showPicker.value = false;
   } catch (err) {
-    tg.showAlert(err.message || 'Ошибка загрузки иконки');
+    platform.alert(err.message || 'Ошибка загрузки иконки');
   } finally {
     isUploading.value = false;
   }
@@ -105,28 +107,26 @@ const onFileSelected = async (event) => {
 
 const deleteCustom = async (icon, event) => {
   event.stopPropagation();
-  tg.showConfirm('Удалить эту иконку?', async (ok) => {
-    if (!ok) return;
-    try {
-      await customIconApi.delete(icon.id);
-      customIcons.value = customIcons.value.filter((item) => item.id !== icon.id);
-      if (formData.value.icon === icon.key) {
-        formData.value.icon = null;
-      }
-      localResources.value = localResources.value.map((r) =>
-        r.icon === icon.key ? {...r, icon: null} : r
-      );
-      emit('resources-updated', localResources.value);
-    } catch {
-      tg.showAlert('Ошибка удаления иконки');
+  if (!(await platform.confirm('Удалить эту иконку?'))) return;
+  try {
+    await customIconApi.delete(icon.id);
+    customIcons.value = customIcons.value.filter((item) => item.id !== icon.id);
+    if (formData.value.icon === icon.key) {
+      formData.value.icon = null;
     }
-  });
+    localResources.value = localResources.value.map((r) =>
+      r.icon === icon.key ? {...r, icon: null} : r
+    );
+    emit('resources-updated', localResources.value);
+  } catch {
+    platform.alert('Ошибка удаления иконки');
+  }
 };
 
 const handleSave = async () => {
   if (!editing.value) return;
   if (!formData.value.resource_name.trim()) {
-    tg.showAlert('Введите название площадки');
+    platform.alert('Введите название площадки');
     return;
   }
   isLoading.value = true;
@@ -144,10 +144,10 @@ const handleSave = async () => {
         (a.resource_name || '').localeCompare(b.resource_name || '', 'ru')
       );
     emit('resources-updated', localResources.value);
-    tg.HapticFeedback.notificationOccurred('success');
+    platform.haptic('success');
     cancelEdit();
   } catch (err) {
-    tg.showAlert(err.message || 'Ошибка при сохранении');
+    platform.alert(err.message || 'Ошибка при сохранении');
   } finally {
     isLoading.value = false;
     tg.MainButton.hideProgress();
@@ -155,32 +155,31 @@ const handleSave = async () => {
   }
 };
 
-const handleDelete = () => {
+const handleDelete = async () => {
   if (!editing.value || isDefaultResource.value) {
-    tg.showAlert('Нельзя удалить системную площадку «Без площадки»');
+    platform.alert('Нельзя удалить системную площадку «Без площадки»');
     return;
   }
   const name = formData.value.resource_name;
-  tg.showConfirm(
-    `Удалить площадку «${name}»? Аккаунты будут перенесены на «Без площадки».`,
-    async (ok) => {
-      if (!ok) return;
-      isLoading.value = true;
-      try {
-        await resourceApi.delete(formData.value.id);
-        localResources.value = localResources.value.filter(
-          (r) => r.id !== formData.value.id
-        );
-        emit('resources-updated', localResources.value);
-        tg.HapticFeedback.notificationOccurred('success');
-        cancelEdit();
-      } catch (err) {
-        tg.showAlert(err.message || 'Ошибка при удалении');
-      } finally {
-        isLoading.value = false;
-      }
-    }
+  const confirmed = await platform.confirm(
+    `Удалить площадку «${name}»? Аккаунты будут перенесены на «Без площадки».`
   );
+  if (!confirmed) return;
+
+  isLoading.value = true;
+  try {
+    await resourceApi.delete(formData.value.id);
+    localResources.value = localResources.value.filter(
+      (r) => r.id !== formData.value.id
+    );
+    emit('resources-updated', localResources.value);
+    platform.haptic('success');
+    cancelEdit();
+  } catch (err) {
+    platform.alert(err.message || 'Ошибка при удалении');
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 onMounted(async () => {

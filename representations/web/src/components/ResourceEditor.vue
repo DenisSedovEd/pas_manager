@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import { resourceApi } from '../api.js'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
+import { usePlatform } from '@pas/shared/platform/index.js'
+
+const platform = usePlatform()
 
 const emit = defineEmits(['save', 'cancel'])
 
@@ -14,7 +17,7 @@ const formData = ref({
 
 const handleSave = async () => {
   if (!formData.value.resource_name.trim()) {
-    alert('Введи название площадки')
+    platform.alert('Введи название площадки')
     return
   }
   if (customFieldsRef.value && !customFieldsRef.value.validate()) return
@@ -29,7 +32,7 @@ const handleSave = async () => {
     }
     emit('save', created)
   } catch (err) {
-    if (err?.message !== 'validation') alert('Ошибка при сохранении')
+    if (err?.message !== 'validation') platform.alert('Ошибка при сохранении')
   } finally {
     isLoading.value = false
   }

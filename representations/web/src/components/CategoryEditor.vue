@@ -5,6 +5,9 @@ import CategoryIcon from './CategoryIcon.vue'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
+import { usePlatform } from '@pas/shared/platform/index.js'
+
+const platform = usePlatform()
 
 const props = defineProps(['category', 'parentCategoryId'])
 const emit = defineEmits(['save', 'cancel'])
@@ -61,7 +64,7 @@ const onFileSelected = async (event) => {
     formData.value.icon = created.key
     showPicker.value = false
   } catch (err) {
-    alert(err.message || 'Ошибка загрузки иконки')
+    platform.alert(err.message || 'Ошибка загрузки иконки')
   } finally {
     isUploading.value = false
   }
@@ -69,7 +72,7 @@ const onFileSelected = async (event) => {
 
 const deleteCustom = async (icon, event) => {
   event.stopPropagation()
-  if (!confirm('Удалить эту иконку?')) return
+  if (!(await platform.confirm('Удалить эту иконку?'))) return
   try {
     await customIconApi.delete(icon.id)
     customIcons.value = customIcons.value.filter((item) => item.id !== icon.id)
@@ -77,7 +80,7 @@ const deleteCustom = async (icon, event) => {
       formData.value.icon = icon.fallback_emoji || '📁'
     }
   } catch {
-    alert('Ошибка удаления иконки')
+    platform.alert('Ошибка удаления иконки')
   }
 }
 
@@ -85,7 +88,7 @@ const parentOptionLabel = (cat) =>
   `${iconDisplayLabel(cat.icon, '🌐')} ${cat.name}`
 
 const handleSave = async () => {
-  if (!formData.value.name.trim()) { alert('Введи название категории'); return }
+  if (!formData.value.name.trim()) { platform.alert('Введи название категории'); return }
   if (customFieldsRef.value && !customFieldsRef.value.validate()) return
   isLoading.value = true
   try {
@@ -101,7 +104,7 @@ const handleSave = async () => {
     }
     emit('save', saved || formData.value)
   } catch (err) {
-    if (err?.message !== 'validation') alert('Ошибка при сохранении')
+    if (err?.message !== 'validation') platform.alert('Ошибка при сохранении')
   } finally {
     isLoading.value = false
   }

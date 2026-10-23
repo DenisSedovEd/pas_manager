@@ -6,10 +6,12 @@ import CategoryIcon from './CategoryIcon.vue';
 import CustomFieldsEditor from './CustomFieldsEditor.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
+import { usePlatform } from '@pas/shared/platform/index.js'
 
 const props = defineProps(['category', 'parentCategoryId']);
 const emit = defineEmits(['save', 'cancel']);
 const { tg } = useTelegram();
+const platform = usePlatform()
 
 const showPicker = ref(false);
 const isLoading = ref(false);
@@ -33,7 +35,7 @@ const onSelectEmoji = (emoji) => {
 
 const handleSave = async () => {
   if (!formData.value.name.trim()) {
-    tg.showAlert("Введите название категории");
+    platform.alert("Введите название категории");
     return;
   }
   if (customFieldsRef.value && !customFieldsRef.value.validate()) return;
@@ -51,10 +53,10 @@ const handleSave = async () => {
     if (customFieldsRef.value && entityId) {
       await customFieldsRef.value.save(entityId);
     }
-    tg.HapticFeedback.notificationOccurred('success');
+    platform.haptic('success');
     emit('save');
   } catch (e) {
-    if (e?.message !== 'validation') tg.showAlert("Ошибка при сохранении");
+    if (e?.message !== 'validation') platform.alert("Ошибка при сохранении");
   } finally {
     isLoading.value = false;
     tg.MainButton.hideProgress();

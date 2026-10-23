@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { customFieldApi } from '../api.js'
+import { usePlatform } from '@pas/shared/platform/index.js'
+
+const platform = usePlatform()
 
 const props = defineProps({
   entityType: { type: String, required: true },
@@ -12,7 +15,6 @@ const items = ref([])
 const showPicker = ref(false)
 const showCreate = ref(false)
 const revealed = ref({})
-const pendingRemoveIndex = ref(null)
 const newField = ref({
   name: '',
   is_required: false,
@@ -23,11 +25,6 @@ const attachedIds = computed(() => new Set(items.value.map((i) => i.field_id).fi
 const availableCatalog = computed(() =>
   catalog.value.filter((f) => !attachedIds.value.has(f.id)),
 )
-const pendingRemoveName = computed(() => {
-  const idx = pendingRemoveIndex.value
-  if (idx === null || idx < 0 || idx >= items.value.length) return ''
-  return items.value[idx]?.name || ''
-})
 
 const loadCatalog = async () => {
   catalog.value = await customFieldApi.getList()
@@ -64,7 +61,7 @@ const addFromCatalog = (field) => {
 const createAndAdd = async () => {
   const name = newField.value.name.trim()
   if (!name) {
-    alert('Введи название поля')
+    platform.alert('Введи название поля')
     return
   }
   try {
@@ -78,24 +75,16 @@ const createAndAdd = async () => {
     newField.value = { name: '', is_required: false, is_secret: false }
     showCreate.value = false
   } catch (err) {
-    alert(err.message || 'Ошибка создания поля')
+    platform.alert(err.message || 'Ошибка создания поля')
   }
 }
 
-const requestRemoveItem = (index) => {
-  pendingRemoveIndex.value = index
-}
-
-const cancelRemoveItem = () => {
-  pendingRemoveIndex.value = null
-}
-
-const confirmRemoveItem = () => {
-  const index = pendingRemoveIndex.value
-  if (index !== null && index >= 0) {
-    items.value.splice(index, 1)
-  }
-  pendingRemoveIndex.value = null
+const removeItem = async (index) => {
+  const name = items.value[index]?.name || 'поле'
+  const confirmed = await platform.confirm(
+    `Убрать поле «${name}»? Оно будет отвязано от этой записи, определение останется в каталоге.`
+  )
+  if (confirmed) items.value.splice(index, 1)
 }
 
 const toggleReveal = (key) => {
@@ -105,7 +94,7 @@ const toggleReveal = (key) => {
 const validate = () => {
   for (const item of items.value) {
     if (item.is_required && !String(item.value || '').trim()) {
-      alert(`Поле «${item.name}» обязательно`)
+      platform.alert(`Поле «${item.name}» обязательно`)
       return false
     }
   }
@@ -132,7 +121,7 @@ onMounted(async () => {
     await loadCatalog()
     await loadValues()
   } catch {
-    alert('Не удалось загрузить кастомные поля')
+    platform.alert('Не удалось загрузить кастомные поля')
   }
 })
 </script>
@@ -211,7 +200,7 @@ onMounted(async () => {
           type="button"
           class="remove-btn"
           title="Убрать"
-          @click="requestRemoveItem(index)"
+          @click="removeItem(index)"
         >✕</button>
       </div>
       <div v-if="item.is_secret" class="password-input-wrap">
@@ -234,23 +223,6 @@ onMounted(async () => {
       />
     </div>
 
-    <div
-      v-if="pendingRemoveIndex !== null"
-      class="confirm-backdrop"
-      @click.self="cancelRemoveItem"
-    >
-      <div class="confirm-card" role="alertdialog" aria-labelledby="remove-field-title">
-        <h3 id="remove-field-title">Убрать поле?</h3>
-        <p>
-          Поле «{{ pendingRemoveName }}» будет отвязано от этой записи.
-          Определение останется в каталоге.
-        </p>
-        <div class="confirm-actions">
-          <button type="button" class="btn-danger-sm" @click="confirmRemoveItem">Убрать</button>
-          <button type="button" class="btn-secondary-sm" @click="cancelRemoveItem">Отмена</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -280,9 +252,7 @@ onMounted(async () => {
 .add-btn,
 .create-link,
 .remove-btn,
-.btn-primary-sm,
-.btn-secondary-sm,
-.btn-danger-sm {
+.btn-primary-sm {
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
   border-radius: 10px;
@@ -292,17 +262,10 @@ onMounted(async () => {
   font-size: 0.9rem;
 }
 
-.btn-primary-sm:hover,
 .add-btn:hover,
 .create-link:hover,
-.btn-secondary-sm:hover {
+.btn-primary-sm:hover {
   background: var(--color-hover);
-}
-
-.btn-danger-sm {
-  border-color: var(--color-danger);
-  color: #fff;
-  background: var(--color-danger);
 }
 
 .remove-btn {
@@ -473,41 +436,8 @@ onMounted(async () => {
   color: var(--color-text);
 }
 
-.confirm-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 1100;
-}
 
-.confirm-card {
-  width: min(100%, 420px);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 1.25rem;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-}
 
-.confirm-card h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-  color: var(--color-text);
-}
 
-.confirm-card p {
-  margin: 0 0 1rem;
-  color: var(--color-hint);
-  line-height: 1.45;
-}
 
-.confirm-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
 </style>

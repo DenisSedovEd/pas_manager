@@ -4,6 +4,7 @@ import {initTelegramClipboard} from "./utils/clipboard"
 import {useTelegram} from './composables/useTelegram'
 import { accountApi, pickDefaultResource, resourceApi, setSessionExpiredHandler } from './api.js'
 import { authApi } from './auth.js'
+import { tgPlatform as platform } from './platform.js'
 
 const CategoryList = defineAsyncComponent(() => import('./components/CategoryList.vue'))
 const AccountList = defineAsyncComponent(() => import('./components/AccountList.vue'))
@@ -74,7 +75,7 @@ const authenticateWithBio = async () => {
   try {
     const settings = await authApi.getBioSettings()
     if (!settings.ok || !settings.data.is_enabled) {
-      tg.showAlert('Биометрия ещё не привязана. Войдите по паролю — после входа будет предложена привязка Face ID / Touch ID.')
+      platform.alert('Биометрия ещё не привязана. Войдите по паролю — после входа будет предложена привязка Face ID / Touch ID.')
       return
     }
   } catch (e) {
@@ -93,16 +94,16 @@ const authenticateWithBio = async () => {
           if (res.ok) {
             isUnlocked.value = true
             await loadResources()
-            tg?.HapticFeedback?.notificationOccurred('success')
+            platform.haptic('success')
             return
           }
           // Face ID прошёл, но сервер не смог расшифровать мастер-пароль этим
           // токеном — значит привязка на сервере от другого токена.
           bioNeedsRebind.value = true
-          tg.showAlert('Не удалось войти по биометрии: привязка устарела. Войдите по паролю — предложим привязать заново.')
+          platform.alert('Не удалось войти по биометрии: привязка устарела. Войдите по паролю — предложим привязать заново.')
         } catch (e) {
           console.error('Bio unlock error:', e)
-          tg.showAlert('Ошибка связи с сервером')
+          platform.alert('Ошибка связи с сервером')
         }
       })
     } catch (e) {
@@ -125,11 +126,10 @@ const authenticateWithBio = async () => {
   }
 }
 
-const offerBiometricSetup = () => {
+const offerBiometricSetup = async () => {
   if (!isBioSupported.value || !bio) return
 
-  tg.showConfirm('Привязать Face ID / Touch ID для быстрого входа?', (agreed) => {
-    if (!agreed) return
+  if (await platform.confirm('Привязать Face ID / Touch ID для быстрого входа?')) {
     bio.requestAccess({reason: 'Привязка биометрии'}, (granted) => {
       if (!granted) return
       // Генерируем токен и сохраняем в secure storage Telegram
@@ -147,15 +147,15 @@ const offerBiometricSetup = () => {
           // Не оставляем в Telegram токен, которого нет на сервере, —
           // иначе вход по биометрии будет молча отказывать
           bio.updateBiometricToken('')
-          tg.showAlert(res?.detail || 'Не удалось привязать биометрию')
+          platform.alert(res?.detail || 'Не удалось привязать биометрию')
           return
         }
         bioNeedsRebind.value = false
-        tg?.HapticFeedback?.notificationOccurred('success')
-        tg.showAlert('Биометрия привязана!')
+        platform.haptic('success')
+        platform.alert('Биометрия привязана!')
       })
     })
-  })
+  }
 }
 
 const handleUnlock = async () => {
@@ -165,7 +165,7 @@ const handleUnlock = async () => {
     const res = await authApi.unlockWithPassword(password.value)
     if (res.ok) {
       isUnlocked.value = true
-      tg?.HapticFeedback?.notificationOccurred('success')
+      platform.haptic('success')
       await loadResources()
 
       if (isBioSupported.value) {
@@ -175,10 +175,10 @@ const handleUnlock = async () => {
         if (!settings.data.is_enabled || bioNeedsRebind.value) offerBiometricSetup()
       }
     } else {
-      tg.showAlert(res.status === 403 ? 'Неверный пароль' : 'Ошибка связи с сервером')
+      platform.alert(res.status === 403 ? 'Неверный пароль' : 'Ошибка связи с сервером')
     }
   } catch (e) {
-    tg.showAlert("Ошибка связи с сервером")
+    platform.alert("Ошибка связи с сервером")
   } finally {
     isAuthLoading.value = false
   }
@@ -344,6 +344,17 @@ onMounted(async () => {
 </template>
 
 <style>
+:root {
+  /* Палитра общих диалогов из @pas/shared — на переменные темы Telegram */
+  --pas-dialog-surface: var(--tg-theme-bg-color);
+  --pas-dialog-border: rgba(128, 128, 128, 0.2);
+  --pas-dialog-text: var(--tg-theme-text-color);
+  --pas-dialog-muted: var(--tg-theme-hint-color);
+  --pas-dialog-accent: var(--tg-theme-button-color);
+  --pas-dialog-accent-text: var(--tg-theme-button-text-color);
+  --pas-dialog-danger: #ff3b30;
+}
+
 body {
   margin: 0;
   background-color: var(--tg-theme-bg-color);

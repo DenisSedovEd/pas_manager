@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import DialogHost from '@pas/shared/components/DialogHost.vue'
 import { useWebAuth } from './composables/useWebAuth.js'
 import { accountApi, pickDefaultResource, resourceApi } from './api.js'
+import { dialogHost } from './platform.js'
 
 import Login from './components/Login.vue'
 import CategoryList from './components/CategoryList.vue'
@@ -254,6 +256,8 @@ watch(
 
 <template>
   <div class="app-shell">
+    <DialogHost :host="dialogHost" />
+
     <Login v-if="!isAuthenticated" />
 
     <div v-else-if="!isAppReady" class="app-loading">
