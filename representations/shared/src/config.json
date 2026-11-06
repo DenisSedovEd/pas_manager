@@ -1,0 +1,16 @@
+{
+  "password": {
+    "length": 16,
+    "specialChars": "-_.@%^+",
+    "excludedChars": "0Oo1lI"
+  },
+  "icon": {
+    "maxBytes": 524288,
+    "fallbackEmoji": "📁"
+  },
+  "ui": {
+    "searchDebounceMs": 300,
+    "copyFeedbackMs": 2000,
+    "dragTouchDelayMs": 300
+  }
+}

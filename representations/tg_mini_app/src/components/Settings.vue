@@ -1,7 +1,9 @@
 <script setup>
 import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {useTelegram} from '../composables/useTelegram';
-import { customIconApi, customIconFileUrl, isCustomIcon, resourceApi } from '../api.js'
+import { customIconApi, customIconFileUrl, ICON_MAX_BYTES, isCustomIcon, resourceApi } from '../api.js'
+
+const iconMaxKb = ICON_MAX_BYTES / 1024
 import CategoryIcon from './CategoryIcon.vue';
 import EmojiPicker from 'vue3-emoji-picker';
 import 'vue3-emoji-picker/css';
@@ -279,7 +281,7 @@ onUnmounted(() => {
             >
               {{ isUploading ? 'Загрузка...' : '+ Загрузить иконку' }}
             </button>
-            <p class="upload-hint">PNG, JPEG, WebP или SVG, до 512 KB</p>
+            <p class="upload-hint">PNG, JPEG, WebP или SVG, до {{ iconMaxKb }} KB</p>
             <div v-if="!customIcons.length" class="custom-empty">Пока нет своих иконок</div>
             <div v-else class="custom-grid">
               <button

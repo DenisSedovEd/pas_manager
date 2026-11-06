@@ -4,6 +4,7 @@ import { accountApi, customFieldApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue'
 import { usePlatform } from '@pas/shared/platform/index.js'
 import { writeClipboard } from '@pas/shared/utils/clipboard.js'
+import uiConfig from '@pas/shared/config.json'
 
 const platform = usePlatform()
 
@@ -35,7 +36,7 @@ const copyToClipboard = async (text, field) => {
     return
   }
   copyStatus.value[field] = true
-  setTimeout(() => { copyStatus.value[field] = false }, 2000)
+  setTimeout(() => { copyStatus.value[field] = false }, uiConfig.ui.copyFeedbackMs)
 }
 
 onMounted(async () => {

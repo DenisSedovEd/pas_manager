@@ -65,6 +65,8 @@ class AppSettings(Base):
     cors_origins: list[str] = Field(
         default=["https://web.telegram.org", "https://t.me"]
     )
+    rate_limit_max_attempts: int = Field(5)
+    rate_limit_window_seconds: int = Field(60)
 
     @model_validator(mode="after")
     def resolve_session_ttl(self):

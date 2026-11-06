@@ -24,4 +24,6 @@ export {
     customIconFileUrl,
     iconDisplayLabel,
     resolveAccountIcon,
+    DEFAULT_FALLBACK_EMOJI,
+    ICON_MAX_BYTES,
 } from '@pas/shared/api/index.js'

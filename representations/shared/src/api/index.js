@@ -18,6 +18,8 @@ export {
     customIconFileUrl,
     iconDisplayLabel,
     resolveAccountIcon,
+    DEFAULT_FALLBACK_EMOJI,
+    ICON_MAX_BYTES,
 } from './customIcon.js'
 
 /**

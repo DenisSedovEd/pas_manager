@@ -3,6 +3,7 @@ from pathlib import Path
 
 from sqlalchemy import select, update
 
+from backend.core.shared_config import ICON_FALLBACK_EMOJI, ICON_MAX_BYTES
 from backend.models.category import CategoryTable
 from backend.models.custom_icon import CustomIconTable
 from backend.models.resource import ResourceTable
@@ -15,9 +16,9 @@ ALLOWED_CONTENT_TYPES: dict[str, str] = {
     "image/webp": ".webp",
     "image/svg+xml": ".svg",
 }
-MAX_ICON_BYTES = 512 * 1024
+MAX_ICON_BYTES = ICON_MAX_BYTES
 ICONS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "category_icons"
-DEFAULT_FALLBACK = "📁"
+DEFAULT_FALLBACK = ICON_FALLBACK_EMOJI
 
 
 class CustomIconService:
@@ -78,7 +79,7 @@ class CustomIconService:
         if len(data) == 0:
             raise ValueError("Empty file")
         if len(data) > MAX_ICON_BYTES:
-            raise ValueError("File too large (max 512 KB)")
+            raise ValueError(f"File too large (max {MAX_ICON_BYTES // 1024} KB)")
 
         self._ensure_dir()
         icon_id = str(uuid.uuid4())

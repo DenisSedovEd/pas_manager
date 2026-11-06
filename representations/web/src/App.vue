@@ -15,6 +15,8 @@ import Settings from './components/Settings.vue'
 
 const { isAuthenticated, logout, checkStatus } = useWebAuth()
 
+const localNetworkUrl = import.meta.env.VITE_LOCAL_NETWORK_URL || null
+
 const resources = ref([])
 const defaultResourceId = ref(null)
 const suggestions = ref({ login: [], email: [], phone: [], label: [] })
@@ -271,7 +273,7 @@ watch(
       <header class="app-header">
         <div class="header-brand">
           <span class="app-title">🔐 Safe Manager</span>
-          <a class="local-link" href="http://192.168.10.1:8000" target="_blank" rel="noopener">local</a>
+          <a v-if="localNetworkUrl" class="local-link" :href="localNetworkUrl" target="_blank" rel="noopener">local</a>
         </div>
         <div class="header-actions">
           <button

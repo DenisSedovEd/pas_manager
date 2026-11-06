@@ -5,6 +5,7 @@ import { accountApi, customFieldApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 import { usePlatform } from '@pas/shared/platform/index.js'
 import { writeClipboard } from '@pas/shared/utils/clipboard.js'
+import uiConfig from '@pas/shared/config.json'
 
 const props = defineProps(['account', 'resources', 'category']);
 const emit = defineEmits(['edit']);
@@ -71,7 +72,7 @@ const copyToClipboard = async (text, field) => {
   copyStatus.value[field] = true;
   setTimeout(() => {
     copyStatus.value[field] = false;
-  }, 2000);
+  }, uiConfig.ui.copyFeedbackMs);
 };
 </script>
 

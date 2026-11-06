@@ -5,6 +5,7 @@ import {useTelegram} from '../composables/useTelegram';
 import { accountApi, categoryApi, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 import { usePlatform } from '@pas/shared/platform/index.js'
+import uiConfig from '@pas/shared/config.json'
 
 const emit = defineEmits(['select-account', 'add-account', 'edit-category']);
 const { tg } = useTelegram();
@@ -405,7 +406,7 @@ onUnmounted(() => {
               @click="toggleSubcategory(sub)"
           >
             <div class="icon-box">
-              <CategoryIcon :icon="sub.icon" fallback="📁" size="fill" />
+              <CategoryIcon :icon="sub.icon" size="fill" />
             </div>
             <div class="main-content">
               <div class="name">{{ sub.name }}</div>
@@ -438,7 +439,7 @@ onUnmounted(() => {
                 :force-fallback="true"
                 :fallback-on-body="true"
                 :empty-insert-threshold="12"
-                :delay="300"
+                :delay="uiConfig.ui.dragTouchDelayMs"
                 :delay-on-touch-only="true"
                 @start="onDragStart"
                 @end="onDragEnd"
@@ -513,7 +514,7 @@ onUnmounted(() => {
           :force-fallback="true"
           :fallback-on-body="true"
           :empty-insert-threshold="12"
-          :delay="300"
+          :delay="uiConfig.ui.dragTouchDelayMs"
           :delay-on-touch-only="true"
           @start="onDragStart"
           @end="onDragEnd"

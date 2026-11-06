@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { categoryApi, customIconApi, customIconFileUrl, iconDisplayLabel, isCustomIcon } from '../api.js'
+import { categoryApi, customIconApi, customIconFileUrl, DEFAULT_FALLBACK_EMOJI, ICON_MAX_BYTES, iconDisplayLabel, isCustomIcon } from '../api.js'
+
+const iconMaxKb = ICON_MAX_BYTES / 1024
 import CategoryIcon from './CategoryIcon.vue'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
 import EmojiPicker from 'vue3-emoji-picker'
@@ -77,7 +79,7 @@ const deleteCustom = async (icon, event) => {
     await customIconApi.delete(icon.id)
     customIcons.value = customIcons.value.filter((item) => item.id !== icon.id)
     if (formData.value.icon === icon.key) {
-      formData.value.icon = icon.fallback_emoji || '📁'
+      formData.value.icon = icon.fallback_emoji || DEFAULT_FALLBACK_EMOJI
     }
   } catch {
     platform.alert('Ошибка удаления иконки')
@@ -183,7 +185,7 @@ onMounted(async () => {
             >
               {{ isUploading ? 'Загрузка...' : '+ Загрузить иконку' }}
             </button>
-            <p class="upload-hint">PNG, JPEG, WebP или SVG, до 512 KB</p>
+            <p class="upload-hint">PNG, JPEG, WebP или SVG, до {{ iconMaxKb }} KB</p>
 
             <div v-if="!customIcons.length" class="custom-empty">Пока нет своих иконок</div>
             <div v-else class="custom-grid">

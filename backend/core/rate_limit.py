@@ -3,21 +3,23 @@ from collections import defaultdict
 
 from fastapi import HTTPException, Request
 
+from backend.core.config import settings as app_settings
+
 _attempts: dict[str, list[float]] = defaultdict(list)
-_WINDOW_SECONDS = 60
-_MAX_ATTEMPTS = 5
 
 
 def check_rate_limit(request: Request) -> None:
-    """Блокирует IP после 5 неудачных попыток за 60 секунд."""
+    """Блокирует IP после настроенного числа неудачных попыток за окно времени."""
+    window_seconds = app_settings.app.rate_limit_window_seconds
+    max_attempts = app_settings.app.rate_limit_max_attempts
     ip = request.client.host if request.client else "unknown"
     now = time.time()
-    window_start = now - _WINDOW_SECONDS
+    window_start = now - window_seconds
     _attempts[ip] = [t for t in _attempts[ip] if t > window_start]
-    if len(_attempts[ip]) >= _MAX_ATTEMPTS:
+    if len(_attempts[ip]) >= max_attempts:
         raise HTTPException(
             status_code=429,
-            detail=f"Too many attempts. Try again in {_WINDOW_SECONDS} seconds.",
+            detail=f"Too many attempts. Try again in {window_seconds} seconds.",
         )
     _attempts[ip].append(now)
 

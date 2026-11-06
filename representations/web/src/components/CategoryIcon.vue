@@ -1,10 +1,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { customIconFileUrl, iconDisplayLabel, isCustomIcon } from '../api.js'
+import { customIconFileUrl, DEFAULT_FALLBACK_EMOJI, iconDisplayLabel, isCustomIcon } from '../api.js'
 
 const props = defineProps({
   icon: { type: String, default: null },
-  fallback: { type: String, default: '📁' },
+  fallback: { type: String, default: DEFAULT_FALLBACK_EMOJI },
   size: { type: String, default: 'md' },
 })
 

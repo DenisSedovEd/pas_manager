@@ -5,6 +5,7 @@ import {useTelegram} from '../composables/useTelegram';
 import { accountApi, categoryApi, iconDisplayLabel, resolveAccountIcon } from '../api.js'
 import CategoryIcon from './CategoryIcon.vue';
 import { usePlatform } from '@pas/shared/platform/index.js'
+import uiConfig from '@pas/shared/config.json'
 
 const emit = defineEmits(['select-category', 'add-category', 'open-settings']);
 const { tg } = useTelegram();
@@ -27,7 +28,7 @@ const handleSearchInput = () => {
     searchResults.value = [];
     return;
   }
-  searchTimer = setTimeout(runSearch, 300);
+  searchTimer = setTimeout(runSearch, uiConfig.ui.searchDebounceMs);
 };
 
 const runSearch = async () => {
@@ -326,7 +327,7 @@ onUnmounted(() => {
             ghost-class="ghost-card"
             :animation="200"
             :force-fallback="true"
-            :delay="300"
+            :delay="uiConfig.ui.dragTouchDelayMs"
             :delay-on-touch-only="true"
             @start="onDragStart"
             @end="handleReorder"

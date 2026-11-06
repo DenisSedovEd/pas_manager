@@ -5,6 +5,7 @@ import { accountApi, categoryApi, iconDisplayLabel, resolveAccountIcon } from '.
 import AddItemMenu from './AddItemMenu.vue'
 import CategoryIcon from './CategoryIcon.vue'
 import { usePlatform } from '@pas/shared/platform/index.js'
+import uiConfig from '@pas/shared/config.json'
 
 const platform = usePlatform()
 
@@ -26,7 +27,7 @@ let searchTimer = null
 const handleSearchInput = () => {
   clearTimeout(searchTimer)
   if (!searchQuery.value.trim()) { searchResults.value = []; return }
-  searchTimer = setTimeout(runSearch, 300)
+  searchTimer = setTimeout(runSearch, uiConfig.ui.searchDebounceMs)
 }
 
 const runSearch = async () => {
@@ -155,7 +156,7 @@ onMounted(fetchCategories)
             @click="!isEditMode && $emit('select-category', cat)"
           >
             <span v-if="isEditMode" class="drag-handle">☰</span>
-            <CategoryIcon class="item-icon" :icon="cat.icon" fallback="📁" />
+            <CategoryIcon class="item-icon" :icon="cat.icon" />
             <div class="item-info">
               <span class="item-name">{{ cat.name }}</span>
               <span class="item-sub">
