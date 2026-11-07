@@ -1,6 +1,9 @@
-from cryptography.exceptions import InvalidTag
-from fastapi import APIRouter, HTTPException, Depends
+import logging
 
+from cryptography.exceptions import InvalidTag
+from fastapi import APIRouter, HTTPException, Depends, Request
+
+from backend.core.rate_limit import check_rate_limit, reset_rate_limit
 from backend.core.security import MasterPasswordService
 from backend.core.config import settings as app_settings
 from backend.core.session import session_manager, KIND_MINIAPP, KIND_WEB
@@ -20,7 +23,14 @@ from backend.schemas.main_router_schema import (
 )
 from backend.schemas.response_schema import SuccessResponse
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/main")
+
+# Отдельные бюджеты попыток: неудачи биометрии не должны отнимать попытки
+# входа по паролю, а веб-вход считается своим счётчиком.
+RATE_SCOPE_UNLOCK = "miniapp-unlock"
+RATE_SCOPE_BIO = "miniapp-bio"
 
 
 @router.get("/auth/status")
@@ -33,11 +43,13 @@ async def check_status(user: dict = Depends(get_current_user)) -> StatusResponse
 
 @router.post("/auth/unlock")
 async def unlock(
+    request: Request,
     payload: UnlockRequest,
     user: dict = Depends(get_current_user),
     db_repo: DatabaseRepository = Depends(get_db_repo),
 ) -> SuccessResponse:
     """Разблокировка с мастер-паролем"""
+    check_rate_limit(request, scope=RATE_SCOPE_UNLOCK)
     secure = MasterPasswordService()
 
     settings = await db_repo.get(AppSettings, filters={"id": app_settings.app.admin_id})
@@ -52,6 +64,7 @@ async def unlock(
     )
     if is_valid:
         session_manager.create_miniapp_session(user["id"], payload.master_password)
+        reset_rate_limit(request, scope=RATE_SCOPE_UNLOCK)
         return SuccessResponse()
 
     raise HTTPException(status_code=403, detail="Wrong password")
@@ -65,7 +78,9 @@ async def get_bio_settings(
     """Получение настроек биометрии"""
     settings = await db_repo.get(AppSettings, filters={"id": app_settings.app.admin_id})
 
-    if not settings.bio_enc_data:
+    # Строка настроек может отсутствовать до первой инициализации —
+    # обращение к полю на None давало 500 вместо внятного ответа.
+    if not settings or not settings.bio_enc_data:
         return {"is_enabled": False}
 
     return {
@@ -76,12 +91,14 @@ async def get_bio_settings(
 
 @router.post("/auth/unlock-biometric")
 async def unlock_bio(
+    request: Request,
     request_data: BiometricRequest,
     user: dict = Depends(get_current_user),
     db_repo: DatabaseRepository = Depends(get_db_repo),
     encrypt_repo: EncryptionRepository = Depends(get_encrypt_repo),
 ) -> SuccessResponse:
     """Разблокировка по FaceID: восстанавливаем мастер-пароль из зашифрованного хранилища"""
+    check_rate_limit(request, scope=RATE_SCOPE_BIO)
 
     settings = await db_repo.get(AppSettings, filters={"id": app_settings.app.admin_id})
 
@@ -104,9 +121,17 @@ async def unlock_bio(
         )
 
         session_manager.create_miniapp_session(user["id"], recovered_master_password)
+        reset_rate_limit(request, scope=RATE_SCOPE_BIO)
         return SuccessResponse()
 
-    except (InvalidTag, Exception):
+    # Ответ наружу тот же 403 — что именно не сошлось, клиенту знать незачем.
+    # Но в лог причину пишем: прежний `except (InvalidTag, Exception)` молча
+    # съедал и ошибки расшифровки, и любые баги кода.
+    except InvalidTag:
+        logger.warning("Биометрическая разблокировка: токен не подошёл")
+        raise HTTPException(status_code=403, detail="Ошибка биометрической авторизации")
+    except Exception:
+        logger.exception("Биометрическая разблокировка: непредвиденная ошибка")
         raise HTTPException(status_code=403, detail="Ошибка биометрической авторизации")
 
 

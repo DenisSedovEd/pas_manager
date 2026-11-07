@@ -67,6 +67,54 @@ class AppSettings(Base):
     )
     rate_limit_max_attempts: int = Field(5)
     rate_limit_window_seconds: int = Field(60)
+    cookie_secure: bool | None = Field(
+        default=None,
+        description=(
+            "Флаг Secure у cookie сессии. None — определять по схеме запроса: "
+            "https получает Secure, локальный http остаётся рабочим. "
+            "True/False — принудительно."
+        ),
+    )
+    hsts_seconds: int = Field(
+        default=0,
+        description=(
+            "max-age для Strict-Transport-Security; 0 — не отправлять. "
+            "Заголовок уходит только на https-ответах, но включать его стоит "
+            "осознанно: он запрещает браузеру ходить на этот хост по http."
+        ),
+    )
+    forwarded_allow_ips: str | None = Field(
+        default=None,
+        description=(
+            "Каким узлам доверять X-Forwarded-For/-Proto. None — значение по "
+            "умолчанию uvicorn (127.0.0.1). Нужно задать, если приложение "
+            "стоит за cloudflared/реверс-прокси, иначе rate limit видит один "
+            "IP прокси на всех, а схема запроса определяется как http."
+        ),
+    )
+    expose_docs: bool | None = Field(
+        default=None,
+        description="Отдавать /docs и /openapi.json. None — следовать debug.",
+    )
+    init_data_max_age_seconds: int = Field(
+        default=86400,
+        description=(
+            "Максимальный возраст auth_date в initData Telegram; 0 — не "
+            "проверять. Без проверки перехваченная строка initData остаётся "
+            "действительным пропуском бессрочно."
+        ),
+    )
+    session_absolute_ttl_web: int = Field(
+        default=0,
+        description=(
+            "Жёсткий предел жизни веб-сессии от момента входа, секунды; "
+            "0 — без предела (TTL продлевается на каждом запросе)."
+        ),
+    )
+    session_absolute_ttl_miniapp: int = Field(
+        default=0,
+        description="То же для сессии mini app; 0 — без предела.",
+    )
 
     @model_validator(mode="after")
     def resolve_session_ttl(self):

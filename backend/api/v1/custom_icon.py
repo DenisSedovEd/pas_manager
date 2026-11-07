@@ -58,7 +58,15 @@ async def get_custom_icon_file(
         path, content_type = await service.get_file(icon_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return FileResponse(path, media_type=content_type)
+    # attachment обезвреживает загруженный SVG: при переходе по ссылке он
+    # скачивается, а не открывается документом со скриптом внутри. На <img
+    # src> и fetch в blob это не влияет — Content-Disposition учитывается
+    # только для навигации, поэтому отображение иконок не меняется.
+    return FileResponse(
+        path,
+        media_type=content_type,
+        headers={"Content-Disposition": "attachment"},
+    )
 
 
 @router.delete("/{icon_id}")

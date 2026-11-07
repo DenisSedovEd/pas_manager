@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from backend.core.config import settings as app_settings
+from backend.core.http_security import cookie_secure_for
 from backend.core.rate_limit import check_rate_limit, reset_rate_limit
 from backend.core.security import MasterPasswordService
 from backend.core.session import session_manager, KIND_WEB
@@ -43,7 +44,7 @@ async def web_unlock(
         value=token,
         httponly=True,
         samesite="strict",
-        secure=False,
+        secure=cookie_secure_for(request.url.scheme),
         path="/",
         max_age=app_settings.app.session_ttl_web,
     )
@@ -60,10 +61,19 @@ async def web_status(user: dict = Depends(get_current_user)) -> StatusResponse:
 
 @router.post("/auth/logout")
 async def web_logout(
+    request: Request,
     response: Response,
     user: dict = Depends(get_current_user),
 ) -> SuccessResponse:
     """Завершение браузерной сессии."""
     session_manager.close_session(user["id"], KIND_WEB)
-    response.delete_cookie(key="session_token", path="/")
+    # Атрибуты повторяют set_cookie: иначе по http браузер отклонит
+    # Set-Cookie с Secure и удаляющая cookie не применится.
+    response.delete_cookie(
+        key="session_token",
+        path="/",
+        httponly=True,
+        samesite="strict",
+        secure=cookie_secure_for(request.url.scheme),
+    )
     return SuccessResponse()

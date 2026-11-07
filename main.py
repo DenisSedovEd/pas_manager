@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.api.router import router
 from backend.core.config import settings
 from backend.core.db import init_db
+from backend.core.http_security import add_security_headers
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -34,20 +35,42 @@ async def start() -> None:
         app,
         host=settings.app.host,
         port=settings.app.port,
+        # За cloudflared/реверс-прокси без этого все запросы выглядят как
+        # http с одного IP: rate limit считает всех одним клиентом, а cookie
+        # не получает Secure. None — поведение uvicorn по умолчанию.
+        **(
+            {"forwarded_allow_ips": settings.app.forwarded_allow_ips}
+            if settings.app.forwarded_allow_ips
+            else {}
+        ),
     )
     server = uvicorn.Server(uvicorn_config)
     await server.serve()
 
 
-app = FastAPI(lifespan=lifespan)  # ← Добавь lifespan
+# /docs и /openapi.json — полная карта API менеджера паролей, и авторизация их
+# не закрывает. Вне debug выключаем.
+_expose_docs = (
+    settings.app.expose_docs
+    if settings.app.expose_docs is not None
+    else settings.app.debug
+)
+
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url="/docs" if _expose_docs else None,
+    redoc_url="/redoc" if _expose_docs else None,
+    openapi_url="/openapi.json" if _expose_docs else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.app.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+add_security_headers(app)
 # add
 app.include_router(router)
 

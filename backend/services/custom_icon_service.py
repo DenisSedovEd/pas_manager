@@ -20,6 +20,39 @@ MAX_ICON_BYTES = ICON_MAX_BYTES
 ICONS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "category_icons"
 DEFAULT_FALLBACK = ICON_FALLBACK_EMOJI
 
+_BOM = b"\xef\xbb\xbf"
+
+
+def _looks_like_svg(data: bytes) -> bool:
+    """Начинается ли файл как XML/SVG-документ."""
+    head = data[:4096]
+    if head.startswith(_BOM):
+        head = head[len(_BOM) :]
+    head = head.lstrip()
+    if not head.startswith(b"<"):
+        return False
+    return b"<svg" in head.lower()
+
+
+def detect_content_type(data: bytes) -> str | None:
+    """Определяет тип картинки по содержимому, а не по словам клиента.
+
+    content_type в запросе задаёт браузер по расширению, поэтому сам по себе
+    он ничего не гарантирует: под видом иконки можно было положить любые
+    байты. Возвращаем распознанный тип или None, если это не поддерживаемая
+    картинка. Для корректного файла результат совпадает с заявленным типом,
+    а файл с перепутанным расширением сохранится под своим настоящим.
+    """
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if _looks_like_svg(data):
+        return "image/svg+xml"
+    return None
+
 
 class CustomIconService:
     """CRUD пользовательских иконок (категории и площадки)."""
@@ -80,6 +113,12 @@ class CustomIconService:
             raise ValueError("Empty file")
         if len(data) > MAX_ICON_BYTES:
             raise ValueError(f"File too large (max {MAX_ICON_BYTES // 1024} KB)")
+
+        detected_type = detect_content_type(data)
+        if detected_type is None:
+            raise ValueError("Unsupported image type")
+        # Дальше доверяем только распознанному типу.
+        content_type = detected_type
 
         self._ensure_dir()
         icon_id = str(uuid.uuid4())

@@ -10,6 +10,22 @@ ENV
 
 .env
 
+# История репозитория не нужна в образе: образ публикуется в реестр, а .git
+# несёт все прошлые версии файлов целиком.
+.git
+.gitignore
+.github
+
+# Локальные настройки редакторов и кэши инструментов
+.vscode
+.claude
+.cursorignore
+.ruff_cache
+.mypy_cache
+
+# Демки не участвуют в рантайме (README оставлен: на него ссылается pyproject)
+demos
+
 # Exclude local Node.js dependencies from build context
 # (воркспейс поднимает зависимости в representations/node_modules)
 representations/node_modules
